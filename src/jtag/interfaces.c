@@ -57,6 +57,9 @@ extern struct adapter_driver ftdi_adapter_driver;
 #if BUILD_USB_BLASTER == 1 || BUILD_USB_BLASTER_2 == 1
 extern struct adapter_driver usb_blaster_adapter_driver;
 #endif
+#if BUILD_JTAGSERV
+extern struct adapter_driver jtagserv_adapter_driver;
+#endif
 #if BUILD_JTAG_VPI == 1
 extern struct adapter_driver jtag_vpi_adapter_driver;
 #endif
@@ -167,6 +170,9 @@ struct adapter_driver *adapter_drivers[] = {
 #endif
 #if BUILD_USB_BLASTER == 1 || BUILD_USB_BLASTER_2 == 1
 		&usb_blaster_adapter_driver,
+#endif
+#if BUILD_JTAGSERV
+		&jtagserv_adapter_driver,
 #endif
 #if BUILD_JTAG_VPI == 1
 		&jtag_vpi_adapter_driver,
