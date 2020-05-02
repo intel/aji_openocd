@@ -165,7 +165,7 @@ struct adapter_driver *adapter_drivers[] = {
 #if BUILD_FTDI == 1
 		&ftdi_adapter_driver,
 #endif
-#if BUILD_USB_BLASTER || BUILD_USB_BLASTER_2 == 1
+#if BUILD_USB_BLASTER == 1 || BUILD_USB_BLASTER_2 == 1
 		&usb_blaster_adapter_driver,
 #endif
 #if BUILD_JTAG_VPI == 1
