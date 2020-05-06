@@ -24,7 +24,7 @@ fi
 # bootstrap the autotools
 (
 set -x
-aclocal
+aclocal ${ACLOCAL_OPTS}
 ${libtoolize} --automake --copy
 autoconf
 autoheader
