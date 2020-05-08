@@ -610,6 +610,10 @@ AS_IF([test "x$build_target64" = "xyes"], [
   AC_DEFINE([BUILD_TARGET64], [0], [0 if you don't want 64-bit addresses.])
 ])
 
+# Cannot do AC_CHECK_LIB(jtag_client) because the test will insist that
+# that functions from libSafeString is not available, even if on the command line, 
+# one can see -lSafeString
+# @TODO Should extend tests to include libSafeString.so and libccl_ver.so
 #AC_CHECK_LIB([jtag_client], [_Z16aji_get_hardwarePjP12AJI_HARDWAREj])
 AC_CHECK_FILE([src/jtag/drivers/jtagserv/lib64/libjtag_client.so],[
     use_jtagserv=yes
@@ -736,7 +740,7 @@ AM_CONDITIONAL([SYSFSGPIO], [test "x$build_sysfsgpio" = "xyes"])
 AM_CONDITIONAL([XLNX_PCIE_XVC], [test "x$build_xlnx_pcie_xvc" = "xyes"])
 AM_CONDITIONAL([USE_LIBUSB0], [test "x$use_libusb0" = "xyes"])
 AM_CONDITIONAL([USE_LIBUSB1], [test "x$use_libusb1" = "xyes"])
-AM_CONDITIONAL([JTAGSERV], [test "x$use_jtagserv" = "xyes"])
+AM_CONDITIONAL([USE_JTAGSERV], [test "x$use_jtagserv" = "xyes"])
 AM_CONDITIONAL([IS_CYGWIN], [test "x$is_cygwin" = "xyes"])
 AM_CONDITIONAL([IS_MINGW], [test "x$is_mingw" = "xyes"])
 AM_CONDITIONAL([IS_WIN32], [test "x$is_win32" = "xyes"])
