@@ -114,7 +114,7 @@ struct jtagserv_info {
 static struct jtagserv_info info = {
 	.jtagserv_vid = 0x09fb, /* Altera */
 	.jtagserv_pid = 0x6001, /* JTAGSERV */
-	.lowlevel_name = "jtagserv",
+	.lowlevel_name = NULL,
 	.srst_asserted = false,
 	.trst_asserted = false,
 	.pin6 = FIXED_1,
@@ -989,6 +989,16 @@ COMMAND_HANDLER(jtagserv_handle_pin_command)
 	return ERROR_OK;
 }
 
+COMMAND_HANDLER(jtagserv_handle_lowlevel_drv_command)
+{
+	if (CMD_ARGC != 1)
+		return ERROR_COMMAND_SYNTAX_ERROR;
+
+	info.lowlevel_name = strdup(CMD_ARGV[0]);
+
+	return ERROR_OK;
+}
+
 COMMAND_HANDLER(jtagserv_firmware_command)
 {
 	if (CMD_ARGC != 1)
@@ -1015,6 +1025,13 @@ static const struct command_registration jtagserv_command_handlers[] = {
 		.help = "the vendor ID and product ID of the uninitialized device " \
 			"for JTAGSERV",
 		.usage = "vid pid vid_uninit pid_uninit",
+	},
+	{
+		.name = "jtagserv_lowlevel_driver",
+		.handler = jtagserv_handle_lowlevel_drv_command,
+		.mode = COMMAND_CONFIG,
+		.help = "set the lowlevel access for the USB Blaster (ftdi, jtagserv2)",
+		.usage = "jtagserv2",
 	},
 	{
 		.name = "jtagserv_pin",
