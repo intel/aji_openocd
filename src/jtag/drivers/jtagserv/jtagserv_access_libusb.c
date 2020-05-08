@@ -23,7 +23,7 @@
 #endif
 #include <jtag/interface.h>
 #include <jtag/commands.h>
-#include <libusb_helper.h>
+//#include <libusb_helper.h>
 #include <target/image.h>
 
 #include "jtagserv_access.h"
@@ -42,8 +42,8 @@
 static int jtagserv_libusb_read(struct jtagserv_lowlevel *low, uint8_t *buf,
 			      unsigned size, uint32_t *bytes_read)
 {
+/*
 	int ret, tmp = 0;
-
 	ret = jtag_libusb_bulk_read(low->libusb_dev,
 					    USBBLASTER_EPIN | \
 					    LIBUSB_ENDPOINT_IN,
@@ -53,11 +53,14 @@ static int jtagserv_libusb_read(struct jtagserv_lowlevel *low, uint8_t *buf,
 	*bytes_read = tmp;
 
 	return ret;
+*/
+return 0;
 }
 
 static int jtagserv_libusb_write(struct jtagserv_lowlevel *low, uint8_t *buf,
 			       int size, uint32_t *bytes_written)
 {
+/*
 	int ret, tmp = 0;
 
 	ret = jtag_libusb_bulk_write(low->libusb_dev,
@@ -69,7 +72,8 @@ static int jtagserv_libusb_write(struct jtagserv_lowlevel *low, uint8_t *buf,
 	*bytes_written = tmp;
 
 	return ret;
-
+*/
+return 0;
 }
 
 static int jtagserv_write_firmware_section(struct libusb_device_handle *libusb_dev,
@@ -104,7 +108,7 @@ static int jtagserv_write_firmware_section(struct libusb_device_handle *libusb_d
 			chunk_size = 64;
 		else
 			chunk_size = bytes_remaining;
-
+/*
 		jtag_libusb_control_transfer(libusb_dev,
 					     LIBUSB_REQUEST_TYPE_VENDOR | \
 					     LIBUSB_ENDPOINT_OUT,
@@ -114,7 +118,7 @@ static int jtagserv_write_firmware_section(struct libusb_device_handle *libusb_d
 					     (char *)data_ptr,
 					     chunk_size,
 					     100);
-
+*/
 		bytes_remaining -= chunk_size;
 		addr += chunk_size;
 		data_ptr += chunk_size;
@@ -151,7 +155,7 @@ static int load_usb_blaster_firmware(struct libusb_device_handle *libusb_dev,
 	 */
 
 	char value = CPU_RESET;
-	jtag_libusb_control_transfer(libusb_dev,
+/*	jtag_libusb_control_transfer(libusb_dev,
 				     LIBUSB_REQUEST_TYPE_VENDOR | \
 				     LIBUSB_ENDPOINT_OUT,
 				     USBBLASTER_CTRL_LOAD_FIRM,
@@ -160,8 +164,9 @@ static int load_usb_blaster_firmware(struct libusb_device_handle *libusb_dev,
 				     &value,
 				     1,
 				     100);
-
+*/
 	/* Download all sections in the image to ULINK */
+/*
 	for (int i = 0; i < jtagserv_firmware_image.num_sections; i++) {
 		ret = jtagserv_write_firmware_section(libusb_dev,
 						     &jtagserv_firmware_image, i);
@@ -170,8 +175,9 @@ static int load_usb_blaster_firmware(struct libusb_device_handle *libusb_dev,
 			return ret;
 		}
 	}
-
+*/
 	value = !CPU_RESET;
+/*
 	jtag_libusb_control_transfer(libusb_dev,
 				     LIBUSB_REQUEST_TYPE_VENDOR | \
 				     LIBUSB_ENDPOINT_OUT,
@@ -181,7 +187,7 @@ static int load_usb_blaster_firmware(struct libusb_device_handle *libusb_dev,
 				     &value,
 				     1,
 				     100);
-
+*/
 	image_close(&jtagserv_firmware_image);
 
 	return ERROR_OK;
@@ -189,8 +195,9 @@ static int load_usb_blaster_firmware(struct libusb_device_handle *libusb_dev,
 
 static int jtagserv_libusb_init(struct jtagserv_lowlevel *low)
 {
-	const uint16_t vids[] = { low->jtagserv_vid_uninit, 0 };
+/*	const uint16_t vids[] = { low->jtagserv_vid_uninit, 0 };
 	const uint16_t pids[] = { low->jtagserv_pid_uninit, 0 };
+
 	struct libusb_device_handle *temp;
 	bool renumeration = false;
 	int ret;
@@ -240,13 +247,15 @@ static int jtagserv_libusb_init(struct jtagserv_lowlevel *low)
 				     100);
 
 	LOG_INFO("Altera USB-Blaster II found (Firm. rev. = %s)", buffer);
-
+*/
 	return ERROR_OK;
 }
 
 static int jtagserv_libusb_quit(struct jtagserv_lowlevel *low)
 {
+/*
 	jtag_libusb_close(low->libusb_dev);
+*/
 	return ERROR_OK;
 };
 
