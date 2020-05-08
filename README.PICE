@@ -1,0 +1,16 @@
+# You can use ACLOCAL_OPTS to set options for aclocal command in bootstrap
+# In the example below I use my own m4 package directory
+export ACLOCAL_OPTS=" -I /p/psg/swip/w/cinlyooi/.local/share/aclocal"
+./bootstrap
+
+
+# If you are on gcc 7.2.0, then you need to set system to find
+# /usr/lib64/libutil.so, which contains the openpty that jimctl 
+# uses, but OpenOCD did not recognize and add in when linkning
+# the final openocd program.
+
+LDFLAGS='-L/usr/lib64 ' LIBS='-lutil '  ./configure --prefix=$(pwd)  
+
+
+To use USB_BLASTER_II you need to compile openocd on a machine 
+with libudev which in turn must be installed by administrator.
