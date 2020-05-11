@@ -1,6 +1,6 @@
 //# START_MODULE_HEADER/////////////////////////////////////////////////////////
 //#
-//# $Header: //depot/users/cinlyooi/p/snippets/gnuaji/aji.h#3 $
+//# $Header$
 //#
 //# Description:
 //#

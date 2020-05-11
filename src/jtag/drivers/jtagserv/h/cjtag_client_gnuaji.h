@@ -1,6 +1,6 @@
 //START_MODULE_HEADER////////////////////////////////////////////////////////
 //
-// $Header: //depot/users/cinlyooi/p/snippets/gnuaji/jtag_client_gnuaji.h#3 $
+// $Header$
 //
 // Description: Entries points for AJI with GNU name decoration
 //
