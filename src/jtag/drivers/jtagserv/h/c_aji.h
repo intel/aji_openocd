@@ -1,6 +1,6 @@
 //# START_MODULE_HEADER/////////////////////////////////////////////////////////
 //#
-//# $Header$
+//# $Header: //depot/users/cinlyooi/p/snippets/gnuaji/aji.cbinding.h#2 $
 //#
 //# Description:
 //#
@@ -191,8 +191,13 @@ enum AJI_PINS    // Direct pin control bitfield
 //# FORWARD REFERENCES FOR CLASSES /////////////////////////////////////////
 
 //# TYPEDEFS ///////////////////////////////////////////////////////////////
-typedef struct AJI_CHAIN * AJI_CHAIN_ID;  //} Expecting to cause problem later
-typedef struct AJI_OPEN  * AJI_OPEN_ID;   //} as I changed "class" to "struct"
+typedef struct AJI_CHAIN * AJI_CHAIN_ID;  //} Changed "class" to "struct"
+
+// Original is "typedef AJI_OPEN* AJI_OPEN_ID" but AJI_OPEN is a class
+// with virtual functions so instead use opaque pointer (void*) as AJI_OPEN.
+
+typedef void AJI_OPEN;          
+typedef AJI_OPEN  * AJI_OPEN_ID;
 
 //# CLASS AND STRUCTURE DECLARATIONS ///////////////////////////////////////
 
