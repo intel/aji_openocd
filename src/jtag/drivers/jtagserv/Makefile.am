@@ -32,7 +32,8 @@ noinst_LTLIBRARIES += %D%/libocdjtagserv.la
 
 %C%_libocdjtagserv_la_SOURCES = $(JTAGSERV_SRC)
 
-%C%_libocdjtagserv_la_CPPFLAGS = -Ih -I$(top_srcdir)/src/jtag/drivers $(AM_CPPFLAGS) \
+%C%_libocdjtagserv_la_CPPFLAGS = -I%D%/h -I%D%/.. \
+    $(AM_CPPFLAGS) \
     $(JTAGSERV_BUILTINS_CPPFLAGS) $(JTAG_SERV_GENERAL_CPPFLAGS) $(JTAGSERV_ALTERA_CPPFLAGS) \
     $(JTAGSERV_MISC_FLAGS) \
     $(LIBUSB1_CFLAGS) $(LIBFTDI_CFLAGS)
@@ -43,7 +44,10 @@ noinst_LTLIBRARIES += %D%/libocdjtagserv.la
     -static-libgcc 
 %C%_libocdjtagserv_la_LDLIBS = -ljtag_client -lccl_ver -lSafeString
 
-JTAGSERV_SRC = %D%/jtagserv.c %D%/jtagserv_access.h  %D%/jtagserv_access_libusb.c
+JTAGSERV_SRC = \
+    %D%/h/aji.h %D%/h/c_aji.h \
+    %D%/h/jtag_client_gnuaji.h %D%/h/c_jtag_client_gnuaji.h  %D%/h/c2_jtag_client_gnuaji.h \
+    %D%/jtagserv.c %D%/jtagserv_access.h  %D%/ %D%/jtagserv_access_libusb.c
 
 
 

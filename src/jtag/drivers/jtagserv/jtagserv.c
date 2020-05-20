@@ -1,52 +1,7 @@
 /*
- *   Driver for USB-JTAG, Altera JTAGSERV and compatibles
- *
- *   Inspired from original code from Kolja Waschk's USB-JTAG project
- *   (http://www.ixo.de/info/usb_jtag/), and from openocd project.
- *
- *   Copyright (C) 2013 Franck Jullien franck.jullien@gmail.com
- *   Copyright (C) 2012 Robert Jarzmik robert.jarzmik@free.fr
- *   Copyright (C) 2011 Ali Lown ali@lown.me.uk
- *   Copyright (C) 2009 Catalin Patulea cat@vv.carleton.ca
- *   Copyright (C) 2006 Kolja Waschk usbjtag@ixo.de
- *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
+ *   Driver for Altera JTag Server
+ *  
  */
-
-/*
- * The following information is originally from Kolja Waschk's USB-JTAG,
- * where it was obtained by reverse engineering an Altera JTAGSERV.
- * See http://www.ixo.de/info/usb_jtag/ for JTAGSERV block diagram and
- * usb_jtag-20080705-1200.zip#usb_jtag/host/openocd for protocol.
- *
- * The same information is also on the UrJTAG mediawiki, with some additional
- * notes on bits marked as "unknown" by usb_jtag.
- * (http://sourceforge.net/apps/mediawiki/urjtag/index.php?
- *    title=Cable_Altera_JTAGSERV)
- * USB-JTAG, Altera JTAGSERV are typically implemented as a Cypress
- * EZ-USB FX2LP followed by a CPLD.
- *            _____________    _________
- *           |             |  |         |
- *      USB__| EZ-USB FX2  |__| EPM570  |__JTAG (B_TDO,B_TDI,B_TMS,B_TCK)
- *           |_____________|  |_________|
- *            __|__________
- *           |             |
- *           | 24 MHz XTAL |
- *           |_____________|
- */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -69,6 +24,10 @@
 #include <sys/time.h>
 #include <time.h>
 
+/* AJI */
+#include "c2_aji.h"
+#include "c2_jtag_client_gnuaji.h"
+
 /* Size of USB endpoint max packet size, ie. 64 bytes */
 #define MAX_PACKET_SIZE 64
 /*
@@ -89,7 +48,7 @@ enum gpio_steer {
 	TRST,
 };
 
-struct jtagserv_info {
+struct jtagserv_info { 
 	enum gpio_steer pin6;
 	enum gpio_steer pin8;
 	int tms;
@@ -127,13 +86,6 @@ static struct jtagserv_info info = {
 struct drvs_map {
 	char *name;
 	struct jtagserv_lowlevel *(*drv_register)(void);
-};
-
-static struct drvs_map lowlevel_drivers_map[] = {
-#if BUILD_JTAGSERV
-	{ .name = "jtagserv", .drv_register = jtagserv_register_libusb },
-#endif
-	{ NULL, NULL },
 };
 
 /*
@@ -297,8 +249,7 @@ static uint8_t jtagserv_build_out(enum scan_type type)
  * @srst: 1 if SRST is to be asserted
  */
 static void jtagserv_reset(int trst, int srst)
-{
-	uint8_t out_value;
+{	uint8_t out_value;
 
 	info.trst_asserted = trst;
 	info.srst_asserted = srst;
@@ -757,7 +708,7 @@ static void jtagserv_initial_wipeout(void)
 	tap_set_state(TAP_RESET);
 }
 
-static int jtagserv_execute_queue(void)
+static void jtagserv_execute_queue(void)
 {
 	struct jtag_command *cmd;
 	static int first_call = 1;
@@ -797,7 +748,7 @@ static int jtagserv_execute_queue(void)
 			ret = jtagserv_scan(cmd->cmd.scan);
 			break;
 		default:
-			LOG_ERROR("BUG: unknown JTAG command type 0x%X",
+            LOG_ERROR("BUG: unknown JTAG command type 0x%X",
 				  cmd->type);
 			ret = ERROR_FAIL;
 			break;
@@ -809,65 +760,63 @@ static int jtagserv_execute_queue(void)
 }
 
 /**
- * jtagserv_init - Initialize the Altera device
+ * jtagserv_init - Contact the JTAG Server
  *
- * Initialize the device :
- *  - open the USB device
- *  - pretend it's initialized while actual init is delayed until first jtag command
- *
- * Returns ERROR_OK if USB device found, error if not.
+ * Returns ERROR_OK if JTAG Server found.
+ * TODO: Write a TCL Command that allows me to specify the jtagserver config file
  */
 static int jtagserv_init(void)
-{
-	int ret, i;
+{   LOG_INFO("Check inputs\n");
+    char *quartus_jtag_client_config = getenv("QUARTUS_JTAG_CLIENT_CONFIG");
+    if (quartus_jtag_client_config != NULL) {
+        LOG_INFO("Configuration file, set via QUARTUS_JTAG_CLIENT_CONFIG, is '%s'\n", 
+               quartus_jtag_client_config
+        );
+    } else {
+        LOG_INFO("Environment variable QUARTUS_JTAG_CLIENT_CONFIG not setted\n");
+    }
+    
+    unsigned int hardware_capacity = 10;
+    AJI_HARDWARE *hardware_list = (AJI_HARDWARE*) calloc(hardware_capacity, sizeof(AJI_HARDWARE));
+    char **server_version_info_list = (char**) calloc(hardware_capacity, sizeof(char*));
+    if(NULL == hardware_list) {
+        LOG_ERROR("Failed to allocate memory for hardware_list\n");
+        return AJI_NO_MEMORY;
+    }
 
-	for (i = 0; lowlevel_drivers_map[i].name; i++) {
-		if (info.lowlevel_name) {
-			if (!strcmp(lowlevel_drivers_map[i].name, info.lowlevel_name)) {
-				info.drv = lowlevel_drivers_map[i].drv_register();
-				if (!info.drv) {
-					LOG_ERROR("Error registering lowlevel driver \"%s\"",
-						  info.lowlevel_name);
-					return ERROR_JTAG_DEVICE_ERROR;
-				}
-				break;
-			}
-		} else {
-			info.drv = lowlevel_drivers_map[i].drv_register();
-			if (info.drv) {
-				info.lowlevel_name = strdup(lowlevel_drivers_map[i].name);
-				LOG_INFO("No lowlevel driver configured, using %s", info.lowlevel_name);
-				break;
-			}
-		}
-	}
+    printf("Query JTAG\n");
+    unsigned int hardware_count = hardware_capacity;
+    AJI_ERROR status = c2_aji_get_hardware2( 
+        &hardware_count, hardware_list, server_version_info_list, c2_aji_config.timeout
+    );
+    LOG_INFO("Return Status is %i\n", status);
 
-	if (!info.drv) {
-		LOG_ERROR("No lowlevel driver available");
-		return ERROR_JTAG_DEVICE_ERROR;
-	}
+    LOG_INFO("Output Result\n");
+    if (AJI_NO_ERROR == status) {
+        LOG_INFO("Number of hardware is %d\n", hardware_count);
 
-	/*
-	 * Register the lowlevel driver
-	 */
-	info.drv->jtagserv_vid = info.jtagserv_vid;
-	info.drv->jtagserv_pid = info.jtagserv_pid;
-	info.drv->jtagserv_vid_uninit = info.jtagserv_vid_uninit;
-	info.drv->jtagserv_pid_uninit = info.jtagserv_pid_uninit;
-	info.drv->jtagserv_device_desc = info.jtagserv_device_desc;
-	info.drv->firmware_path = info.firmware_path;
-
-	info.flags |= info.drv->flags;
-
-	ret = info.drv->open(info.drv);
-
-	/*
-	 * Let lie here : the TAP is in an unknown state, but the first
-	 * execute_queue() will trigger a jtagserv_initial_wipeout(), which will
-	 * put the TAP in RESET.
-	 */
-	tap_set_state(TAP_RESET);
-	return ret;
+        for(unsigned int i=0; i<hardware_count; ++i) {
+            AJI_HARDWARE hw = hardware_list[i];
+            LOG_INFO("    (%u) device_name=%s hw_name=%s server=%s port=%s chain_id=%p persistent_id=%d, chain_type=%d, features=%d, server_version_info_list=%s\n", 
+                   i+1, hw.device_name, hw.hw_name, hw.server, hw.port,  
+                   hw.chain_id, hw.persistent_id, hw.chain_type, hw.features,
+                   server_version_info_list[i]
+            );
+           
+           //Assume if persistent_id==0,hw is not defined. Felt that .port="Unable to connect" 
+           //..is not a strong enough indicator that something is wrong       
+           if(hw.persistent_id == 0) {
+               LOG_INFO("        Not a valid device.\n");
+               continue;
+           } //end if(hw.persistent_id
+        } //end for(i)
+    } //end if AJI_NO_ERROR for c2_aji_get_hardware2()
+    
+    free(hardware_list);
+    free(server_version_info_list);
+    //TODO: TAP state?
+    
+    return ERROR_OK;
 }
 
 /**
@@ -881,157 +830,12 @@ static int jtagserv_init(void)
  */
 static int jtagserv_quit(void)
 {
-	uint8_t byte0 = 0;
-	unsigned int retlen;
+       uint8_t byte0 = 0;
+       unsigned int retlen;
 
-	jtagserv_buf_write(&byte0, 1, &retlen);
-	return info.drv->close(info.drv);
+       jtagserv_buf_write(&byte0, 1, &retlen);
+       return info.drv->close(info.drv);
 }
-
-COMMAND_HANDLER(jtagserv_handle_device_desc_command)
-{
-	if (CMD_ARGC != 1)
-		return ERROR_COMMAND_SYNTAX_ERROR;
-
-	info.jtagserv_device_desc = strdup(CMD_ARGV[0]);
-
-	return ERROR_OK;
-}
-
-COMMAND_HANDLER(jtagserv_handle_vid_pid_command)
-{
-	if (CMD_ARGC > 4) {
-		LOG_WARNING("ignoring extra IDs in jtagserv_vid_pid "
-					"(maximum is 2 pairs)");
-		CMD_ARGC = 4;
-	}
-
-	if (CMD_ARGC >= 2) {
-		COMMAND_PARSE_NUMBER(u16, CMD_ARGV[0], info.jtagserv_vid);
-		COMMAND_PARSE_NUMBER(u16, CMD_ARGV[1], info.jtagserv_pid);
-	} else {
-		LOG_WARNING("incomplete jtagserv_vid_pid configuration");
-	}
-
-	if (CMD_ARGC == 4) {
-		COMMAND_PARSE_NUMBER(u16, CMD_ARGV[2], info.jtagserv_vid_uninit);
-		COMMAND_PARSE_NUMBER(u16, CMD_ARGV[3], info.jtagserv_pid_uninit);
-	} else {
-		LOG_WARNING("incomplete jtagserv_vid_pid configuration");
-	}
-
-	return ERROR_OK;
-}
-
-COMMAND_HANDLER(jtagserv_handle_pin_command)
-{
-	uint8_t out_value;
-	const char * const pin_name = CMD_ARGV[0];
-	enum gpio_steer *steer = NULL;
-	static const char * const pin_val_str[] = {
-		[FIXED_0] = "0",
-		[FIXED_1] = "1",
-		[SRST] = "SRST driven",
-		[TRST] = "TRST driven",
-	};
-
-	if (CMD_ARGC > 2) {
-		LOG_ERROR("%s takes exactly one or two arguments", CMD_NAME);
-		return ERROR_COMMAND_SYNTAX_ERROR;
-	}
-
-	if (!strcmp(pin_name, "pin6"))
-		steer = &info.pin6;
-	if (!strcmp(pin_name, "pin8"))
-		steer = &info.pin8;
-	if (!steer) {
-		LOG_ERROR("%s: pin name must be \"pin6\" or \"pin8\"",
-			  CMD_NAME);
-		return ERROR_COMMAND_SYNTAX_ERROR;
-	}
-
-	if (CMD_ARGC == 1) {
-		LOG_INFO("%s: %s is set as %s\n", CMD_NAME, pin_name,
-			 pin_val_str[*steer]);
-	}
-
-	if (CMD_ARGC == 2) {
-		const char * const pin_value = CMD_ARGV[1];
-		char val = pin_value[0];
-
-		if (strlen(pin_value) > 1)
-			val = '?';
-		switch (tolower((unsigned char)val)) {
-		case '0':
-			*steer = FIXED_0;
-			break;
-		case '1':
-			*steer = FIXED_1;
-			break;
-		case 't':
-			*steer = TRST;
-			break;
-		case 's':
-			*steer = SRST;
-			break;
-		default:
-			LOG_ERROR("%s: pin value must be 0, 1, s (SRST) or t (TRST)",
-				pin_value);
-			return ERROR_COMMAND_SYNTAX_ERROR;
-		}
-
-		if (info.drv) {
-			out_value = jtagserv_build_out(SCAN_OUT);
-			jtagserv_queue_byte(out_value);
-			jtagserv_flush_buffer();
-		}
-	}
-	return ERROR_OK;
-}
-
-COMMAND_HANDLER(jtagserv_firmware_command)
-{
-	if (CMD_ARGC != 1)
-		return ERROR_COMMAND_SYNTAX_ERROR;
-
-	info.firmware_path = strdup(CMD_ARGV[0]);
-
-	return ERROR_OK;
-}
-
-
-static const struct command_registration jtagserv_command_handlers[] = {
-	{
-		.name = "jtagserv_device_desc",
-		.handler = jtagserv_handle_device_desc_command,
-		.mode = COMMAND_CONFIG,
-		.help = "set the USB device description of the JTAGSERV",
-		.usage = "description-string",
-	},
-	{
-		.name = "jtagserv_vid_pid",
-		.handler = jtagserv_handle_vid_pid_command,
-		.mode = COMMAND_CONFIG,
-		.help = "the vendor ID and product ID of the uninitialized device " \
-			"for JTAGSERV",
-		.usage = "vid pid vid_uninit pid_uninit",
-	},
-	{
-		.name = "jtagserv_pin",
-		.handler = jtagserv_handle_pin_command,
-		.mode = COMMAND_ANY,
-		.help = "show or set pin state for the unused GPIO pins",
-		.usage = "(pin6|pin8) (0|1|s|t)",
-	},
-		{
-		.name = "jtagserv_firmware",
-		.handler = &jtagserv_firmware_command,
-		.mode = COMMAND_CONFIG,
-		.help = "configure the JTAGSERV firmware location",
-		.usage = "path/to/blaster_xxxx.hex",
-	},
-	COMMAND_REGISTRATION_DONE
-};
 
 static struct jtag_interface jtagserv_interface = {
 	.supported = DEBUG_CAP_TMS_SEQ,
@@ -1041,10 +845,10 @@ static struct jtag_interface jtagserv_interface = {
 struct adapter_driver jtagserv_adapter_driver = {
 	.name = "jtagserv",
 	.transports = jtag_only,
-	.commands = jtagserv_command_handlers,
+	//.commands = jtagserv_command_handlers,
 
 	.init = jtagserv_init,
-	.quit = jtagserv_quit,
+	//.quit = jtagserv_quit,
 
-	.jtag_ops = &jtagserv_interface,
-};
+	//.jtag_ops = &jtagserv_interface,
+;

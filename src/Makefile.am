@@ -8,7 +8,11 @@ bin_PROGRAMS += %D%/openocd
 	%D%/hello.c %D%/hello.h \
 	%D%/openocd.c %D%/openocd.h
 
-%C%_openocd_LDADD = %D%/libopenocd.la
+%C%_openocd_LDFLAGS = 
+
+%C%_openocd_LDLIBS = 
+
+%C%_openocd_LDADD = %D%/libopenocd.la 
 
 %C%_openocd_LDADD += $(MINGWLDADD)
 
@@ -16,6 +20,11 @@ if INTERNAL_JIMTCL
 %C%_openocd_LDADD += $(top_builddir)/jimtcl/libjim.a
 else
 %C%_openocd_LDADD += -ljim
+endif
+
+if JTAGSERV_DRIVER
+%C%_openocd_LDFLAGS += -L%D%/jtag/drivers/jtagserv/lib64
+%C%_openocd_LDADD += -ljtag_client -lccl_ver -lSafeString
 endif
 
 %C%_libopenocd_la_CPPFLAGS =
