@@ -59,7 +59,7 @@ static const struct option long_options[] = {
 };
 
 int configuration_output_handler(struct command_context *context, const char *line)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	LOG_USER_N("%s", line);
 
 	return ERROR_OK;
@@ -69,7 +69,7 @@ int configuration_output_handler(struct command_context *context, const char *li
  * The path should be absolute, use / as path separator and have all symlinks
  * resolved. The returned string is malloc'd. */
 static char *find_exe_path(void)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	char *exepath = NULL;
 
 	do {
@@ -141,7 +141,7 @@ static char *find_exe_path(void)
 }
 
 static char *find_relative_path(const char *from, const char *to)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	size_t i;
 
 	/* Skip common /-separated parts of from and to */
@@ -179,7 +179,7 @@ static char *find_relative_path(const char *from, const char *to)
 }
 
 static void add_default_dirs(void)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	char *path;
 	char *exepath = find_exe_path();
 	char *bin2data = find_relative_path(BINDIR, PKGDATADIR);
@@ -238,7 +238,7 @@ static void add_default_dirs(void)
 }
 
 int parse_cmdline_args(struct command_context *cmd_ctx, int argc, char *argv[])
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int c;
 
 	while (1) {

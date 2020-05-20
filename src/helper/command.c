@@ -54,13 +54,13 @@ struct log_capture_state {
 
 static void tcl_output(void *privData, const char *file, unsigned line,
 	const char *function, const char *string)
-{
+{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct log_capture_state *state = privData;
 	Jim_AppendString(state->interp, state->output, string, strlen(string));
 }
 
 static struct log_capture_state *command_log_capture_start(Jim_Interp *interp)
-{
+{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* capture log output and return it. A garbage collect can
 	 * happen, so we need a reference count to this object */
 	Jim_Obj *tclOutput = Jim_NewStringObj(interp, "", 0);
@@ -93,7 +93,7 @@ static struct log_capture_state *command_log_capture_start(Jim_Interp *interp)
  * captured output.
  */
 static void command_log_capture_finish(struct log_capture_state *state)
-{
+{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (NULL == state)
 		return;
 
@@ -114,7 +114,7 @@ static void command_log_capture_finish(struct log_capture_state *state)
 }
 
 static int command_retval_set(Jim_Interp *interp, int retval)
-{
+{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int *return_retval = Jim_GetAssocData(interp, "retval");
 	if (return_retval != NULL)
 		*return_retval = retval;
@@ -128,24 +128,26 @@ extern struct command_context *global_cmd_ctx;
  * Do nothing in case we are not at debug level 3 */
 void script_debug(Jim_Interp *interp, const char *name,
 	unsigned argc, Jim_Obj * const *argv)
-{
+{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (debug_level < LOG_LVL_DEBUG)
 		return;
 
-	char *dbg = alloc_printf("command - %s", name);
+	char *cmd = alloc_printf("level %d : command - '%s'", argc, name);
+	char *args = (char*) calloc(sizeof(char),1);
 	for (unsigned i = 0; i < argc; i++) {
 		int len;
 		const char *w = Jim_GetString(argv[i], &len);
-		char *t = alloc_printf("%s %s", dbg, w);
-		free(dbg);
-		dbg = t;
+		char *t = alloc_printf("%s '%s'", args, w);
+		free(args);
+		args = t;
 	}
-	LOG_DEBUG("%s", dbg);
-	free(dbg);
+	LOG_DEBUG("%s : tokens: %s", cmd, args);
+	free(cmd);
+	free(args);
 }
 
 static void script_command_args_free(char **words, unsigned nwords)
-{
+{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	for (unsigned i = 0; i < nwords; i++)
 		free(words[i]);
 	free(words);
@@ -153,7 +155,7 @@ static void script_command_args_free(char **words, unsigned nwords)
 
 static char **script_command_args_alloc(
 	unsigned argc, Jim_Obj * const *argv, unsigned *nwords)
-{
+{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	char **words = malloc(argc * sizeof(char *));
 	if (NULL == words)
 		return NULL;
@@ -173,7 +175,7 @@ static char **script_command_args_alloc(
 }
 
 struct command_context *current_command_context(Jim_Interp *interp)
-{
+{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* grab the command context from the associated data */
 	struct command_context *cmd_ctx = Jim_GetAssocData(interp, "context");
 	if (NULL == cmd_ctx) {
@@ -191,7 +193,7 @@ struct command_context *current_command_context(Jim_Interp *interp)
 
 static int script_command_run(Jim_Interp *interp,
 	int argc, Jim_Obj * const *argv, struct command *c)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	target_call_timer_callbacks_now();
 	LOG_USER_N("%s", "");	/* Keep GDB connection alive*/
 
@@ -208,7 +210,7 @@ static int script_command_run(Jim_Interp *interp,
 }
 
 static int script_command(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* the private data is stashed in the interp structure */
 
 	struct command *c = interp->cmdPrivData;
@@ -218,7 +220,7 @@ static int script_command(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 }
 
 static struct command *command_root(struct command *c)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	while (NULL != c->parent)
 		c = c->parent;
 	return c;
@@ -230,22 +232,25 @@ static struct command *command_root(struct command *c)
  * Returns NULL otherwise.
  */
 static struct command *command_find(struct command *head, const char *name)
-{
+{   LOG_INFO("***> IN %s(%d): %s cmd='%s'\n", __FILE__, __LINE__, __FUNCTION__, name);
 	for (struct command *cc = head; cc; cc = cc->next) {
-		if (strcmp(cc->name, name) == 0)
+		if (strcmp(cc->name, name) == 0) {
+		    LOG_INFO("******> IN %s(%d): %s Found cmd='%s'\n", __FILE__, __LINE__, __FUNCTION__, name);
 			return cc;
+		}
 	}
+    LOG_INFO("******> IN %s(%d): %s NOT Found cmd='%s'\n", __FILE__, __LINE__, __FUNCTION__, name);
 	return NULL;
 }
 
 struct command *command_find_in_context(struct command_context *cmd_ctx,
 	const char *name)
-{
+{   //LOG_INFO("***> IN %s(%d): %s cmd='%s'\n", __FILE__, __LINE__, __FUNCTION__, name);
 	return command_find(cmd_ctx->commands, name);
 }
 struct command *command_find_in_parent(struct command *parent,
 	const char *name)
-{
+{   //LOG_INFO("***> IN %s(%d): %s cmd='%s'\n", __FILE__, __LINE__, __FUNCTION__, name);
 	return command_find(parent->children, name);
 }
 
@@ -256,7 +261,7 @@ struct command *command_find_in_parent(struct command *parent,
  * @param c The command to add to the list pointed to by @c head.
  */
 static void command_add_child(struct command **head, struct command *c)
-{
+{   LOG_INFO("***> IN %s(%d): %s cmd='%s'\n", __FILE__, __LINE__, __FUNCTION__, c->name);
 	assert(head);
 	if (NULL == *head) {
 		*head = c;
@@ -277,12 +282,12 @@ static void command_add_child(struct command **head, struct command *c)
 
 static struct command **command_list_for_parent(
 	struct command_context *cmd_ctx, struct command *parent)
-{
+{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	return parent ? &parent->children : &cmd_ctx->commands;
 }
 
 static void command_free(struct command *c)
-{
+{   //LOG_INFO("***> IN %s(%d): %s cmd='%s'\n", __FILE__, __LINE__, __FUNCTION__, c->name);
 	/** @todo if command has a handler, unregister its jim command! */
 
 	while (NULL != c->children) {
@@ -299,7 +304,7 @@ static void command_free(struct command *c)
 
 static struct command *command_new(struct command_context *cmd_ctx,
 	struct command *parent, const struct command_registration *cr)
-{
+{   LOG_INFO("***> IN %s(%d): %s cmd='%s'\n", __FILE__, __LINE__, __FUNCTION__, cr->name);
 	assert(cr->name);
 
 	/*
@@ -348,7 +353,7 @@ static int command_unknown(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
 
 static int register_command_handler(struct command_context *cmd_ctx,
 	struct command *c)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	Jim_Interp *interp = cmd_ctx->interp;
 
 	LOG_DEBUG("registering '%s'...", c->name);
@@ -361,7 +366,7 @@ static int register_command_handler(struct command_context *cmd_ctx,
 
 struct command *register_command(struct command_context *context,
 	struct command *parent, const struct command_registration *cr)
-{
+{   LOG_INFO("***> IN %s(%d): %s cmd='%s'\n", __FILE__, __LINE__, __FUNCTION__, cr->name);
 	if (!context || !cr->name)
 		return NULL;
 
@@ -397,7 +402,7 @@ struct command *register_command(struct command_context *context,
 
 int register_commands(struct command_context *cmd_ctx, struct command *parent,
 	const struct command_registration *cmds)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int retval = ERROR_OK;
 	unsigned i;
 	for (i = 0; cmds[i].name || cmds[i].chain; i++) {
@@ -427,7 +432,7 @@ int register_commands(struct command_context *cmd_ctx, struct command *parent,
 
 int unregister_all_commands(struct command_context *context,
 	struct command *parent)
-{
+{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (context == NULL)
 		return ERROR_OK;
 
@@ -443,7 +448,7 @@ int unregister_all_commands(struct command_context *context,
 
 int unregister_command(struct command_context *context,
 	struct command *parent, const char *name)
-{
+{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if ((!context) || (!name))
 		return ERROR_COMMAND_SYNTAX_ERROR;
 
@@ -466,7 +471,7 @@ int unregister_command(struct command_context *context,
 }
 
 void command_set_handler_data(struct command *c, void *p)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (NULL != c->handler || NULL != c->jim_handler)
 		c->jim_handler_data = p;
 	for (struct command *cc = c->children; NULL != cc; cc = cc->next)
@@ -474,13 +479,13 @@ void command_set_handler_data(struct command *c, void *p)
 }
 
 void command_output_text(struct command_context *context, const char *data)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (context && context->output_handler && data)
 		context->output_handler(context, data);
 }
 
 void command_print_sameline(struct command_invocation *cmd, const char *format, ...)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	char *string;
 
 	va_list ap;
@@ -503,7 +508,7 @@ void command_print_sameline(struct command_invocation *cmd, const char *format, 
 }
 
 void command_print(struct command_invocation *cmd, const char *format, ...)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	char *string;
 
 	va_list ap;
@@ -550,12 +555,12 @@ static char *__command_name(struct command *c, char delim, unsigned extra)
 }
 
 char *command_name(struct command *c, char delim)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	return __command_name(c, delim, 0);
 }
 
 static bool command_can_run(struct command_context *cmd_ctx, struct command *c)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (c->mode == COMMAND_ANY || c->mode == cmd_ctx->mode)
 		return true;
 
@@ -582,7 +587,7 @@ static bool command_can_run(struct command_context *cmd_ctx, struct command *c)
 
 static int run_command(struct command_context *context,
 	struct command *c, const char *words[], unsigned num_words)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (!command_can_run(context, c))
 		return ERROR_FAIL;
 
@@ -638,7 +643,7 @@ static int run_command(struct command_context *context,
 }
 
 int command_run_line(struct command_context *context, char *line)
-{
+{   LOG_INFO("***> IN %s(%d): %s - cmd='%s'\n", __FILE__, __LINE__, __FUNCTION__, line);
 	/* all the parent commands have been registered with the interpreter
 	 * so, can just evaluate the line as a script and check for
 	 * results
@@ -662,7 +667,7 @@ int command_run_line(struct command_context *context, char *line)
 		/* associated the return value */
 		Jim_DeleteAssocData(interp, "retval");
 		retcode = Jim_SetAssocData(interp, "retval", NULL, &retval);
-		if (retcode == JIM_OK) {
+		if (retcode == JIM_OK) {  LOG_DEBUG("******>evaluating '%s'\n", line);
 			retcode = Jim_Eval_Named(interp, line, 0, 0);
 
 			Jim_DeleteAssocData(interp, "retval");
@@ -673,23 +678,23 @@ int command_run_line(struct command_context *context, char *line)
 			retcode = inner_retcode;
 	}
 	context->current_target_override = saved_target_override;
-	if (retcode == JIM_OK) {
+	if (retcode == JIM_OK) { 
 		const char *result;
 		int reslen;
 
 		result = Jim_GetString(Jim_GetResult(interp), &reslen);
-		if (reslen > 0) {
+		if (reslen > 0) { LOG_DEBUG("******>evaluate OK'%s'\n", result);
 			command_output_text(context, result);
 			command_output_text(context, "\n");
 		}
 		retval = ERROR_OK;
-	} else if (retcode == JIM_EXIT) {
+	} else if (retcode == JIM_EXIT) {  LOG_DEBUG("******>evaluate EXIT'\n");
 		/* ignore.
 		 * exit(Jim_GetExitCode(interp)); */
-	} else if (retcode == ERROR_COMMAND_CLOSE_CONNECTION) {
+	} else if (retcode == ERROR_COMMAND_CLOSE_CONNECTION) {  LOG_DEBUG("******>evaluate CLOSE_CONNECTION'\n");
 		return retcode;
-	} else {
-		Jim_MakeErrorMessage(interp);
+	} else {   LOG_DEBUG("******>evaluate UNKNOWN ERROR'\n");
+		Jim_MakeErrorMessage(interp); 
 		/* error is broadcast */
 		LOG_USER("%s", Jim_GetString(Jim_GetResult(interp), NULL));
 
@@ -704,7 +709,7 @@ int command_run_line(struct command_context *context, char *line)
 }
 
 int command_run_linef(struct command_context *context, const char *format, ...)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int retval = ERROR_FAIL;
 	char *string;
 	va_list ap;
@@ -720,13 +725,13 @@ int command_run_linef(struct command_context *context, const char *format, ...)
 
 void command_set_output_handler(struct command_context *context,
 	command_output_handler_t output_handler, void *priv)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	context->output_handler = output_handler;
 	context->output_handler_priv = priv;
 }
 
 struct command_context *copy_command_context(struct command_context *context)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct command_context *copy_context = malloc(sizeof(struct command_context));
 
 	*copy_context = *context;
@@ -735,7 +740,7 @@ struct command_context *copy_command_context(struct command_context *context)
 }
 
 void command_done(struct command_context *cmd_ctx)
-{
+{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (NULL == cmd_ctx)
 		return;
 
@@ -744,7 +749,7 @@ void command_done(struct command_context *cmd_ctx)
 
 /* find full path to file */
 static int jim_find(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (argc != 2)
 		return JIM_ERR;
 	const char *file = Jim_GetString(argv[1], NULL);
@@ -759,7 +764,7 @@ static int jim_find(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 }
 
 COMMAND_HANDLER(jim_echo)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (CMD_ARGC == 2 && !strcmp(CMD_ARGV[0], "-n")) {
 		LOG_USER_N("%s", CMD_ARGV[1]);
 		return JIM_OK;
@@ -774,7 +779,7 @@ COMMAND_HANDLER(jim_echo)
  * progress output was empty, return tcl return value.
  */
 static int jim_capture(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (argc != 2)
 		return JIM_ERR;
 
@@ -802,7 +807,7 @@ static int jim_capture(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static COMMAND_HELPER(command_help_find, struct command *head,
 	struct command **out)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (0 == CMD_ARGC)
 		return ERROR_COMMAND_SYNTAX_ERROR;
 	*out = command_find(head, CMD_ARGV[0]);
@@ -819,7 +824,7 @@ static COMMAND_HELPER(command_help_show, struct command *c, unsigned n,
 
 static COMMAND_HELPER(command_help_show_list, struct command *head, unsigned n,
 	bool show_help, const char *cmd_match)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	for (struct command *c = head; NULL != c; c = c->next)
 		CALL_COMMAND_HANDLER(command_help_show, c, n, show_help, cmd_match);
 	return ERROR_OK;
@@ -828,12 +833,12 @@ static COMMAND_HELPER(command_help_show_list, struct command *head, unsigned n,
 #define HELP_LINE_WIDTH(_n) (int)(76 - (2 * _n))
 
 static void command_help_show_indent(unsigned n)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	for (unsigned i = 0; i < n; i++)
 		LOG_USER_N("  ");
 }
 static void command_help_show_wrap(const char *str, unsigned n, unsigned n2)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	const char *cp = str, *last = str;
 	while (*cp) {
 		const char *next = last;
@@ -854,7 +859,7 @@ static void command_help_show_wrap(const char *str, unsigned n, unsigned n2)
 
 static COMMAND_HELPER(command_help_show, struct command *c, unsigned n,
 	bool show_help, const char *cmd_match)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	char *cmd_name = command_name(c, ' ');
 	if (NULL == cmd_name)
 		return ERROR_FAIL;
@@ -918,7 +923,7 @@ static COMMAND_HELPER(command_help_show, struct command *c, unsigned n,
 }
 
 COMMAND_HANDLER(handle_help_command)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	bool full = strcmp(CMD_NAME, "help") == 0;
 	int retval;
 	struct command *c = CMD_CTX->commands;
@@ -960,19 +965,25 @@ COMMAND_HANDLER(handle_help_command)
 
 static int command_unknown_find(unsigned argc, Jim_Obj *const *argv,
 	struct command *head, struct command **out)
-{
-	if (0 == argc)
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_INFO("***> IN %s(%d): %s cmd='%s' argc=%d\n", __FILE__, __LINE__, __FUNCTION__, argc == 0? "<none>": Jim_GetString(argv[0], NULL), argc);
+	if (0 == argc)  { LOG_INFO("***> IN %s(%d): %s Returning because stop condition (argc==0) satisfied\n", __FILE__, __LINE__, __FUNCTION__);
 		return argc;
+    }
 	const char *cmd_name = Jim_GetString(argv[0], NULL);
 	struct command *c = command_find(head, cmd_name);
-	if (NULL == c)
+	LOG_INFO("*********> Return from command_find(), %p\n", c);
+	if (NULL == c) {   LOG_INFO("******> IN %s(%d): %s cmd='%s' not found\n", __FILE__, __LINE__, __FUNCTION__, Jim_GetString(argv[0], NULL));
 		return argc;
+	}
+	LOG_INFO("******> IN %s(%d): %s cmd='%s' Found, find next with  argc=%d argv[1]=%s \n", __FILE__, __LINE__, __FUNCTION__, Jim_GetString(argv[0], NULL), argc-1, argc == 1? "<none>": Jim_GetString(argv[1],NULL));
 	*out = c;
+	LOG_INFO("*********> NEXT recursion of %s", __FUNCTION__);
 	return command_unknown_find(--argc, ++argv, (*out)->children, out);
 }
 
 static char *alloc_concatenate_strings(int argc, Jim_Obj * const *argv)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	char *prev, *all;
 	int i;
 
@@ -998,7 +1009,7 @@ static char *alloc_concatenate_strings(int argc, Jim_Obj * const *argv)
 }
 
 static int run_usage(Jim_Interp *interp, int argc_valid, int argc, Jim_Obj * const *argv)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct command_context *cmd_ctx = current_command_context(interp);
 	char *command;
 	int retval;
@@ -1031,7 +1042,7 @@ static int run_usage(Jim_Interp *interp, int argc_valid, int argc, Jim_Obj * con
 }
 
 static int command_unknown(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
-{
+{   LOG_INFO("***> IN %s(%d): %s cmd='%s'\n", __FILE__, __LINE__, __FUNCTION__, Jim_GetString(argv[0], NULL));
 	const char *cmd_name = Jim_GetString(argv[0], NULL);
 	script_debug(interp, cmd_name, argc, argv);
 
@@ -1070,7 +1081,7 @@ static int command_unknown(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 }
 
 static int jim_command_mode(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct command_context *cmd_ctx = current_command_context(interp);
 	enum command_mode mode;
 
@@ -1107,7 +1118,7 @@ static int jim_command_mode(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 int help_add_command(struct command_context *cmd_ctx, struct command *parent,
 	const char *cmd_name, const char *help_text, const char *usage)
-{
+{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct command **head = command_list_for_parent(cmd_ctx, parent);
 	struct command *nc = command_find(*head, cmd_name);
 	if (NULL == nc) {
@@ -1155,7 +1166,7 @@ int help_add_command(struct command_context *cmd_ctx, struct command *parent,
 }
 
 COMMAND_HANDLER(handle_help_add_command)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (CMD_ARGC < 2) {
 		LOG_ERROR("%s: insufficient arguments", CMD_NAME);
 		return ERROR_COMMAND_SYNTAX_ERROR;
@@ -1186,7 +1197,7 @@ COMMAND_HANDLER(handle_help_add_command)
  * this is useful in target startup scripts
  */
 COMMAND_HANDLER(handle_sleep_command)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	bool busy = false;
 	if (CMD_ARGC == 2) {
 		if (strcmp(CMD_ARGV[1], "busy") == 0)
@@ -1289,7 +1300,7 @@ static const struct command_registration command_builtin_handlers[] = {
 };
 
 struct command_context *command_init(const char *startup_tcl, Jim_Interp *interp)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct command_context *context = calloc(1, sizeof(struct command_context));
 	const char *HostOs;
 
@@ -1357,7 +1368,7 @@ struct command_context *command_init(const char *startup_tcl, Jim_Interp *interp
 }
 
 void command_exit(struct command_context *context)
-{
+{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (!context)
 		return;
 
@@ -1366,7 +1377,7 @@ void command_exit(struct command_context *context)
 }
 
 int command_context_mode(struct command_context *cmd_ctx, enum command_mode mode)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (!cmd_ctx)
 		return ERROR_COMMAND_SYNTAX_ERROR;
 
@@ -1449,7 +1460,7 @@ DEFINE_PARSE_LONGLONG(_s8,  int8_t,  n < INT8_MIN,  INT8_MAX)
 
 static int command_parse_bool(const char *in, bool *out,
 	const char *on, const char *off)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (strcasecmp(in, on) == 0)
 		*out = true;
 	else if (strcasecmp(in, off) == 0)
@@ -1460,7 +1471,7 @@ static int command_parse_bool(const char *in, bool *out,
 }
 
 int command_parse_bool_arg(const char *in, bool *out)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (command_parse_bool(in, out, "on", "off") == ERROR_OK)
 		return ERROR_OK;
 	if (command_parse_bool(in, out, "enable", "disable") == ERROR_OK)
@@ -1475,7 +1486,7 @@ int command_parse_bool_arg(const char *in, bool *out)
 }
 
 COMMAND_HELPER(handle_command_parse_bool, bool *out, const char *label)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	switch (CMD_ARGC) {
 		case 1: {
 			const char *in = CMD_ARGV[0];

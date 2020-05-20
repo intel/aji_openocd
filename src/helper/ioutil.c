@@ -52,7 +52,7 @@
 /* loads a file and returns a pointer to it in memory. The file contains
  * a 0 byte(sentinel) after len bytes - the length of the file. */
 static int load_file(const char *fileName, char **data, size_t *len)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* ensure returned length is always sane */
 	*len = 0;
 
@@ -102,7 +102,7 @@ static int load_file(const char *fileName, char **data, size_t *len)
 }
 
 COMMAND_HANDLER(handle_cat_command)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (CMD_ARGC != 1)
 		return ERROR_COMMAND_SYNTAX_ERROR;
 
@@ -122,7 +122,7 @@ COMMAND_HANDLER(handle_cat_command)
 }
 
 COMMAND_HANDLER(handle_trunc_command)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (CMD_ARGC != 1)
 		return ERROR_COMMAND_SYNTAX_ERROR;
 
@@ -136,7 +136,7 @@ COMMAND_HANDLER(handle_trunc_command)
 
 #ifdef HAVE_MALLOC_H
 COMMAND_HANDLER(handle_meminfo_command)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	static int prev;
 	struct mallinfo info;
 
@@ -156,7 +156,7 @@ COMMAND_HANDLER(handle_meminfo_command)
 #endif
 
 COMMAND_HANDLER(handle_append_command)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (CMD_ARGC < 1)
 		return ERROR_COMMAND_SYNTAX_ERROR;
 
@@ -187,7 +187,7 @@ COMMAND_HANDLER(handle_append_command)
 }
 
 COMMAND_HANDLER(handle_cp_command)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (CMD_ARGC != 2)
 		return ERROR_COMMAND_SYNTAX_ERROR;
 
@@ -242,7 +242,7 @@ COMMAND_HANDLER(handle_cp_command)
 }
 
 COMMAND_HANDLER(handle_rm_command)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (CMD_ARGC != 1)
 		return ERROR_COMMAND_SYNTAX_ERROR;
 
@@ -258,7 +258,7 @@ COMMAND_HANDLER(handle_rm_command)
 static int ioutil_Jim_Command_ls(Jim_Interp *interp,
 	int argc,
 	Jim_Obj * const *argv)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (argc != 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "ls ?dir?");
 		return JIM_ERR;
@@ -294,7 +294,7 @@ static int ioutil_Jim_Command_ls(Jim_Interp *interp,
 static int ioutil_Jim_Command_peek(Jim_Interp *interp,
 	int argc,
 	Jim_Obj *const *argv)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (argc != 2) {
 		Jim_WrongNumArgs(interp, 1, argv, "peek ?address?");
 		return JIM_ERR;
@@ -314,7 +314,7 @@ static int ioutil_Jim_Command_peek(Jim_Interp *interp,
 static int ioutil_Jim_Command_poke(Jim_Interp *interp,
 	int argc,
 	Jim_Obj *const *argv)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (argc != 3) {
 		Jim_WrongNumArgs(interp, 1, argv, "poke ?address? ?value?");
 		return JIM_ERR;
@@ -335,7 +335,7 @@ static int ioutil_Jim_Command_poke(Jim_Interp *interp,
 /* not so pretty code to fish out ip number*/
 static int ioutil_Jim_Command_ip(Jim_Interp *interp, int argc,
 	Jim_Obj *const *argv)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 #if !defined(__CYGWIN__)
 	Jim_Obj *tclOutput = Jim_NewStringObj(interp, "", 0);
 
@@ -379,7 +379,7 @@ static int ioutil_Jim_Command_ip(Jim_Interp *interp, int argc,
 /* not so pretty code to fish out eth0 mac address */
 static int ioutil_Jim_Command_mac(Jim_Interp *interp, int argc,
 	Jim_Obj *const *argv)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct ifreq *ifr, *ifend;
 	struct ifreq ifreq;
 	struct ifconf ifc;
@@ -530,6 +530,6 @@ static const struct command_registration ioutil_command_handlers[] = {
 };
 
 int ioutil_init(struct command_context *cmd_ctx)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	return register_commands(cmd_ctx, NULL, ioutil_command_handlers);
 }

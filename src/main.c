@@ -31,7 +31,7 @@
  * and use bits and pieces from openocd.c. */
 
 int main(int argc, char *argv[])
-{
+{   printf("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* disable buffering otherwise piping to logs causes problems work */
 	setvbuf(stdout, NULL, _IONBF, 0);
 	setvbuf(stderr, NULL, _IONBF, 0);
