@@ -804,7 +804,6 @@ DWORD jtagserv_find_chain_pid(void)
     unsigned int hardware_count = 0;
     AJI_HARDWARE *hardware_list = NULL;
     char **server_version_info_list  = NULL;
-printf("Y1 %p", hardware_list); fflush(stdout);
 
     AJI_ERROR status = c_aji_get_hardware2( 
         &hardware_count, hardware_list, server_version_info_list, 
@@ -832,17 +831,13 @@ printf("Y1 %p", hardware_list); fflush(stdout);
         LOG_ERROR("JTAG server reports that it has no hardware cable\n");
         return 0;
     }
-    if(1 == hardware_count) {
-        LOG_INFO("At present, only the first hardware cable will be used"
-                 " (%d cables detected)", 
-                 hardware_count
-        );
-    }
-printf("Y %p", hardware_list); fflush(stdout);
+    LOG_INFO("At present, only the first hardware cable will be used"
+             " [%d cable(s) detected]", 
+             hardware_count
+    );
+
     DWORD chain_pid = hardware_list[0].persistent_id;
-printf("Z"); fflush(stdout);
     if(LOG_LEVEL_IS(LOG_LVL_DEBUG)) {
-printf("A\n");
         AJI_HARDWARE hw = hardware_list[0];
         LOG_DEBUG("Cable %u: device_name=%s, hw_name=%s, server=%s, port=%s,"
                   " chain_id=%p, persistent_id=%d, chain_type=%d, features=%d,"
@@ -852,11 +847,8 @@ printf("A\n");
               server_version_info_list[0]
         );
     }
-printf("B\n"); fflush(stdout);
     free(hardware_list);
-printf("C\n"); fflush(stdout);
     free(server_version_info_list);
-printf("D\n"); fflush(stdout);
 
     return chain_pid;
 }
