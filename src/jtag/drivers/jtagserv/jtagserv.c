@@ -99,7 +99,7 @@ struct drvs_map {
  * Access functions to lowlevel driver, agnostic of libftdi/libftdxx
  */
 static char *hexdump(uint8_t *buf, unsigned int size)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	unsigned int i;
 	char *str = calloc(size * 2 + 1, 1);
 
@@ -109,7 +109,7 @@ static char *hexdump(uint8_t *buf, unsigned int size)
 }
 
 static int jtagserv_buf_read(uint8_t *buf, unsigned size, uint32_t *bytes_read)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int ret = info.drv->read(info.drv, buf, size, bytes_read);
 	char *str = hexdump(buf, *bytes_read);
 
@@ -120,7 +120,7 @@ static int jtagserv_buf_read(uint8_t *buf, unsigned size, uint32_t *bytes_read)
 }
 
 static int jtagserv_buf_write(uint8_t *buf, int size, uint32_t *bytes_written)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int ret = info.drv->write(info.drv, buf, size, bytes_written);
 	char *str = hexdump(buf, *bytes_written);
 
@@ -131,12 +131,12 @@ static int jtagserv_buf_write(uint8_t *buf, int size, uint32_t *bytes_written)
 }
 
 static int nb_buf_remaining(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	return BUF_LEN - info.bufidx;
 }
 
 static void jtagserv_flush_buffer(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	unsigned int retlen;
 	int nb = info.bufidx, ret = ERROR_OK;
 
@@ -199,7 +199,7 @@ static void jtagserv_flush_buffer(void)
  * the buffer is filled, or if an explicit jtagserv_flush_buffer() is called.
  */
 static void jtagserv_queue_byte(uint8_t abyte)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (nb_buf_remaining() < 1)
 		jtagserv_flush_buffer();
 	info.buf[info.bufidx++] = abyte;
@@ -215,7 +215,7 @@ static void jtagserv_queue_byte(uint8_t abyte)
  * Returns pin value (1 means driven high, 0 mean driven low)
  */
 bool jtagserv_compute_pin(enum gpio_steer steer)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	switch (steer) {
 	case FIXED_0:
 		return 0;
@@ -237,7 +237,7 @@ bool jtagserv_compute_pin(enum gpio_steer steer)
  * Returns the compute bitbang mode byte
  */
 static uint8_t jtagserv_build_out(enum scan_type type)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	uint8_t abyte = 0;
 
 	abyte |= info.tms ? TMS : 0;
@@ -256,9 +256,9 @@ static uint8_t jtagserv_build_out(enum scan_type type)
  * @srst: 1 if SRST is to be asserted
  */
 static int jtagserv_reset(int trst, int srst)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     //TODO: Implement
-    LOG_INFO("******> IN %s(%d): %s TO BE IMPLEMENTED\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_DEBUG("******> IN %s(%d): %s TO BE IMPLEMENTED\n", __FILE__, __LINE__, __FUNCTION__);
     
     return ERROR_OK;
     
@@ -280,7 +280,7 @@ static int jtagserv_reset(int trst, int srst)
  * Triggers a TMS transition (ie. one JTAG TAP state move).
  */
 static void jtagserv_clock_tms(int tms)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	uint8_t out;
 
 	LOG_DEBUG_IO("(tms=%d)", !!tms);
@@ -297,7 +297,7 @@ static void jtagserv_clock_tms(int tms)
  * See jtagserv_queue_tdi() comment for the usage of this function.
  */
 static void jtagserv_idle_clock(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	uint8_t out = jtagserv_build_out(SCAN_OUT);
 
 	LOG_DEBUG_IO(".");
@@ -318,7 +318,7 @@ static void jtagserv_idle_clock(void)
  * and the USB Blaster will send back a byte with bit0 reprensenting the TDO.
  */
 static void jtagserv_clock_tdi(int tdi, enum scan_type type)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	uint8_t out;
 
 	LOG_DEBUG_IO("(tdi=%d)",  !!tdi);
@@ -343,7 +343,7 @@ static void jtagserv_clock_tdi(int tdi, enum scan_type type)
  *   - or DRSHIFT -> DREXIT1
  */
 static void jtagserv_clock_tdi_flip_tms(int tdi, enum scan_type type)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	uint8_t out;
 
 	LOG_DEBUG_IO("(tdi=%d)", !!tdi);
@@ -370,7 +370,7 @@ static void jtagserv_clock_tdi_flip_tms(int tdi, enum scan_type type)
  * the buffer is filled, or if an explicit jtagserv_flush_buffer() is called.
  */
 static void jtagserv_queue_bytes(uint8_t *bytes, int nb_bytes)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (info.bufidx + nb_bytes > BUF_LEN) {
 		LOG_ERROR("buggy code, should never queue more that %d bytes",
 			  info.bufidx + nb_bytes);
@@ -400,7 +400,7 @@ static void jtagserv_queue_bytes(uint8_t *bytes, int nb_bytes)
  * low.
  */
 static void jtagserv_tms_seq(const uint8_t *bits, int nb_bits, int skip)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int i;
 
 	LOG_DEBUG_IO("(bits=%02x..., nb_bits=%d)", bits[0], nb_bits);
@@ -414,7 +414,7 @@ static void jtagserv_tms_seq(const uint8_t *bits, int nb_bits, int skip)
  * @cmd: tms command
  */
 static void jtagserv_tms(struct tms_command *cmd)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	LOG_DEBUG_IO("(num_bits=%d)", cmd->num_bits);
 	jtagserv_tms_seq(cmd->bits, cmd->num_bits, 0);
 }
@@ -430,7 +430,7 @@ static void jtagserv_tms(struct tms_command *cmd)
  * low.
  */
 static void jtagserv_path_move(struct pathmove_command *cmd)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int i;
 
 	LOG_DEBUG_IO("(num_states=%d, last_state=%d)",
@@ -454,7 +454,7 @@ static void jtagserv_path_move(struct pathmove_command *cmd)
  * target state. This assumes the current state (tap_get_state()) is correct.
  */
 static void jtagserv_state_move(tap_state_t state, int skip)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	uint8_t tms_scan;
 	int tms_len;
 
@@ -483,7 +483,7 @@ static void jtagserv_state_move(tap_state_t state, int skip)
  * Returns ERROR_OK if OK, ERROR_xxx if a read error occured
  */
 static int jtagserv_read_byteshifted_tdos(uint8_t *buf, int nb_bytes)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	unsigned int retlen;
 	int ret = ERROR_OK;
 
@@ -513,7 +513,7 @@ static int jtagserv_read_byteshifted_tdos(uint8_t *buf, int nb_bytes)
  * Returns ERROR_OK if OK, ERROR_xxx if a read error occured
  */
 static int jtagserv_read_bitbang_tdos(uint8_t *buf, int nb_bits)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int nb1 = nb_bits;
 	int i, ret = ERROR_OK;
 	unsigned int retlen;
@@ -556,7 +556,7 @@ static int jtagserv_read_bitbang_tdos(uint8_t *buf, int nb_bits)
  * on rising edge !!!
  */
 static void jtagserv_queue_tdi(uint8_t *bits, int nb_bits, enum scan_type scan)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int nb8 = nb_bits / 8;
 	int nb1 = nb_bits % 8;
 	int nbfree_in_packet, i, trans = 0, read_tdos;
@@ -633,7 +633,7 @@ static void jtagserv_queue_tdi(uint8_t *bits, int nb_bits, enum scan_type scan)
 }
 
 static void jtagserv_runtest(int cycles, tap_state_t state)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	LOG_DEBUG_IO("%s(cycles=%i, end_state=%d)", __func__, cycles, state);
 
 	jtagserv_state_move(TAP_IDLE, 0);
@@ -642,7 +642,7 @@ static void jtagserv_runtest(int cycles, tap_state_t state)
 }
 
 static void jtagserv_stableclocks(int cycles)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	LOG_DEBUG_IO("%s(cycles=%i)", __func__, cycles);
 	jtagserv_queue_tdi(NULL, cycles, SCAN_OUT);
 }
@@ -656,7 +656,7 @@ static void jtagserv_stableclocks(int cycles)
  * Returns ERROR_OK if OK, ERROR_xxx if a read/write error occured.
  */
 static int jtagserv_scan(struct scan_command *cmd)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int scan_bits;
 	uint8_t *buf = NULL;
 	enum scan_type type;
@@ -694,7 +694,7 @@ static int jtagserv_scan(struct scan_command *cmd)
 }
 
 static void jtagserv_usleep(int us)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	LOG_DEBUG_IO("%s(us=%d)",  __func__, us);
 	jtag_sleep(us);
 }
@@ -703,7 +703,7 @@ static void jtagserv_usleep(int us)
    of the openocd session. With jtagd we don'tneed to do this.
 */
 //static void jtagserv_initial_wipeout(void)
-//{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+//{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 //	static uint8_t tms_reset = 0xff;
 //	uint8_t out_value;
 //	uint32_t retlen;
@@ -727,24 +727,24 @@ static void jtagserv_usleep(int us)
 //}
 
 static int jtagserv_execute_queue(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct jtag_command *cmd;
 	int ret = ERROR_OK;
 
     /* TODO: Confirm I don't need this. */
 //	static int first_call = 1;
 //	if (first_call) {
-//	    LOG_INFO("******> IN %s(%d): %s - First time calling jtagserv_execute_queue() so wipe everything \n", __FILE__, __LINE__, __FUNCTION__);
+//	    LOG_DEBUG("******> IN %s(%d): %s - First time calling jtagserv_execute_queue() so wipe everything \n", __FILE__, __LINE__, __FUNCTION__);
 //		first_call--;
 //		jtagserv_initial_wipeout();
 //	}
     if(jtag_command_queue == NULL) {
-        LOG_INFO("***> IN %s(%d): %s No command queued\n", __FILE__, __LINE__, __FUNCTION__);
+        LOG_DEBUG("***> IN %s(%d): %s No command queued\n", __FILE__, __LINE__, __FUNCTION__);
     }
 int i=0;
 	for (cmd = jtag_command_queue; ret == ERROR_OK && cmd != NULL;
 	     cmd = cmd->next) {
-LOG_INFO("***> IN %s(%d): %s Running cmd %d\n", __FILE__, __LINE__, __FUNCTION__,i++);
+LOG_DEBUG("***> IN %s(%d): %s Running cmd %d\n", __FILE__, __LINE__, __FUNCTION__,i++);
 	     
 		switch (cmd->type) {
 		case JTAG_RESET:
@@ -799,7 +799,7 @@ LOG_INFO("***> IN %s(%d): %s Running cmd %d\n", __FILE__, __LINE__, __FUNCTION__
  * @return The chain_pid (Perisistent ID for chain) for the selected cable. 0 if there is an issue.
  */
 DWORD jtagserv_find_chain_pid(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     LOG_INFO("Querying JTAG Server ...");
     unsigned int hardware_count = 0;
     AJI_HARDWARE *hardware_list = NULL;
@@ -869,7 +869,7 @@ printf("D\n"); fflush(stdout);
  * TODO: Write a TCL Command that allows me to specify the jtagserver config file
  */
 static int jtagserv_init(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     LOG_DEBUG("Capture server\n");
     char *quartus_jtag_client_config = getenv("QUARTUS_JTAG_CLIENT_CONFIG");
     if (quartus_jtag_client_config != NULL) {
@@ -889,7 +889,7 @@ static int jtagserv_init(void)
 }
 
 static int jtagserv_quit(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     jtagservice_free();
     return ERROR_OK;
     

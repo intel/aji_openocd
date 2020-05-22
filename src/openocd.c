@@ -116,7 +116,7 @@ COMMAND_HANDLER(handle_noinit_command)
 
 /* OpenOCD can't really handle failure of this command. Patches welcome! :-) */
 COMMAND_HANDLER(handle_init_command)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 
 	if (CMD_ARGC != 0)
 		return ERROR_COMMAND_SYNTAX_ERROR;
@@ -127,12 +127,12 @@ COMMAND_HANDLER(handle_init_command)
 		return ERROR_OK;
 
 	initialized = 1;
-    LOG_INFO("******> IN %s(%d): %s - Running target init ...\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_DEBUG("******> IN %s(%d): %s - Running target init ...\n", __FILE__, __LINE__, __FUNCTION__);
 	retval = command_run_line(CMD_CTX, "target init");
 	if (ERROR_OK != retval)
 		return ERROR_FAIL;
 
-    LOG_INFO("******> IN %s(%d): %s - Running adapter_init ...\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_DEBUG("******> IN %s(%d): %s - Running adapter_init ...\n", __FILE__, __LINE__, __FUNCTION__);
 	retval = adapter_init(CMD_CTX);
 	if (retval != ERROR_OK) {
 		/* we must be able to set up the debug adapter */
@@ -148,12 +148,12 @@ COMMAND_HANDLER(handle_init_command)
 	 */
 	command_context_mode(CMD_CTX, COMMAND_EXEC);
 
-    LOG_INFO("******> IN %s(%d): %s - Running transport init ...\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_DEBUG("******> IN %s(%d): %s - Running transport init ...\n", __FILE__, __LINE__, __FUNCTION__);
 	retval = command_run_line(CMD_CTX, "transport init");
 	if (ERROR_OK != retval)
 		return ERROR_FAIL;
 
-    LOG_INFO("******> IN %s(%d): %s - Running dap init ...\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_DEBUG("******> IN %s(%d): %s - Running dap init ...\n", __FILE__, __LINE__, __FUNCTION__);
 	retval = command_run_line(CMD_CTX, "dap init");
 	if (ERROR_OK != retval)
 		return ERROR_FAIL;
@@ -282,7 +282,7 @@ struct command_context *setup_command_handler(Jim_Interp *interp)
  * Commandline arguments are passed into this function from openocd_main().
  */
 static int openocd_thread(int argc, char *argv[], struct command_context *cmd_ctx)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int ret;
 
 	if (parse_cmdline_args(cmd_ctx, argc, argv) != ERROR_OK)
@@ -303,7 +303,7 @@ static int openocd_thread(int argc, char *argv[], struct command_context *cmd_ct
 	ret = server_init(cmd_ctx);
 	if (ERROR_OK != ret)
 		return ERROR_FAIL;
-    LOG_INFO("******> IN %s(%d): %s Completed server_init()\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_DEBUG("******> IN %s(%d): %s Completed server_init()\n", __FILE__, __LINE__, __FUNCTION__);
 
 	if (init_at_startup) {
 		ret = command_run_line(cmd_ctx, "init");
@@ -313,7 +313,7 @@ static int openocd_thread(int argc, char *argv[], struct command_context *cmd_ct
 		}
 	}
 	
-    LOG_INFO("******> IN %s(%d): %s About to start server_loop\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_DEBUG("******> IN %s(%d): %s About to start server_loop\n", __FILE__, __LINE__, __FUNCTION__);
 	ret = server_loop(cmd_ctx);
 
 	int last_signal = server_quit();

@@ -64,7 +64,7 @@ static int polling_period = 100;
 static char *bindto_name;
 
 static int add_connection(struct service *service, struct command_context *cmd_ctx)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	socklen_t address_size;
 	struct connection *c, **p;
 	int retval;
@@ -163,7 +163,7 @@ static int add_connection(struct service *service, struct command_context *cmd_c
 }
 
 static int remove_connection(struct service *service, struct connection *connection)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct connection **p = &service->connections;
 	struct connection *c;
 
@@ -198,7 +198,7 @@ static int remove_connection(struct service *service, struct connection *connect
 }
 
 static void free_service(struct service *c)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	free(c->name);
 	free(c->port);
 	free(c);
@@ -211,7 +211,7 @@ int add_service(char *name,
 	input_handler_t input_handler,
 	connection_closed_handler_t connection_closed_handler,
 	void *priv)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct service *c, **p;
 	struct hostent *hp;
 	int so_reuseaddr_option = 1;
@@ -350,7 +350,7 @@ int add_service(char *name,
 }
 
 static void remove_connections(struct service *service)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct connection *connection;
 
 	connection = service->connections;
@@ -365,7 +365,7 @@ static void remove_connections(struct service *service)
 }
 
 int remove_service(const char *name, const char *port)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct service *tmp;
 	struct service *prev;
 
@@ -394,7 +394,7 @@ int remove_service(const char *name, const char *port)
 }
 
 static int remove_services(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct service *c = services;
 
 	/* loop service */
@@ -429,7 +429,7 @@ static int remove_services(void)
 }
 
 int server_loop(struct command_context *command_context)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct service *service;
 
 	bool poll_ok = true;
@@ -601,7 +601,7 @@ int server_loop(struct command_context *command_context)
 }
 
 void sig_handler(int sig)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* store only first signal that hits us */
 	if (shutdown_openocd == CONTINUE_MAIN_LOOP) {
 		shutdown_openocd = SHUTDOWN_WITH_SIGNAL_CODE;
@@ -620,7 +620,7 @@ BOOL WINAPI ControlHandler(DWORD dwCtrlType)
 }
 #else
 static void sigkey_handler(int sig)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* ignore keystroke generated signals if not in foreground process group */
 
 	if (tcgetpgrp(STDIN_FILENO) > 0)
@@ -632,7 +632,7 @@ static void sigkey_handler(int sig)
 
 
 int server_preinit(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* this currently only calls WSAStartup on native win32 systems
 	 * before any socket operations are performed.
 	 * This is an issue if you call init in your config script */
@@ -666,7 +666,7 @@ int server_preinit(void)
 }
 
 int server_init(struct command_context *cmd_ctx)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int ret = tcl_init();
 
 	if (ret != ERROR_OK)
@@ -683,7 +683,7 @@ int server_init(struct command_context *cmd_ctx)
 }
 
 int server_quit(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	remove_services();
 	target_quit();
 
@@ -699,7 +699,7 @@ int server_quit(void)
 }
 
 void server_free(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	tcl_service_free();
 	telnet_service_free();
 	jsp_service_free();
@@ -708,7 +708,7 @@ void server_free(void)
 }
 
 void exit_on_signal(int sig)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 #ifndef _WIN32
 	/* bring back default system handler and kill yourself */
 	signal(sig, SIG_DFL);
@@ -717,7 +717,7 @@ void exit_on_signal(int sig)
 }
 
 int connection_write(struct connection *connection, const void *data, int len)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (len == 0) {
 		/* successful no-op. Sockets and pipes behave differently here... */
 		return 0;
@@ -729,7 +729,7 @@ int connection_write(struct connection *connection, const void *data, int len)
 }
 
 int connection_read(struct connection *connection, void *data, int len)
-{  LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{  LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (connection->service->type == CONNECTION_TCP)
 		return read_socket(connection->fd, data, len);
 	else
@@ -738,7 +738,7 @@ int connection_read(struct connection *connection, void *data, int len)
 
 /* tell the server we want to shut down */
 COMMAND_HANDLER(handle_shutdown_command)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	LOG_USER("shutdown command invoked");
 
 	shutdown_openocd = SHUTDOWN_REQUESTED;
@@ -754,7 +754,7 @@ COMMAND_HANDLER(handle_shutdown_command)
 }
 
 COMMAND_HANDLER(handle_poll_period_command)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (CMD_ARGC == 0)
 		LOG_WARNING("You need to set a period value");
 	else
@@ -766,7 +766,7 @@ COMMAND_HANDLER(handle_poll_period_command)
 }
 
 COMMAND_HANDLER(handle_bindto_command)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	switch (CMD_ARGC) {
 		case 0:
 			command_print(CMD, "bindto name: %s", bindto_name);
@@ -808,7 +808,7 @@ static const struct command_registration server_command_handlers[] = {
 };
 
 int server_register_commands(struct command_context *cmd_ctx)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int retval = telnet_register_commands(cmd_ctx);
 	if (ERROR_OK != retval)
 		return retval;
@@ -825,7 +825,7 @@ int server_register_commands(struct command_context *cmd_ctx)
 }
 
 COMMAND_HELPER(server_port_command, unsigned short *out)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	switch (CMD_ARGC) {
 		case 0:
 			command_print(CMD, "%d", *out);
@@ -844,7 +844,7 @@ COMMAND_HELPER(server_port_command, unsigned short *out)
 }
 
 COMMAND_HELPER(server_pipe_command, char **out)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	switch (CMD_ARGC) {
 		case 0:
 			command_print(CMD, "%s", *out);
