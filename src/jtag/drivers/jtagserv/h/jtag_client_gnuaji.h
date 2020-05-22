@@ -36,14 +36,15 @@ AJI_API const char * aji_get_error_info(void);
 AJI_API AJI_ERROR aji_get_potential_hardware(DWORD * hardware_count, AJI_HARDWARE * hardware_list);
 #endif
 
-AJI_API AJI_ERROR _Z16aji_get_hardwarePjP12AJI_HARDWAREj(DWORD * hardware_count, AJI_HARDWARE * hardware_list, DWORD timeout /*  = 0x7FFFFFFF */);
-AJI_API AJI_ERROR _Z17aji_get_hardware2PjP12AJI_HARDWAREPPcj(DWORD * hardware_count, AJI_HARDWARE * hardware_list, char **server_version_info_list, DWORD timeout /*  = 0x7FFFFFFF */);
+AJI_API AJI_ERROR _Z16aji_get_hardwarePjP12AJI_HARDWAREj(DWORD * hardware_count, AJI_HARDWARE * hardware_list, DWORD timeout /*  = 0x7FFFFFFF */); //cinlyooi
+AJI_API AJI_ERROR _Z17aji_get_hardware2PjP12AJI_HARDWAREPPcj(DWORD * hardware_count, AJI_HARDWARE * hardware_list, char **server_version_info_list, DWORD timeout /*  = 0x7FFFFFFF */); //cinlyooi
 
 #if 0
 AJI_API AJI_ERROR _Z17aji_find_hardwarePKcP12AJI_HARDWAREm(DWORD persistent_id, AJI_HARDWARE * hardware, DWORD timeout);
 #endif
 
-AJI_API AJI_ERROR _Z17aji_find_hardwarePKcP12AJI_HARDWAREm(const char * hw_name, AJI_HARDWARE * hardware, DWORD timeout);
+AJI_API AJI_ERROR _Z17aji_find_hardwarePKcP12AJI_HARDWAREj(const char * hw_name, AJI_HARDWARE * hardware, DWORD timeout); //cinlyooi
+AJI_API AJI_ERROR _Z17aji_find_hardwarejP12AJI_HARDWAREj(unsigned int, AJI_HARDWARE*, unsigned int); //cinlyooi, not in original 
 
 #if 0
 AJI_API AJI_ERROR aji_print_hardware_name(AJI_CHAIN_ID chain_id, char * hw_name, DWORD hw_name_len);
@@ -150,7 +151,7 @@ AJI_API AJI_ERROR _Z18aji_get_checkpointP8AJI_OPENPm(AJI_OPEN_ID open_id, DWORD 
 
 AJI_API AJI_ERROR _Z14aji_lock_chainP9AJI_CHAINj(AJI_CHAIN_ID chain_id, DWORD timeout);
 
-AJI_API AJI_ERROR _Z16aji_unlock_chainP9AJI_CHAIN(AJI_CHAIN_ID chain_id);
+AJI_API AJI_ERROR _Z16aji_unlock_chainP9AJI_CHAIN(AJI_CHAIN_ID chain_id); //cinlyooi
 
 AJI_API AJI_ERROR _Z21aji_unlock_chain_lockP9AJI_CHAINP8AJI_OPEN14AJI_PACK_STYLE(AJI_CHAIN_ID unlock_id, AJI_OPEN_ID lock_id, AJI_PACK_STYLE pack_style); //cinlyooi
 

@@ -45,9 +45,11 @@ noinst_LTLIBRARIES += %D%/libocdjtagserv.la
 %C%_libocdjtagserv_la_LDLIBS = -ljtag_client -lccl_ver -lSafeString
 
 JTAGSERV_SRC = \
-    %D%/h/aji.h %D%/h/c_aji.h \
-    %D%/h/jtag_client_gnuaji.h %D%/h/c_jtag_client_gnuaji.h  %D%/h/c2_jtag_client_gnuaji.h \
-    %D%/jtagserv.c %D%/jtagserv_access.h  %D%/ %D%/jtagserv_access_libusb.c
+    %D%/h/aji.h %D%/h/c_aji.h  %D%/c2_aji.h \
+    %D%/h/jtag_client_gnuaji.h %D%/h/c_jtag_client_gnuaji.h  \
+    %D%/jtagservice.h %D%/jtagservice.c \
+    %D%/jtagserv.c \
+    %D%/jtagserv_access.h  %D%/ %D%/jtagserv_access_libusb.c
 
 
 
