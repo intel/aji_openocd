@@ -24,15 +24,23 @@ AJI_API AJI_ERROR c_aji_get_hardware2(DWORD * hardware_count, AJI_HARDWARE * har
 } 
 
 inline
-AJI_API AJI_ERROR c_aji_find_hardware(DWORD chain_id, AJI_HARDWARE * hardware, DWORD timeout) {
-    return _Z17aji_find_hardwarejP12AJI_HARDWAREj(chain_id, hardware, timeout);
+AJI_API AJI_ERROR c_aji_find_hardware(DWORD persistent_id, AJI_HARDWARE * hardware, DWORD timeout) {
+    return _Z17aji_find_hardwarejP12AJI_HARDWAREj(persistent_id, hardware, timeout);
 }
 inline
 AJI_API AJI_ERROR c_aji_find_hardware_a(const char * hw_name, AJI_HARDWARE * hardware, DWORD timeout) {
     return _Z17aji_find_hardwarePKcP12AJI_HARDWAREj(hw_name, hardware, timeout);
 }
 
+inline 
+AJI_API AJI_ERROR c_aji_read_device_chain(AJI_CHAIN_ID chain_id, DWORD * device_count, AJI_DEVICE * device_list, _Bool auto_scan) {
+    return _Z21aji_read_device_chainP9AJI_CHAINPjP10AJI_DEVICEb( chain_id, device_count, device_list, auto_scan);
+}
 
+inline
+AJI_API AJI_ERROR c_aji_lock_chain(AJI_CHAIN_ID chain_id, DWORD timeout) {
+    return _Z14aji_lock_chainP9AJI_CHAINj(chain_id, timeout); 
+}
 inline
 AJI_API AJI_ERROR c_aji_unlock_chain(AJI_CHAIN_ID chain_id) {
     return _Z16aji_unlock_chainP9AJI_CHAIN(chain_id);

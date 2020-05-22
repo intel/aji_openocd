@@ -29,6 +29,8 @@
 
 #include "jtagservice.h"
 
+#define IDCODE_SOCVHPS (0x4BA00477)
+
 /* Size of USB endpoint max packet size, ie. 64 bytes */
 #define MAX_PACKET_SIZE 64
 /*
@@ -796,16 +798,18 @@ LOG_DEBUG("***> IN %s(%d): %s Running cmd %d\n", __FILE__, __LINE__, __FUNCTION_
 
 /**
  * Find the hardware cable from the jtag server
- * @return The chain_pid (Perisistent ID for chain) for the selected cable. 0 if there is an issue.
+ * @pos Set jtagservice chain detail if return successful.
  */
-DWORD jtagserv_find_chain_pid(void)
+static AJI_ERROR jtagserv_select_cable(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+    AJI_ERROR status = AJI_NO_ERROR;
+
     LOG_INFO("Querying JTAG Server ...");
     unsigned int hardware_count = 0;
     AJI_HARDWARE *hardware_list = NULL;
     char **server_version_info_list  = NULL;
 
-    AJI_ERROR status = c_aji_get_hardware2( 
+    status = c_aji_get_hardware2( 
         &hardware_count, hardware_list, server_version_info_list, 
         JTAGSERVICE_TIMEOUT_MS
     );
@@ -820,23 +824,22 @@ DWORD jtagserv_find_chain_pid(void)
         );
     } //end if (AJI_TOO_MANY_DEVICES)
     
-    
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failed to query server for hardware cable information. "
                   " Return Status is %i\n", status
         );
-        return 0;
+        return status;
     }
     if(0 == hardware_count) {
         LOG_ERROR("JTAG server reports that it has no hardware cable\n");
-        return 0;
+        return AJI_BAD_HARDWARE;
     }
     LOG_INFO("At present, only the first hardware cable will be used"
              " [%d cable(s) detected]", 
              hardware_count
     );
 
-    DWORD chain_pid = hardware_list[0].persistent_id;
+    jtagservice.chain_pid = hardware_list[0].persistent_id;
     if(LOG_LEVEL_IS(LOG_LVL_DEBUG)) {
         AJI_HARDWARE hw = hardware_list[0];
         LOG_DEBUG("Cable %u: device_name=%s, hw_name=%s, server=%s, port=%s,"
@@ -847,12 +850,96 @@ DWORD jtagserv_find_chain_pid(void)
               server_version_info_list[0]
         );
     }
+
     free(hardware_list);
     free(server_version_info_list);
 
-    return chain_pid;
+    return status;
 }
 
+/**
+ * Select the TAP device to use
+ * @pre The chain is already acquired, @see jtagserv_select_cable()
+ * @pos jtagservice will be populated with the selected tap
+ */
+static AJI_ERROR jtagserv_select_tap(void)
+{    LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+     if(!jtagservice.chain_pid) {
+        return AJI_CHAIN_NOT_CONFIGURED;
+    }
+    
+    AJI_ERROR status = AJI_NO_ERROR;
+    
+    AJI_HARDWARE hardware;
+    status = c_aji_find_hardware(jtagservice.chain_pid, &hardware, 
+                JTAGSERVICE_TIMEOUT_MS
+    );
+    if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Failed to find the chosen cable."
+                  " Return Status is %i\n", status
+        );
+        return status;
+    }
+    
+    status = jtagservice_lock(CHAIN, JTAGSERVICE_TIMEOUT_MS);
+    if (AJI_NO_ERROR != status) { 
+        return status;
+    }
+    
+    DWORD device_count = 5;
+    AJI_DEVICE *device_list =  calloc(device_count, sizeof(AJI_DEVICE)); 
+    status = c_aji_read_device_chain(
+        hardware.chain_id, &device_count, device_list, 1
+    );
+    if(AJI_TOO_MANY_DEVICES == status) {
+        device_list = calloc(device_count, sizeof(AJI_DEVICE)); 
+        status = c_aji_read_device_chain(
+            hardware.chain_id, &device_count, device_list, 1
+        );
+    }    
+    if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Failed to query server for TAP information. "
+                  " Return Status is %i\n", status
+        );
+        LOG_ERROR("Sometimes can get status AJI_CHAIN_NOT_CONFIGURED  = 38. TO investigate why later"); //TODO
+        jtagservice_unlock(CHAIN);
+        return status;
+    }
+    if(0 == device_count) {
+        LOG_ERROR("JTAG server reports that it has no hardware cable\n");
+        jtagservice_unlock(CHAIN);
+        return AJI_NO_DEVICES;
+    }
+    LOG_INFO("At present, will select the ARM SOCVHPS with IDCODE %X",
+             IDCODE_SOCVHPS
+    );
+    
+    for(DWORD tap_position=0; tap_position<device_count; ++tap_position) {
+        AJI_DEVICE device = device_list[tap_position];
+        LOG_DEBUG("Detected device (tap_position=%d) device_id=%08X," 
+                  " instruction_length=%d, features=%d, device_name=%s\n", 
+                    tap_position+1, 
+                    device.device_id, device.instruction_length, 
+                    device.features, device.device_name
+        );
+        if( IDCODE_SOCVHPS == device.device_id ) {
+            jtagservice.device_id = device.device_id;
+            jtagservice.device_tap_position = tap_position+1;
+            jtagservice.device_irlen = device.instruction_length;
+            LOG_DEBUG("Found SOCVHPS device at tap_position %d", tap_position+1); 
+        }
+    } //end for tap_position
+    
+    if(0 == jtagservice.device_id) {
+        LOG_DEBUG("No SOCVHPS device found.");
+        jtagservice_unlock(CHAIN);
+        return AJI_NO_DEVICES;
+    }
+    
+    jtagservice_unlock(CHAIN);
+    free(device_list);
+    return AJI_NO_ERROR;
+}
 
 /**
  * jtagserv_init - Contact the JTAG Server
@@ -872,8 +959,18 @@ static int jtagserv_init(void)
         LOG_INFO("Environment variable QUARTUS_JTAG_CLIENT_CONFIG not set\n"); //TODO: Remove this message, useful for debug will be cause user alarm unnecessarily
     }
     
-    jtagservice.chain_pid = jtagserv_find_chain_pid();
-    if (jtagservice.chain_pid == 0) {
+    AJI_ERROR status = AJI_NO_ERROR;
+    
+    status = jtagserv_select_cable();
+    if (AJI_NO_ERROR != status) {
+        LOG_ERROR("Cannot select JTAG Cable. Return status is %d", status);
+        jtagservice_free();
+        return ERROR_JTAG_INIT_FAILED;
+    }
+    
+    status = jtagserv_select_tap();
+    if (AJI_NO_ERROR != status) {
+        LOG_ERROR("Cannot select TAP device. Return status is %d", status);
         return ERROR_JTAG_INIT_FAILED;
     }
     
