@@ -805,22 +805,28 @@ static AJI_ERROR jtagserv_select_cable(void)
     AJI_ERROR status = AJI_NO_ERROR;
 
     LOG_INFO("Querying JTAG Server ...");
-    unsigned int hardware_count = 0;
-    AJI_HARDWARE *hardware_list = NULL;
-    char **server_version_info_list  = NULL;
-
+ 
     status = c_aji_get_hardware2( 
-        &hardware_count, hardware_list, server_version_info_list, 
+        &(jtagservice.hardware_count), 
+        jtagservice.hardware_list, 
+        jtagservice.server_version_info_list, 
         JTAGSERVICE_TIMEOUT_MS
     );
     if(AJI_TOO_MANY_DEVICES == status) {
-        hardware_list =  calloc(hardware_count, sizeof(AJI_HARDWARE));
-        server_version_info_list = calloc(hardware_count, sizeof(char*));
-        if (hardware_list == NULL || server_version_info_list == NULL) {
+        jtagservice.hardware_list = 
+            calloc(jtagservice.hardware_count, sizeof(AJI_HARDWARE));
+        jtagservice.server_version_info_list = 
+            calloc(jtagservice.hardware_count, sizeof(char*));
+        if (   jtagservice.hardware_list == NULL 
+            || jtagservice.server_version_info_list == NULL
+        ) {
             return AJI_NO_MEMORY;
         }
-        status = c_aji_get_hardware2(&hardware_count, hardware_list, 
-                     server_version_info_list, 0
+        status = c_aji_get_hardware2( 
+            &(jtagservice.hardware_count), 
+            jtagservice.hardware_list, 
+            jtagservice.server_version_info_list, 
+            JTAGSERVICE_TIMEOUT_MS
         );
     } //end if (AJI_TOO_MANY_DEVICES)
     
@@ -830,29 +836,27 @@ static AJI_ERROR jtagserv_select_cable(void)
         );
         return status;
     }
-    if(0 == hardware_count) {
+    if(0 == jtagservice.hardware_count) {
         LOG_ERROR("JTAG server reports that it has no hardware cable\n");
         return AJI_BAD_HARDWARE;
     }
     LOG_INFO("At present, only the first hardware cable will be used"
              " [%d cable(s) detected]", 
-             hardware_count
+             jtagservice.hardware_count
     );
 
-    jtagservice.chain_pid = hardware_list[0].persistent_id;
-    if(LOG_LEVEL_IS(LOG_LVL_DEBUG)) {
-        AJI_HARDWARE hw = hardware_list[0];
-        LOG_DEBUG("Cable %u: device_name=%s, hw_name=%s, server=%s, port=%s,"
+    jtagservice.in_use_hardware = jtagservice.hardware_list;
+    jtagservice.in_use_chain_pid = jtagservice.in_use_hardware->persistent_id;
+    if(LOG_LEVEL_IS(LOG_LVL_INFO)) {
+        AJI_HARDWARE hw = *(jtagservice.in_use_hardware);
+        LOG_INFO("Cable %u: device_name=%s, hw_name=%s, server=%s, port=%s,"
                   " chain_id=%p, persistent_id=%d, chain_type=%d, features=%d,"
                   " server_version_info=%s\n", 
               1, hw.device_name, hw.hw_name, hw.server, hw.port,  
               hw.chain_id, hw.persistent_id, hw.chain_type, hw.features,
-              server_version_info_list[0]
+              jtagservice.server_version_info_list[0]
         );
     }
-
-    free(hardware_list);
-    free(server_version_info_list);
 
     return status;
 }
@@ -864,14 +868,81 @@ static AJI_ERROR jtagserv_select_cable(void)
  */
 static AJI_ERROR jtagserv_select_tap(void)
 {    LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+    AJI_ERROR status = AJI_NO_ERROR;
+
+//jtagservice_query_main();
+    status = jtagservice_lock(CHAIN, JTAGSERVICE_TIMEOUT_MS);
+    if (AJI_NO_ERROR != status) { 
+        return status;
+    }
+
+    status = c_aji_read_device_chain(
+        jtagservice.in_use_hardware->chain_id, 
+        &(jtagservice.device_count), 
+        jtagservice.device_list, 
+        1
+    );
+    if(AJI_TOO_MANY_DEVICES == status) {
+        jtagservice.device_list = calloc(jtagservice.device_count, sizeof(AJI_DEVICE)); 
+        status = c_aji_read_device_chain(
+            jtagservice.in_use_hardware->chain_id, 
+            &(jtagservice.device_count), 
+            jtagservice.device_list,
+            0
+        );
+    }    
+    if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Failed to query server for TAP information. "
+                  " Return Status is %i\n", status
+        );
+        jtagservice_unlock(CHAIN);
+        return status;
+    }
+
+    if(0 == jtagservice.device_count) {
+        LOG_ERROR("JTAG server reports that it has no TAP attached to the cable");
+        jtagservice_unlock(CHAIN);
+        return AJI_NO_DEVICES;
+    }
+    LOG_INFO("At present, will not honour OpenOCD target selection and"
+             " select the ARM SOCVHPS with IDCODE %X automatically",
+             IDCODE_SOCVHPS
+    );
+    LOG_INFO("Found %d TAP devices", jtagservice.device_count);
+    for(DWORD tap_position=0; tap_position<jtagservice.device_count; ++tap_position) {
+        AJI_DEVICE device = jtagservice.device_list[tap_position];
+        LOG_DEBUG("Detected device (tap_position=%d) device_id=%08X," 
+                  " instruction_length=%d, features=%d, device_name=%s", 
+                    tap_position+1, 
+                    device.device_id, device.instruction_length, 
+                    device.features, device.device_name
+        );
+        if( IDCODE_SOCVHPS == device.device_id ) {
+            jtagservice.in_use_device_id = device.device_id;
+            jtagservice.in_use_device_tap_position = tap_position+1;
+            jtagservice.in_use_device_irlen = device.instruction_length;
+            LOG_INFO("Found SOCVHPS device at tap_position %d", tap_position+1); 
+        }
+    } //end for tap_position
+    
+    if(0 == jtagservice.in_use_device_id) {
+        LOG_ERROR("No SOCVHPS device found.");
+        jtagservice_unlock(CHAIN);
+        return AJI_NO_DEVICES;
+    }
+    
+    jtagservice_unlock(CHAIN);
+    return status;
+    
+/******
+
      if(!jtagservice.chain_pid) {
         return AJI_CHAIN_NOT_CONFIGURED;
     }
     
-    AJI_ERROR status = AJI_NO_ERROR;
     
-    AJI_HARDWARE hardware;
-    status = c_aji_find_hardware(jtagservice.chain_pid, &hardware, 
+    AJI_HARDWARE *hardware = calloc(1, sizeof(AJI_HARDWARE));
+    status = c_aji_find_hardware(jtagservice.chain_pid, hardware, 
                 JTAGSERVICE_TIMEOUT_MS
     );
     if(AJI_NO_ERROR != status) {
@@ -889,12 +960,12 @@ static AJI_ERROR jtagserv_select_tap(void)
     DWORD device_count = 5;
     AJI_DEVICE *device_list =  calloc(device_count, sizeof(AJI_DEVICE)); 
     status = c_aji_read_device_chain(
-        hardware.chain_id, &device_count, device_list, 1
+        hardware->chain_id, &device_count, device_list, 1
     );
     if(AJI_TOO_MANY_DEVICES == status) {
         device_list = calloc(device_count, sizeof(AJI_DEVICE)); 
         status = c_aji_read_device_chain(
-            hardware.chain_id, &device_count, device_list, 1
+            hardware->chain_id, &device_count, device_list, 1
         );
     }    
     if(AJI_NO_ERROR != status) {
@@ -938,6 +1009,8 @@ static AJI_ERROR jtagserv_select_tap(void)
     
     jtagservice_unlock(CHAIN);
     free(device_list);
+    
+    */
     return AJI_NO_ERROR;
 }
 
