@@ -49,7 +49,7 @@ static int tcl_closed(struct connection *connection);
 
 static int tcl_target_callback_event_handler(struct target *target,
 		enum target_event event, void *priv)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct connection *connection = priv;
 	struct tcl_connection *tclc;
 	char buf[256];
@@ -74,7 +74,7 @@ static int tcl_target_callback_event_handler(struct target *target,
 
 static int tcl_target_callback_reset_handler(struct target *target,
 		enum target_reset_mode reset_mode, void *priv)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct connection *connection = priv;
 	struct tcl_connection *tclc;
 	char buf[256];
@@ -91,7 +91,7 @@ static int tcl_target_callback_reset_handler(struct target *target,
 
 static int tcl_target_callback_trace_handler(struct target *target,
 		size_t len, uint8_t *data, void *priv)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct connection *connection = priv;
 	struct tcl_connection *tclc;
 	char *header = "type target_trace data ";
@@ -121,7 +121,7 @@ static int tcl_target_callback_trace_handler(struct target *target,
  * that is not the case then flag the connection with an output error.
  */
 int tcl_output(struct connection *connection, const void *data, ssize_t len)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	ssize_t wlen;
 	struct tcl_connection *tclc;
 
@@ -141,7 +141,7 @@ int tcl_output(struct connection *connection, const void *data, ssize_t len)
 
 /* connections */
 static int tcl_new_connection(struct connection *connection)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct tcl_connection *tclc;
 
 	tclc = calloc(1, sizeof(struct tcl_connection));
@@ -172,7 +172,7 @@ static int tcl_new_connection(struct connection *connection)
 }
 
 static int tcl_input(struct connection *connection)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	Jim_Interp *interp = (Jim_Interp *)connection->cmd_ctx->interp;
 	int retval;
 	int i;
@@ -258,7 +258,7 @@ static int tcl_input(struct connection *connection)
 }
 
 static int tcl_closed(struct connection *connection)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct tcl_connection *tclc;
 	tclc = connection->priv;
 
@@ -277,7 +277,7 @@ static int tcl_closed(struct connection *connection)
 }
 
 int tcl_init(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (strcmp(tcl_port, "disabled") == 0) {
 		LOG_INFO("tcl server disabled");
 		return ERROR_OK;
@@ -289,12 +289,12 @@ int tcl_init(void)
 }
 
 COMMAND_HANDLER(handle_tcl_port_command)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	return CALL_COMMAND_HANDLER(server_pipe_command, &tcl_port);
 }
 
 COMMAND_HANDLER(handle_tcl_notifications_command)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct connection *connection = NULL;
 	struct tcl_connection *tclc = NULL;
 
@@ -311,7 +311,7 @@ COMMAND_HANDLER(handle_tcl_notifications_command)
 }
 
 COMMAND_HANDLER(handle_tcl_trace_command)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct connection *connection = NULL;
 	struct tcl_connection *tclc = NULL;
 
@@ -354,12 +354,12 @@ static const struct command_registration tcl_command_handlers[] = {
 };
 
 int tcl_register_commands(struct command_context *cmd_ctx)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	tcl_port = strdup("6666");
 	return register_commands(cmd_ctx, NULL, tcl_command_handlers);
 }
 
 void tcl_service_free(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	free(tcl_port);
 }

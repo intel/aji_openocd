@@ -32,7 +32,7 @@ static size_t num_script_dirs;
 static char **script_search_dirs;
 
 void add_script_search_dir(const char *dir)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	num_script_dirs++;
 	script_search_dirs = realloc(script_search_dirs, (num_script_dirs + 1) * sizeof(char *));
 
@@ -43,7 +43,7 @@ void add_script_search_dir(const char *dir)
 }
 
 void add_config_command(const char *cfg)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	num_config_files++;
 	config_file_names = realloc(config_file_names, (num_config_files + 1) * sizeof(char *));
 
@@ -52,7 +52,7 @@ void add_config_command(const char *cfg)
 }
 
 void free_config(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	while (num_config_files)
 		free(config_file_names[--num_config_files]);
 
@@ -68,7 +68,7 @@ void free_config(void)
 
 /* return full path or NULL according to search rules */
 char *find_file(const char *file)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	FILE *fp = NULL;
 	char **search_dirs = script_search_dirs;
 	char *dir;
@@ -104,7 +104,7 @@ char *find_file(const char *file)
 }
 
 FILE *open_file_from_path(const char *file, const char *mode)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (mode[0] != 'r')
 		return fopen(file, mode);
 	else {
@@ -119,7 +119,7 @@ FILE *open_file_from_path(const char *file, const char *mode)
 }
 
 int parse_config_file(struct command_context *cmd_ctx)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int retval;
 	char **cfg;
 
@@ -145,7 +145,7 @@ int parse_config_file(struct command_context *cmd_ctx)
 #endif
 
 char *get_home_dir(const char *append_path)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	char *home = getenv("HOME");
 
 	if (home == NULL) {
