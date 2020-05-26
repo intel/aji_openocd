@@ -29,8 +29,6 @@
 
 #include "jtagservice.h"
 
-#define IDCODE_SOCVHPS (0x4BA00477)
-
 /* Size of USB endpoint max packet size, ie. 64 bytes */
 #define MAX_PACKET_SIZE 64
 /*
@@ -44,6 +42,8 @@
 /* JTAGSERV II specific command */
 #define CMD_COPY_TDO_BUFFER	0x5F
 
+
+
 //TODO Remove
 enum gpio_steer {
 	FIXED_0 = 0,
@@ -51,13 +51,9 @@ enum gpio_steer {
 	SRST,
 	TRST,
 };
-<<<<<<< HEAD
 
-struct jtagserv_info {
-=======
 //TODO Remove
 struct jtagserv_info { 
->>>>>>> 894294e18... misc: Adding LOG_INFO for debugging purpose
 	enum gpio_steer pin6;
 	enum gpio_steer pin8;
 	int tms;
@@ -76,7 +72,8 @@ struct jtagserv_info {
 	char *firmware_path;
 };
 
-//TODO Remove
+
+//TODO Remove: OLD UB2
 /*
  * Global device control
  */
@@ -259,10 +256,6 @@ static uint8_t jtagserv_build_out(enum scan_type type)
  * @trst: 1 if TRST is to be asserted
  * @srst: 1 if SRST is to be asserted
  */
-<<<<<<< HEAD
-static void jtagserv_reset(int trst, int srst)
-{
-=======
 static int jtagserv_reset(int trst, int srst)
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     //TODO: Implement
@@ -271,7 +264,6 @@ static int jtagserv_reset(int trst, int srst)
     return ERROR_OK;
     
     /* ubii stuff. Don't need
->>>>>>> 894294e18... misc: Adding LOG_INFO for debugging purpose
 	uint8_t out_value;
 
 	info.trst_asserted = trst;
@@ -708,44 +700,52 @@ static void jtagserv_usleep(int us)
 	jtag_sleep(us);
 }
 
-static void jtagserv_initial_wipeout(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-	static uint8_t tms_reset = 0xff;
-	uint8_t out_value;
-	uint32_t retlen;
-	int i;
-
-	out_value = jtagserv_build_out(SCAN_OUT);
-	for (i = 0; i < BUF_LEN; i++)
-		info.buf[i] = out_value | ((i % 2) ? TCK : 0);
-
-	/*
-	 * Flush JTAGSERV queue fifos
-	 *  - empty the write FIFO (128 bytes)
-	 *  - empty the read FIFO (384 bytes)
-	 */
-	jtagserv_buf_write(info.buf, BUF_LEN, &retlen);
-	/*
-	 * Put JTAG in RESET state (five 1 on TMS)
-	 */
-	jtagserv_tms_seq(&tms_reset, 5, 0);
-	tap_set_state(TAP_RESET);
-}
+/* TODO: Confirm I do not need this. It is only called once, at the start
+   of the openocd session. With jtagd we don'tneed to do this.
+*/
+//static void jtagserv_initial_wipeout(void)
+//{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+//	static uint8_t tms_reset = 0xff;
+//	uint8_t out_value;
+//	uint32_t retlen;
+//	int i;
+//
+//	out_value = jtagserv_build_out(SCAN_OUT);
+//	for (i = 0; i < BUF_LEN; i++)
+//		info.buf[i] = out_value | ((i % 2) ? TCK : 0);
+//
+//	/*
+//	 * Flush JTAGSERV queue fifos
+//	 *  - empty the write FIFO (128 bytes)
+//	 *  - empty the read FIFO (384 bytes)
+//	 */
+//	jtagserv_buf_write(info.buf, BUF_LEN, &retlen);
+//	/*
+//	 * Put JTAG in RESET state (five 1 on TMS)
+//	 */
+//	jtagserv_tms_seq(&tms_reset, 5, 0);
+//	tap_set_state(TAP_RESET);
+//}
 
 static int jtagserv_execute_queue(void)
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct jtag_command *cmd;
 	int ret = ERROR_OK;
 
-	if (first_call) {
-	    LOG_INFO("******> IN %s(%d): %s - First time calling jtagserv_execute_queue() so wipe everything \n", __FILE__, __LINE__, __FUNCTION__);
-		first_call--;
-		jtagserv_initial_wipeout();
-	}
-
+    /* TODO: Confirm I don't need this. */
+//	static int first_call = 1;
+//	if (first_call) {
+//	    LOG_INFO("******> IN %s(%d): %s - First time calling jtagserv_execute_queue() so wipe everything \n", __FILE__, __LINE__, __FUNCTION__);
+//		first_call--;
+//		jtagserv_initial_wipeout();
+//	}
+    if(jtag_command_queue == NULL) {
+        LOG_INFO("***> IN %s(%d): %s No command queued\n", __FILE__, __LINE__, __FUNCTION__);
+    }
+int i=0;
 	for (cmd = jtag_command_queue; ret == ERROR_OK && cmd != NULL;
 	     cmd = cmd->next) {
-LOG_DEBUG("***> IN %s(%d): %s Running cmd %d\n", __FILE__, __LINE__, __FUNCTION__,i++);
+LOG_INFO("***> IN %s(%d): %s Running cmd %d\n", __FILE__, __LINE__, __FUNCTION__,i++);
 	     
 		switch (cmd->type) {
 		case JTAG_RESET:
@@ -797,11 +797,84 @@ LOG_DEBUG("***> IN %s(%d): %s Running cmd %d\n", __FILE__, __LINE__, __FUNCTION_
 
 /**
  * Find the hardware cable from the jtag server
- * @pos Set jtagservice chain detail if return successful.
+ * @return The chain_pid (Perisistent ID for chain) for the selected cable. 0 if there is an issue.
+ */
+DWORD jtagserv_find_chain_pid(void)
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_INFO("Querying JTAG Server ...");
+    unsigned int hardware_count = 0;
+    AJI_HARDWARE *hardware_list = NULL;
+    char **server_version_info_list  = NULL;
+printf("Y1 %p", hardware_list); fflush(stdout);
+
+    AJI_ERROR status = c_aji_get_hardware2( 
+        &hardware_count, hardware_list, server_version_info_list, 
+        JTAGSERVICE_TIMEOUT_MS
+    );
+    if(AJI_TOO_MANY_DEVICES == status) {
+        hardware_list =  calloc(hardware_count, sizeof(AJI_HARDWARE));
+        server_version_info_list = calloc(hardware_count, sizeof(char*));
+        if (hardware_list == NULL || server_version_info_list == NULL) {
+            return AJI_NO_MEMORY;
+        }
+        status = c_aji_get_hardware2(&hardware_count, hardware_list, 
+                     server_version_info_list, 0
+        );
+    } //end if (AJI_TOO_MANY_DEVICES)
+    
+    
+    if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Failed to query server for hardware cable information. "
+                  " Return Status is %i\n", status
+        );
+        return 0;
+    }
+    if(0 == hardware_count) {
+        LOG_ERROR("JTAG server reports that it has no hardware cable\n");
+        return 0;
+    }
+    if(1 == hardware_count) {
+        LOG_INFO("At present, only the first hardware cable will be used"
+                 " (%d cables detected)", 
+                 hardware_count
+        );
+    }
+printf("Y %p", hardware_list); fflush(stdout);
+    DWORD chain_pid = hardware_list[0].persistent_id;
+printf("Z"); fflush(stdout);
+    if(LOG_LEVEL_IS(LOG_LVL_DEBUG)) {
+printf("A\n");
+        AJI_HARDWARE hw = hardware_list[0];
+        LOG_DEBUG("Cable %u: device_name=%s, hw_name=%s, server=%s, port=%s,"
+                  " chain_id=%p, persistent_id=%d, chain_type=%d, features=%d,"
+                  " server_version_info=%s\n", 
+              1, hw.device_name, hw.hw_name, hw.server, hw.port,  
+              hw.chain_id, hw.persistent_id, hw.chain_type, hw.features,
+              server_version_info_list[0]
+        );
+    }
+printf("B\n"); fflush(stdout);
+    free(hardware_list);
+printf("C\n"); fflush(stdout);
+    free(server_version_info_list);
+printf("D\n"); fflush(stdout);
+
+    return chain_pid;
+}
+
+
+/**
+ * jtagserv_init - Contact the JTAG Server
+ *
+ * Initialize the device :
+ *  - open the USB device
+ *  - pretend it's initialized while actual init is delayed until first jtag command
+ *
+ * Returns ERROR_OK if USB device found, error if not.
  */
 static int jtagserv_init(void)
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-    LOG_INFO("Check inputs\n");
+    LOG_DEBUG("Capture server\n");
     char *quartus_jtag_client_config = getenv("QUARTUS_JTAG_CLIENT_CONFIG");
     if (quartus_jtag_client_config != NULL) {
         LOG_INFO("Configuration file, set via QUARTUS_JTAG_CLIENT_CONFIG, is '%s'\n", 
@@ -811,61 +884,26 @@ static int jtagserv_init(void)
         LOG_INFO("Environment variable QUARTUS_JTAG_CLIENT_CONFIG not set\n"); //TODO: Remove this message, useful for debug will be cause user alarm unnecessarily
     }
     
-    unsigned int hardware_capacity = 10;
-    AJI_HARDWARE *hardware_list = (AJI_HARDWARE*) calloc(hardware_capacity, sizeof(AJI_HARDWARE));
-    char **server_version_info_list = (char**) calloc(hardware_capacity, sizeof(char*));
-    if(NULL == hardware_list) {
-        LOG_ERROR("Failed to allocate memory for hardware_list\n");
-        return AJI_NO_MEMORY;
+    jtagservice.chain_pid = jtagserv_find_chain_pid();
+    if (jtagservice.chain_pid == 0) {
+        return ERROR_JTAG_INIT_FAILED;
     }
-
-    printf("Query JTAG\n");
-    unsigned int hardware_count = hardware_capacity;
-    AJI_ERROR status = c2_aji_get_hardware2( 
-        &hardware_count, hardware_list, server_version_info_list, c2_aji_config.timeout
-    );
-    LOG_INFO("Return Status is %i\n", status);
-
-    LOG_INFO("Output Result\n");
-    if (AJI_NO_ERROR == status) {
-        LOG_INFO("Number of hardware is %d\n", hardware_count);
-
-        for(unsigned int i=0; i<hardware_count; ++i) {
-            AJI_HARDWARE hw = hardware_list[i];
-            LOG_INFO("    (%u) device_name=%s hw_name=%s server=%s port=%s chain_id=%p persistent_id=%d, chain_type=%d, features=%d, server_version_info_list=%s\n", 
-                   i+1, hw.device_name, hw.hw_name, hw.server, hw.port,  
-                   hw.chain_id, hw.persistent_id, hw.chain_type, hw.features,
-                   server_version_info_list[i]
-            );
-           
-           //Assume if persistent_id==0,hw is not defined. Felt that .port="Unable to connect" 
-           //..is not a strong enough indicator that something is wrong       
-           if(hw.persistent_id == 0) {
-               LOG_INFO("        Not a valid device.\n");
-               continue;
-           } //end if(hw.persistent_id
-        } //end for(i)
-    } //end if AJI_NO_ERROR for c2_aji_get_hardware2()
-    
-    free(hardware_list);
-    free(server_version_info_list);
-    //TODO: TAP state?
     
     return ERROR_OK;
 }
 
-/**
- * Select the TAP device to use
- * @pre The chain is already acquired, @see jtagserv_select_cable()
- * @pos jtagservice will be populated with the selected tap
- */
 static int jtagserv_quit(void)
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+    jtagservice_free();
+    return ERROR_OK;
+    
+    /* UBII
     uint8_t byte0 = 0;
     unsigned int retlen;
 
     jtagserv_buf_write(&byte0, 1, &retlen);
     return info.drv->close(info.drv);
+    */
 }
 
 COMMAND_HANDLER(jtagserv_handle_device_desc_command)
