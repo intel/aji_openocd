@@ -647,11 +647,11 @@ static int adapter_system_reset(int req_srst)
 }
 
 static void legacy_jtag_add_reset(int req_tlr_or_trst, int req_srst)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int trst_with_tlr = 0;
 	int new_srst = 0;
 	int new_trst = 0;
-LOG_DEBUG("***> IN %s(%d): %s Calling req_srst \n", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("***> IN %s(%d): %s Calling req_srst \n", __FILE__, __LINE__, __FUNCTION__);
 	/* Without SRST, we must use target-specific JTAG operations
 	 * on each target; callers should not be requesting SRST when
 	 * that signal doesn't exist.
@@ -673,7 +673,7 @@ LOG_DEBUG("***> IN %s(%d): %s Calling req_srst \n", __FILE__, __LINE__, __FUNCTI
 		}
 		new_srst = 1;
 	}
-LOG_DEBUG("***> IN %s(%d): %s Calling req_tlr_or_trst \n", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("***> IN %s(%d): %s Calling req_tlr_or_trst \n", __FILE__, __LINE__, __FUNCTION__);
 	/* JTAG reset (entry to TAP_RESET state) can always be achieved
 	 * using TCK and TMS; that may go through a TAP_{IR,DR}UPDATE
 	 * state first.  TRST accelerates it, and bypasses those states.
@@ -690,16 +690,16 @@ LOG_DEBUG("***> IN %s(%d): %s Calling req_tlr_or_trst \n", __FILE__, __LINE__, _
 		else
 			new_trst = 1;
 	}
-LOG_DEBUG("***> IN %s(%d): %s Calling jtag_srst or jtag_trst \n", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("***> IN %s(%d): %s Calling jtag_srst or jtag_trst \n", __FILE__, __LINE__, __FUNCTION__);
 	/* Maybe change TRST and/or SRST signal state */
 	if (jtag_srst != new_srst || jtag_trst != new_trst) {
 		int retval;
-LOG_DEBUG("***> IN %s(%d): %s Calling  interface_jtag_add_reset \n", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("***> IN %s(%d): %s Calling  interface_jtag_add_reset \n", __FILE__, __LINE__, __FUNCTION__);
 		retval = interface_jtag_add_reset(new_trst, new_srst);
 		if (retval != ERROR_OK)
 			jtag_set_error(retval);
 		else {
-LOG_DEBUG("***> IN %s(%d): %s Calling  jtag_execute_queue \n", __FILE__, __LINE__, __FUNCTION__);		
+LOG_INFO("***> IN %s(%d): %s Calling  jtag_execute_queue \n", __FILE__, __LINE__, __FUNCTION__);		
 			retval = jtag_execute_queue();
         }
 		if (retval != ERROR_OK) {
@@ -707,7 +707,7 @@ LOG_DEBUG("***> IN %s(%d): %s Calling  jtag_execute_queue \n", __FILE__, __LINE_
 			return;
 		}
 	}
-LOG_DEBUG("***> IN %s(%d): %s Calling jtag _srst \n", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("***> IN %s(%d): %s Calling jtag _srst \n", __FILE__, __LINE__, __FUNCTION__);
 	/* SRST resets everything hooked up to that signal */
 	if (jtag_srst != new_srst) {
 		jtag_srst = new_srst;
@@ -721,7 +721,7 @@ LOG_DEBUG("***> IN %s(%d): %s Calling jtag _srst \n", __FILE__, __LINE__, __FUNC
 				jtag_add_sleep(adapter_nsrst_delay * 1000);
 		}
 	}
-LOG_DEBUG("***> IN %s(%d): %s Calling trst_with_tlr \n", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("***> IN %s(%d): %s Calling trst_with_tlr \n", __FILE__, __LINE__, __FUNCTION__);
 
 	/* Maybe enter the JTAG TAP_RESET state ...
 	 *  - using only TMS, TCK, and the JTAG state machine
@@ -754,22 +754,22 @@ LOG_DEBUG("***> IN %s(%d): %s Calling trst_with_tlr \n", __FILE__, __LINE__, __F
 			jtag_notify_event(JTAG_TRST_ASSERTED);
 		}
 	}
-	LOG_DEBUG("***> IN %s(%d): %s END \n", __FILE__, __LINE__, __FUNCTION__);
+	LOG_INFO("***> IN %s(%d): %s END \n", __FILE__, __LINE__, __FUNCTION__);
 }
 
 /* FIXME: name is misleading; we do not plan to "add" reset into jtag queue */
 void jtag_add_reset(int req_tlr_or_trst, int req_srst)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int retval;
 	int trst_with_tlr = 0;
 	int new_srst = 0;
 	int new_trst = 0;
-LOG_DEBUG("***> IN %s(%d): %s Calling jtag->reset ... \n", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("***> IN %s(%d): %s Calling jtag->reset ... \n", __FILE__, __LINE__, __FUNCTION__);
 	if (!jtag->reset) {
 		legacy_jtag_add_reset(req_tlr_or_trst, req_srst);
 		return;
 	}
-LOG_DEBUG("***> IN %s(%d): %s Calling req_srst \n", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("***> IN %s(%d): %s Calling req_srst \n", __FILE__, __LINE__, __FUNCTION__);
 	/* Without SRST, we must use target-specific JTAG operations
 	 * on each target; callers should not be requesting SRST when
 	 * that signal doesn't exist.
@@ -791,7 +791,7 @@ LOG_DEBUG("***> IN %s(%d): %s Calling req_srst \n", __FILE__, __LINE__, __FUNCTI
 		}
 		new_srst = 1;
 	}
-LOG_DEBUG("***> IN %s(%d): %s Calling req_tlr_or_trst \n", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("***> IN %s(%d): %s Calling req_tlr_or_trst \n", __FILE__, __LINE__, __FUNCTION__);
 	/* JTAG reset (entry to TAP_RESET state) can always be achieved
 	 * using TCK and TMS; that may go through a TAP_{IR,DR}UPDATE
 	 * state first.  TRST accelerates it, and bypasses those states.
@@ -808,7 +808,7 @@ LOG_DEBUG("***> IN %s(%d): %s Calling req_tlr_or_trst \n", __FILE__, __LINE__, _
 		else
 			new_trst = 1;
 	}
-LOG_DEBUG("***> IN %s(%d): %s Calling jtag_srst || jtag_trst \n", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("***> IN %s(%d): %s Calling jtag_srst || jtag_trst \n", __FILE__, __LINE__, __FUNCTION__);
 	/* Maybe change TRST and/or SRST signal state */
 	if (jtag_srst != new_srst || jtag_trst != new_trst) {
 		/* guarantee jtag queue empty before changing reset status */
@@ -821,7 +821,7 @@ LOG_DEBUG("***> IN %s(%d): %s Calling jtag_srst || jtag_trst \n", __FILE__, __LI
 			return;
 		}
 	}
-LOG_DEBUG("***> IN %s(%d): %s Calling jtag_srst != new _srst \n", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("***> IN %s(%d): %s Calling jtag_srst != new _srst \n", __FILE__, __LINE__, __FUNCTION__);
 	/* SRST resets everything hooked up to that signal */
 	if (jtag_srst != new_srst) {
 		jtag_srst = new_srst;
@@ -835,7 +835,7 @@ LOG_DEBUG("***> IN %s(%d): %s Calling jtag_srst != new _srst \n", __FILE__, __LI
 				jtag_add_sleep(adapter_nsrst_delay * 1000);
 		}
 	}
-LOG_DEBUG("***> IN %s(%d): %s Calling trst_with_tlr \n", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("***> IN %s(%d): %s Calling trst_with_tlr \n", __FILE__, __LINE__, __FUNCTION__);
 	/* Maybe enter the JTAG TAP_RESET state ...
 	 *  - using only TMS, TCK, and the JTAG state machine
 	 *  - or else more directly, using TRST
@@ -933,7 +933,7 @@ void jtag_check_value_mask(struct scan_field *field, uint8_t *value, uint8_t *ma
 }
 
 int default_interface_jtag_execute_queue(void)
-{   LOG_DEBUG("***> IN %s(%d): %s \n", __FILE__, __LINE__, __FUNCTION__);	
+{   LOG_INFO("***> IN %s(%d): %s \n", __FILE__, __LINE__, __FUNCTION__);	
 	if (NULL == jtag) {
 		LOG_ERROR("No JTAG interface configured yet.  "
 			"Issue 'init' command in startup scripts "
@@ -1026,7 +1026,7 @@ int default_interface_jtag_execute_queue(void)
 }
 
 void jtag_execute_queue_noclear(void)
-{   LOG_DEBUG("***> IN %s(%d): %s \n", __FILE__, __LINE__, __FUNCTION__);		
+{   LOG_INFO("***> IN %s(%d): %s \n", __FILE__, __LINE__, __FUNCTION__);		
 	jtag_flush_queue_count++;
 	jtag_set_error(interface_jtag_execute_queue());
 
@@ -1045,7 +1045,7 @@ int jtag_get_flush_queue_count(void)
 }
 
 int jtag_execute_queue(void)
-{   LOG_DEBUG("***> IN %s(%d): %s \n", __FILE__, __LINE__, __FUNCTION__);	
+{   LOG_INFO("***> IN %s(%d): %s \n", __FILE__, __LINE__, __FUNCTION__);	
 	jtag_execute_queue_noclear();
 	return jtag_error_clear();
 }
@@ -1518,7 +1518,7 @@ void jtag_tap_free(struct jtag_tap *tap)
  * and clocking.
  */
 int adapter_init(struct command_context *cmd_ctx)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (jtag)
 		return ERROR_OK;
 
@@ -1753,13 +1753,13 @@ int jtag_init_reset(struct command_context *cmd_ctx)
 }
 
 int jtag_init(struct command_context *cmd_ctx)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-LOG_DEBUG("***> IN %s(%d): %s adapter_init() ... \n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("***> IN %s(%d): %s adapter_init() ... \n", __FILE__, __LINE__, __FUNCTION__);
 	int retval = adapter_init(cmd_ctx);
 	if (retval != ERROR_OK)
 		return retval;
 		
-    LOG_DEBUG("***> IN %s(%d): %s jtag_add_reset() ... \n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_INFO("***> IN %s(%d): %s jtag_add_reset() ... \n", __FILE__, __LINE__, __FUNCTION__);
 	/* guard against oddball hardware: force resets to be inactive */
 	jtag_add_reset(0, 0);
 
@@ -1771,11 +1771,11 @@ LOG_DEBUG("***> IN %s(%d): %s adapter_init() ... \n", __FILE__, __LINE__, __FUNC
 			LOG_WARNING("\'srst_nogate\' reset_config option is required");
 	}
 	
-	LOG_DEBUG("***> IN %s(%d): %s jtag_execute_queue() ... s\n", __FILE__, __LINE__, __FUNCTION__);
+	LOG_INFO("***> IN %s(%d): %s jtag_execute_queue() ... s\n", __FILE__, __LINE__, __FUNCTION__);
 	retval = jtag_execute_queue();
 	if (retval != ERROR_OK)
 		return retval;
-    LOG_DEBUG("***> IN %s(%d): %s TCL jtag_init ... \n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_INFO("***> IN %s(%d): %s TCL jtag_init ... \n", __FILE__, __LINE__, __FUNCTION__);
 	if (Jim_Eval_Named(cmd_ctx->interp, "jtag_init", __FILE__, __LINE__) != JIM_OK)
 		return ERROR_FAIL;
 

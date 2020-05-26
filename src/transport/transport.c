@@ -249,7 +249,7 @@ COMMAND_HANDLER(handle_transport_init)
 		}
 		return ERROR_FAIL;
 	}
-LOG_DEBUG("******> IN %s(%d): %s Starting session->init() ...\n", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("******> IN %s(%d): %s Starting session->init() ...\n", __FILE__, __LINE__, __FUNCTION__);
 	return session->init(CMD_CTX);
 }
 
