@@ -1,6 +1,6 @@
 //START_MODULE_HEADER////////////////////////////////////////////////////////
 //
-// $Header: //depot/users/cinlyooi/p/snippets/gnuaji/jtag_client_gnuaji.experiment.h#5 $
+// $Header$
 //
 // Description: Entries points for AJI with GNU name decoration
 //
@@ -104,7 +104,7 @@ AJI_API AJI_ERROR aji_get_defined_devices(DWORD * device_count, AJI_DEVICE * dev
 AJI_API AJI_ERROR aji_get_local_quartus_devices(DWORD * device_count, AJI_DEVICE * device_list);
 #endif
 
-AJI_API AJI_ERROR _Z21aji_read_device_chainP9AJI_CHAINPjP10AJI_DEVICEb(AJI_CHAIN_ID chain_id, DWORD * device_count, AJI_DEVICE * device_list, _Bool auto_scan); //cinlyooi
+AJI_API AJI_ERROR _Z21aji_read_device_chainP9AJI_CHAINPjP10AJI_DEVICEb(AJI_CHAIN_ID chain_id, DWORD * device_count, AJI_DEVICE * device_list, _Bool auto_scan);
 
 #if 0
 AJI_API AJI_ERROR aji_set_parameter(AJI_CHAIN_ID chain_id, const char * name, DWORD value);
@@ -149,7 +149,7 @@ AJI_API AJI_ERROR _Z18aji_set_checkpointP8AJI_OPENm(AJI_OPEN_ID open_id, DWORD c
 
 AJI_API AJI_ERROR _Z18aji_get_checkpointP8AJI_OPENPm(AJI_OPEN_ID open_id, DWORD * checkpoint);
 
-AJI_API AJI_ERROR _Z14aji_lock_chainP9AJI_CHAINj(AJI_CHAIN_ID chain_id, DWORD timeout); //cinlyooi
+AJI_API AJI_ERROR _Z14aji_lock_chainP9AJI_CHAINj(AJI_CHAIN_ID chain_id, DWORD timeout);
 
 AJI_API AJI_ERROR _Z16aji_unlock_chainP9AJI_CHAIN(AJI_CHAIN_ID chain_id); //cinlyooi
 
