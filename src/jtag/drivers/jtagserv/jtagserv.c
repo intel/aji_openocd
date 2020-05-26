@@ -808,7 +808,7 @@ static int jtagserv_init(void)
                quartus_jtag_client_config
         );
     } else {
-        LOG_INFO("Environment variable QUARTUS_JTAG_CLIENT_CONFIG not setted\n");
+        LOG_INFO("Environment variable QUARTUS_JTAG_CLIENT_CONFIG not set\n"); //TODO: Remove this message, useful for debug will be cause user alarm unnecessarily
     }
     
     unsigned int hardware_capacity = 10;
