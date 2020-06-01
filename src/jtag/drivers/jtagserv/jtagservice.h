@@ -6,11 +6,6 @@
 
 #define JTAGSERVICE_TIMEOUT_MS 10000
 
-//Choose one of three to control jtagservice.h. TODO: Remove after experiment. This system is very fragile
-//#define CHAIN_ID
-#define PERSISTENT_ID
-//#define HW_NAME
-
 
 enum jtagservice_lock {
     NONE    = 0b000000,
@@ -35,9 +30,6 @@ struct jtagservice_record {
     DWORD         in_use_hardware_index;
     AJI_HARDWARE *in_use_hardware;
     DWORD         in_use_chain_pid;
-    char         in_use_server[100];
-    char         in_use_port[100];
-    AJI_CHAIN_TYPE in_use_chain_type;
 
     //() Tap device
     DWORD      device_count;
