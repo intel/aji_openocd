@@ -108,7 +108,7 @@ int jtagservice_query_main(void) {
            }
 
            DWORD device_count = hardware_capacity;
-           AJI_DEVICE *device_list = (AJI_DEVICE*) calloc(sizeof(AJI_DEVICE), device_count);
+           AJI_DEVICE *device_list = (AJI_DEVICE*) calloc(device_count, sizeof(AJI_DEVICE));
            status = _Z21aji_read_device_chainP9AJI_CHAINPjP10AJI_DEVICEb(chain_id, &device_count, device_list, 1);
            if(AJI_NO_ERROR !=  status ) { 
                printf("       Problem with Getting device on this chain. Returned %d\n", status);
@@ -124,8 +124,8 @@ int jtagservice_query_main(void) {
                         
                
                DWORD hier_id_n = hardware_capacity; 
-               AJI_HIER_ID *hier_ids = (AJI_HIER_ID*) calloc(sizeof(AJI_HIER_ID), hier_id_n);
-               AJI_HUB_INFO *hub_infos = (AJI_HUB_INFO*) calloc(sizeof(AJI_HUB_INFO), AJI_MAX_HIERARCHICAL_HUB_DEPTH);
+               AJI_HIER_ID *hier_ids = (AJI_HIER_ID*) calloc(hier_id_n, sizeof(AJI_HIER_ID));
+               AJI_HUB_INFO *hub_infos = (AJI_HUB_INFO*) calloc(AJI_MAX_HIERARCHICAL_HUB_DEPTH, sizeof(AJI_HUB_INFO));
 
                status =  _Z13aji_get_nodesP9AJI_CHAINjP11AJI_HIER_IDPjP12AJI_HUB_INFO(chain_id, tap_position, hier_ids, &hier_id_n,  hub_infos);
 
