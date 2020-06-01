@@ -3,7 +3,14 @@
 
 #include "c_aji.h"
 
+
 #define JTAGSERVICE_TIMEOUT_MS 10000
+
+//Choose one of three to control jtagservice.h. TODO: Remove after experiment. This system is very fragile
+//#define CHAIN_ID
+#define PERSISTENT_ID
+//#define HW_NAME
+
 
 enum jtagservice_lock {
     NONE    = 0b000000,
@@ -13,6 +20,7 @@ enum jtagservice_lock {
     ALL     = 0b111111,
 };
 
+typedef struct jtagservice_record jtagservice_record;
 struct jtagservice_record {
     //data members
     //() Cable
@@ -27,6 +35,9 @@ struct jtagservice_record {
     DWORD         in_use_hardware_index;
     AJI_HARDWARE *in_use_hardware;
     DWORD         in_use_chain_pid;
+    char         in_use_server[100];
+    char         in_use_port[100];
+    AJI_CHAIN_TYPE in_use_chain_type;
 
     //() Tap device
     DWORD      device_count;
@@ -45,28 +56,11 @@ struct jtagservice_record {
     enum jtagservice_lock locked;
 };
  
-static struct jtagservice_record jtagservice  = {
-    .hardware_count = 0,
-//    .hardware_list = NULL,
-//    .server_version_info_list = NULL,
-//    .in_use_hardware = NULL,
-    .in_use_hardware_index = 0,
-    .in_use_chain_pid = 0,
-    
-    .device_count = 0,
-//    .device_list = NULL,
-    .in_use_device_tap_position = 0,
-//    .in_use_device = NULL,
-    .in_use_device_id = 0,
-    .in_use_device_irlen = 0,
-    
-    .locked    = NONE,
-};
 
-_Bool jtagservice_is_locked(enum jtagservice_lock lock);
-AJI_ERROR jtagservice_lock(enum jtagservice_lock, DWORD timeout);
-AJI_ERROR jtagservice_unlock(enum jtagservice_lock);
-AJI_ERROR jtagservice_free(void);
+_Bool jtagservice_is_locked(jtagservice_record *me, enum jtagservice_lock lock);
+AJI_ERROR jtagservice_lock(jtagservice_record *me, enum jtagservice_lock, DWORD timeout);
+AJI_ERROR jtagservice_unlock(jtagservice_record *me, enum jtagservice_lock, DWORD timeout);
+AJI_ERROR jtagservice_free(jtagservice_record *me, DWORD timeout);
 
 
 

@@ -3,19 +3,52 @@
 #include "log.h"
 #include "c_jtag_client_gnuaji.h"
 
-_Bool jtagservice_is_locked(enum jtagservice_lock lock) 
+_Bool jtagservice_is_locked(jtagservice_record *me, enum jtagservice_lock lock) 
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-    return jtagservice.locked & lock;
+    return me->locked & lock;
 }
 
-AJI_ERROR jtagservice_lock(enum jtagservice_lock lock, DWORD timeout) 
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+AJI_ERROR jtagservice_lock(jtagservice_record *me, enum jtagservice_lock lock, DWORD timeout) 
+{   LOG_INFO("***> IN %s(%d): %s %d\n", __FILE__, __LINE__, __FUNCTION__, me->locked);
   
     AJI_ERROR status = AJI_NO_ERROR;
-    if(jtagservice_is_locked(CHAIN)) {
-        status = c_aji_lock_chain(jtagservice.in_use_hardware->chain_id, timeout);
+    if(!jtagservice_is_locked(me, CHAIN)) {
+#ifdef PERSISTENT_ID //lock via aji_find_hardware(persistent_id)
+        LOG_INFO("***> IN %s(%d): %s aji_lock_chain via Persistent ID %d\n", __FILE__, __LINE__, __FUNCTION__, me->in_use_chain_pid);
+
+        AJI_HARDWARE hw;
+        status = c_aji_find_hardware(me->in_use_chain_pid, &hw, timeout);
+        if( status == AJI_NO_ERROR) {
+            status = c_aji_lock_chain(hw.chain_id, timeout);
+        }
+#endif
+#ifdef HW_NAME //lock via aji_find_hardware(hw_name)
+        LOG_DEBUG("***> IN %s(%d): %s aji_lock_chain via hw_name\n", __FILE__, __LINE__, __FUNCTION__);
+        char buffer[10];
+        itoa(me->in_use_chain_type, buffer,  10);
+        char *hwname;
+        hwname = calloc(1,   strlen(buffer)
+                           + 4 // <space>on</space>
+                           + sizeof(me->in_use_server)
+                           + 1 // <space>
+                           + sizeof(me->in_use_port)
+                           + 1 // '\0'
+        );
+        sprintf(hw_name, "%s on %s %s", 
+                buffer, me->in_use_server, jtagservice_in_use_port
+        );
+        AJI_HARDWARE hw;
+        status = c_aji_find_hardware_a(hw_name, &hw, timeout);
+        if(AJI_NO_ERROR == status) {
+            status = c_aji_lock_chain(hw.chain_id, timeout);
+        }
+#endif
+#ifdef CHAIN_ID //lock via chain_id
+        LOG_DEBUG("***> IN %s(%d): %s aji_lock_chain via CHAIN ID\n", __FILE__, __LINE__, __FUNCTION__);
+        status = c_aji_lock_chain(me->in_use_hardware->chain_id, timeout);
+#endif
         if( AJI_NO_ERROR == status ) {
-            jtagservice.locked &= ~CHAIN;
+            me->locked &= ~CHAIN;
         }
         return status;
     } //end if(jtagservice_is_locked)
@@ -24,29 +57,64 @@ AJI_ERROR jtagservice_lock(enum jtagservice_lock lock, DWORD timeout)
 } //end jtagserv_unlock
 
 
-AJI_ERROR jtagservice_unlock(enum jtagservice_lock lock) 
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+AJI_ERROR jtagservice_unlock(jtagservice_record *me, enum jtagservice_lock lock, DWORD timeout) 
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
  
-    if((CHAIN & lock) && jtagservice_is_locked(CHAIN)) {
-        c_aji_unlock_chain(jtagservice.in_use_hardware->chain_id);
-        jtagservice.locked &= ~CHAIN;
+    AJI_ERROR status = AJI_NO_ERROR;
+    if((CHAIN & lock) && jtagservice_is_locked(me, CHAIN)) {
+#ifdef PERSISTENT_ID //lock via aji_find_hardware(persistent_id)
+        LOG_DEBUG("***> IN %s(%d): %s aji_unlock_chain via Persistent ID\n", __FILE__, __LINE__, __FUNCTION__);
+
+        AJI_HARDWARE hw;
+        status = c_aji_find_hardware(me->in_use_chain_pid, &hw, timeout);
+        if(AJI_NO_ERROR == status){
+            status = c_aji_unlock_chain(hw.chain_id);        
+        }
+#endif
+#ifdef HW_NAME //lock via aji_find_hardware(hw_name)
+        LOG_DEBUG("***> IN %s(%d): %s aji_unlock_chain via hw_name\n", __FILE__, __LINE__, __FUNCTION__);
+        char buffer[10];
+        itoa(me->in_use_chain_type, buffer,  10);
+        char *hwname;
+        hwname = calloc(1,   strlen(buffer)
+                           + 4 // <space>on</space>
+                           + sizeof(me->in_use_server)
+                           + 1 // <space>
+                           + sizeof(me->in_use_port)
+                           + 1 // '\0'
+        );
+        sprintf(hw_name, "%s on %s %s", 
+                buffer, me->in_use_server, jtagservice_in_use_port
+        );
+        AJI_HARDWARE hw;
+        status = c_aji_find_hardware_a(hw_name, &hw, timeout);
+        if(AJI_NO_ERROR == status) {
+            status = c_aji_unlock_chain(hw.chain_id);
+        }
+#endif
+#ifdef CHAIN_ID //lock via chain_id
+        LOG_DEBUG("***> IN %s(%d): %s aji_lock_chain via CHAIN ID\n", __FILE__, __LINE__, __FUNCTION__);
+        status = c_aji_unlock_chain(me->in_use_hardware->chain_id);
+#endif
+        
+        me->locked &= ~CHAIN;
     }    //end if(jtagservice_is_locked)
-    return AJI_NO_ERROR;
+    return status;
 }
 
-AJI_ERROR  jtagservice_free(void) 
+AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout) 
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     
-    jtagservice_unlock(ALL);
+    jtagservice_unlock(me, ALL, timeout);
 
     //TODO: Free the variables
-    if(jtagservice.device_count != 0) {
-        free(jtagservice.device_list);
+    if(me->device_count != 0) {
+        free(me->device_list);
     }
 
-    if(jtagservice.hardware_count != 0) {
-        free(jtagservice.hardware_list);
-        free(jtagservice.server_version_info_list);
+    if(me->hardware_count != 0) {
+        free(me->hardware_list);
+        free(me->server_version_info_list);
     }
     return AJI_NO_ERROR;
 }
