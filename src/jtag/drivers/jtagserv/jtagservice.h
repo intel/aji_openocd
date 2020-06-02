@@ -5,7 +5,7 @@
 
 
 #define JTAGSERVICE_TIMEOUT_MS 10000
-
+#define IR_ARM_IDCODE 14 // 0b1110
 
 enum jtagservice_lock {
     NONE    = 0b000000,
@@ -29,20 +29,19 @@ struct jtagservice_record {
     
     DWORD         in_use_hardware_index;
     AJI_HARDWARE *in_use_hardware;
-    DWORD         in_use_chain_pid;
+    DWORD         in_use_hardware_chain_pid;
 
     //() Tap device
-    DWORD      device_count;
-    AJI_DEVICE *device_list;
+    DWORD        device_count;
+    AJI_DEVICE  *device_list;
+    AJI_OPEN_ID *device_open_id_list;
     
-    
-    DWORD       in_use_device_tap_position; //1-indexed
+    DWORD       in_use_device_tap_position;
     AJI_DEVICE *in_use_device;
     DWORD       in_use_device_id; 
-    BYTE        in_use_device_irlen; 
+    BYTE        in_use_device_irlen;
+     
 
-
-    
     
     //state tracking
     enum jtagservice_lock locked;

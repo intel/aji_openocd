@@ -3,6 +3,66 @@
 #include "log.h"
 #include "c_jtag_client_gnuaji.h"
 
+
+/**
+ * Print hardware name suitable for @see aji_find_hardware(hw_name, ...) use.
+ *
+ * @param hw_name On input, a string at least as large as hw_name_len,
+ *                On output, the printed name string
+ * @param hw_name_len On input, the size of hw_name
+ *                    On output, the actual length of the name string
+ * @param type  type string, e.g. "USB-BlasterII". Cannot  be NULL
+ * @param server The server name (jtagd terminology), in the form 
+ *               myserver.com:port. Can be NULL
+ * @param explicit_localhost If server is NULL, set to true 
+                              to use "localhost" in place of server
+ * @param port   The port name (jtagd terminology), normally the PCI bus number
+ *               Can be NULL
+ *
+ * @return AJI_NO_ERROR if everything ok
+ *         AJI_TOO_MANY_DEVICE if the string is longer than what hw_name can take
+ *                      In this case hw_name_len will give you the required length
+ *                      hw_name will remain unaltered
+ * 
+ * @see AJI_ERROR AJI_CHAIN_JS::print_hardware_name()
+ */
+AJI_ERROR jtagservice_print_hardware_name(
+    char  *hw_name, DWORD *hw_name_len,
+    const char *type, const char *server, const bool explicit_localhost, 
+    const char *port
+) {
+    DWORD need = strlen(type) + 1;
+    if (server != NULL) {
+        need += 4 + strlen(server);
+    } else {
+        need += 13; //i.e. " on localhost"
+    }
+    if (port != NULL) {
+        need += 3 + strlen(port);
+    }
+    
+    if ( *hw_name_len < need ) {
+        *hw_name_len = need;
+        return AJI_TOO_MANY_DEVICES; // Not enough space
+    }
+    
+    *hw_name_len = need;
+     
+    char * ptr = hw_name;
+    char * const end = ptr + *hw_name_len;
+    ptr += snprintf(ptr, *hw_name_len, "%s", hw_name);
+
+    if (server != NULL) {
+        ptr += snprintf(ptr, (size_t)(end-ptr), " on %s", server);
+    } else if (explicit_localhost) {
+        ptr += snprintf(ptr, (size_t)(end-ptr), "%s", " on localhost");
+    }
+    if (port != NULL) {
+        ptr += snprintf(ptr, (size_t)(end-ptr), " [%s]", port);
+    }
+    return AJI_NO_ERROR;
+}
+
 _Bool jtagservice_is_locked(jtagservice_record *me, enum jtagservice_lock lock) 
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     return me->locked & lock;
@@ -15,13 +75,13 @@ AJI_ERROR jtagservice_lock(jtagservice_record *me, enum jtagservice_lock lock, D
         return AJI_NO_ERROR;
     }
     
-    if(!me->in_use_chain_pid) {
+    if(!me->in_use_hardware_chain_pid) {
         return AJI_FAILURE;
     }
     
     AJI_ERROR status = AJI_NO_ERROR;
     AJI_HARDWARE hw;
-    status = c_aji_find_hardware(me->in_use_chain_pid, &hw, timeout);
+    status = c_aji_find_hardware(me->in_use_hardware_chain_pid, &hw, timeout);
     if( status != AJI_NO_ERROR) {
         return status;
     }
@@ -30,7 +90,7 @@ AJI_ERROR jtagservice_lock(jtagservice_record *me, enum jtagservice_lock lock, D
     } //end if(jtagservice_is_locked(CHAIN))
     
     if( AJI_NO_ERROR == status ) {
-            me->locked |= CHAIN;
+            me->locked = CHAIN;
     }
     if( lock & CHAIN ) {
         return status;
@@ -48,7 +108,7 @@ AJI_ERROR jtagservice_unlock(jtagservice_record *me, enum jtagservice_lock lock,
         LOG_DEBUG("***> IN %s(%d): %s aji_unlock_chain via Persistent ID\n", __FILE__, __LINE__, __FUNCTION__);
 
         AJI_HARDWARE hw;
-        status = c_aji_find_hardware(me->in_use_chain_pid, &hw, timeout);
+        status = c_aji_find_hardware(me->in_use_hardware_chain_pid, &hw, timeout);
         if(AJI_NO_ERROR == status){
             status = c_aji_unlock_chain(hw.chain_id);        
         }        
@@ -62,9 +122,10 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
     
     jtagservice_unlock(me, ALL, timeout);
 
-    //TODO: Free the variables
+    //TODO: Free the variables    
     if(me->device_count != 0) {
         free(me->device_list);
+        free(me->device_open_id_list);
     }
 
     if(me->hardware_count != 0) {

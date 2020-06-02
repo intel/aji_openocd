@@ -117,9 +117,9 @@ AJI_API AJI_ERROR aji_get_parameter(AJI_CHAIN_ID chain_id, const char * name, BY
 #endif
 
 //@deprecated, using AJI_CLAIM2 version
-AJI_API AJI_ERROR _Z15aji_open_deviceP9AJI_CHAINjPP8AJI_OPENPK9AJI_CLAIMjPKc(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_OPEN_ID * open_id, const AJI_CLAIM * claims, DWORD claim_n, const char * application_name);
+AJI_API AJI_ERROR _Z15aji_open_deviceP9AJI_CHAINjPP8AJI_OPENPK9AJI_CLAIMjPKc(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_OPEN_ID * open_id, const AJI_CLAIM * claims, DWORD claim_n, const char * application_name); //cinlyooi
 
-AJI_API AJI_ERROR _Z15aji_open_deviceP9AJI_CHAINjPP8AJI_OPENPK10AJI_CLAIM2jPKc(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_OPEN_ID * open_id, const AJI_CLAIM2 * claims, DWORD claim_n, const char * application_name);
+AJI_API AJI_ERROR _Z15aji_open_deviceP9AJI_CHAINjPP8AJI_OPENPK10AJI_CLAIM2jPKc(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_OPEN_ID * open_id, const AJI_CLAIM2 * claims, DWORD claim_n, const char * application_name); //cinlyooi
 
 AJI_API AJI_ERROR _Z16aji_close_deviceP8AJI_OPEN(AJI_OPEN_ID open_id);
 
