@@ -38,13 +38,25 @@ AJI_API AJI_ERROR c_aji_read_device_chain(AJI_CHAIN_ID chain_id, DWORD * device_
 }
 
 inline
+AJI_API AJI_ERROR c_aji_lock(AJI_OPEN_ID open_id, DWORD timeout, AJI_PACK_STYLE pack_style) {
+    return _Z8aji_lockP8AJI_OPENj14AJI_PACK_STYLE(open_id, timeout, pack_style);
+}
+
+inline
+AJI_API AJI_ERROR c_aji_unlock(AJI_OPEN_ID open_id) {   
+    return _Z10aji_unlockP8AJI_OPEN(open_id);
+}
+
+inline
 AJI_API AJI_ERROR c_aji_lock_chain(AJI_CHAIN_ID chain_id, DWORD timeout) {
     return _Z14aji_lock_chainP9AJI_CHAINj(chain_id, timeout); 
 }
+
 inline
 AJI_API AJI_ERROR c_aji_unlock_chain(AJI_CHAIN_ID chain_id) {
     return _Z16aji_unlock_chainP9AJI_CHAIN(chain_id);
 }
+
 inline
 AJI_API AJI_ERROR c_aji_unlock_chain_lock(AJI_CHAIN_ID unlock_id, AJI_OPEN_ID lock_id, AJI_PACK_STYLE pack_style) {
     return _Z21aji_unlock_chain_lockP9AJI_CHAINP8AJI_OPEN14AJI_PACK_STYLE(unlock_id, lock_id, pack_style);
@@ -60,4 +72,32 @@ AJI_API AJI_ERROR c_aji_open_device_a(AJI_CHAIN_ID chain_id, DWORD tap_position,
     return _Z15aji_open_deviceP9AJI_CHAINjPP8AJI_OPENPK10AJI_CLAIM2jPKc(chain_id, tap_position, open_id, claims, claim_n, application_name);
 } 
 
+inline
+AJI_API AJI_ERROR c_aji_test_logic_reset(AJI_OPEN_ID open_id) {
+    return _Z20aji_test_logic_resetP8AJI_OPEN(open_id);
+}
+
+inline
+AJI_API AJI_ERROR c_aji_access_ir(AJI_OPEN_ID open_id, DWORD instruction, DWORD * captured_ir, DWORD flags) {
+    return _Z13aji_access_irP8AJI_OPENjPjj(open_id, instruction, captured_ir, flags);
+}
+
+inline
+AJI_API AJI_ERROR c_aji_access_ir_a(AJI_OPEN_ID open_id, DWORD length_ir, const BYTE * write_bits, BYTE * read_bits, DWORD flags) {
+    return _Z13aji_access_irP8AJI_OPENjPKhPhj(open_id, length_ir, write_bits, read_bits, flags);
+}
+
+inline
+AJI_API AJI_ERROR c_aji_access_ir_multiple(DWORD num_devices, const AJI_OPEN_ID * open_id, const DWORD * instructions, DWORD * captured_irs) {
+    return _Z22aji_access_ir_multiplejPKP8AJI_OPENPKjPj(num_devices, open_id, instructions, captured_irs);
+}
+inline
+AJI_API AJI_ERROR c_aji_access_dr(AJI_OPEN_ID open_id, DWORD length_dr, DWORD flags, DWORD write_offset, DWORD write_length, const BYTE * write_bits, DWORD read_offset, DWORD read_length, BYTE * read_bits) {
+    return  _Z13aji_access_drP8AJI_OPENjjjjPKhjjPh(open_id, length_dr, flags, write_offset, write_length, write_bits, read_offset, read_length, read_bits);
+}
+
+inline
+AJI_API AJI_ERROR c_aji_access_dr_a(AJI_OPEN_ID open_id, DWORD length_dr, DWORD flags, DWORD write_offset, DWORD write_length, const BYTE * write_bits, DWORD read_offset, DWORD read_length, BYTE * read_bits, DWORD batch) {
+    return _Z13aji_access_drP8AJI_OPENjjjjPKhjjPhj(open_id, length_dr, flags, write_offset, write_length, write_bits, read_offset, read_length, read_bits, batch);
+}
 #endif

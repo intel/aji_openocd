@@ -145,13 +145,14 @@ enum AJI_PACK_STYLE // These are used in the client API so must not change.
 
 enum AJI_DR_FLAGS // These are transmitted from client to server so must not change.
 {
-    AJI_DR_UNUSED_0       = 1,  // Allow zeros to be written to unspecified bits
-    AJI_DR_UNUSED_0_OMIT  = 3,  // Allow zeros at the TDI end, allow any value at TDO end
-    AJI_DR_UNUSED_X       = 15, // Allow any value to be written to unspecified bits
-    AJI_DR_NO_SHORT       = 16, // Must clock all bits through (disable optimisations)
-    AJI_DR_END_PAUSE_DR   = 32, // End the dr scan in the PAUSE_DR state
-    AJI_DR_START_PAUSE_DR = 64, // Allow the dr scan to start in the PAUSE_DR state
-    AJI_DR_NO_RESTORE     = 128 // Do not reload previous instruction and overlay after relocking
+    AJI_DR_NO_OPTIMIZATION = 0, // No optimization
+    AJI_DR_UNUSED_0        = 1,  // Allow zeros to be written to unspecified bits
+    AJI_DR_UNUSED_0_OMIT   = 3,  // Allow zeros at the TDI end, allow any value at TDO end
+    AJI_DR_UNUSED_X        = 15, // Allow any value to be written to unspecified bits
+    AJI_DR_NO_SHORT        = 16, // Must clock all bits through (disable optimisations)
+    AJI_DR_END_PAUSE_DR    = 32, // End the dr scan in the PAUSE_DR state
+    AJI_DR_START_PAUSE_DR  = 64, // Allow the dr scan to start in the PAUSE_DR state
+    AJI_DR_NO_RESTORE      = 128 // Do not reload previous instruction and overlay after relocking
 };
 
 enum AJI_IR_FLAGS // These are transmitted from client to server so must not change.
