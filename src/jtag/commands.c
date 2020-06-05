@@ -207,9 +207,9 @@ int jtag_build_buffer(const struct scan_command *cmd, uint8_t **buffer)
 
 	bit_count = 0;
 
-	LOG_DEBUG_IO("%s num_fields: %i",
+	LOG_DEBUG_IO("%s num_fields: %i (%d bits)",
 			cmd->ir_scan ? "IRSCAN" : "DRSCAN",
-			cmd->num_fields);
+			cmd->num_fields, bit_count);
 
 	for (i = 0; i < cmd->num_fields; i++) {
 		if (cmd->fields[i].out_value) {

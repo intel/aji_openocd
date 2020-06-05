@@ -933,7 +933,7 @@ void jtag_check_value_mask(struct scan_field *field, uint8_t *value, uint8_t *ma
 }
 
 int default_interface_jtag_execute_queue(void)
-{   LOG_DEBUG("***> IN %s(%d): %s \n", __FILE__, __LINE__, __FUNCTION__);	
+{   //LOG_DEBUG("***> IN %s(%d): %s \n", __FILE__, __LINE__, __FUNCTION__);	
 	if (NULL == jtag) {
 		LOG_ERROR("No JTAG interface configured yet.  "
 			"Issue 'init' command in startup scripts "
@@ -1026,7 +1026,7 @@ int default_interface_jtag_execute_queue(void)
 }
 
 void jtag_execute_queue_noclear(void)
-{   LOG_DEBUG("***> IN %s(%d): %s \n", __FILE__, __LINE__, __FUNCTION__);		
+{   //LOG_DEBUG("***> IN %s(%d): %s \n", __FILE__, __LINE__, __FUNCTION__);		
 	jtag_flush_queue_count++;
 	jtag_set_error(interface_jtag_execute_queue());
 
