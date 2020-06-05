@@ -68,14 +68,13 @@ static struct jtagservice_record jtagservice  = {
 
 
 
-//TODO Remove
 enum gpio_steer {
 	FIXED_0 = 0,
 	FIXED_1,
 	SRST,
 	TRST,
 };
-//TODO Remove: old UBII
+
 struct jtagserv_info { 
     enum gpio_steer pin6;
 	enum gpio_steer pin8;
@@ -86,6 +85,7 @@ struct jtagserv_info {
 	uint8_t buf[BUF_LEN];
 	int bufidx;
 
+    //NOT USED by jtagserv
 	char *lowlevel_name;
 	struct jtagserv_lowlevel *drv;
 	char *jtagserv_device_desc;
@@ -145,22 +145,26 @@ static int jtagserv_buf_read(uint8_t *buf, unsigned size, uint32_t *bytes_read)
 
 static int jtagserv_buf_write(uint8_t *buf, int size, uint32_t *bytes_written)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-	int ret = info.drv->write(info.drv, buf, size, bytes_written);
+LOG_INFO("***> IN %s(%d): %s NOT OPERATIONAL START jtag bit bang ***\n", __FILE__, __LINE__, __FUNCTION__);
+//	int ret = info.drv->write(info.drv, buf, size, bytes_written);
+int ret = ERROR_OK;
+*bytes_written=size;
 	char *str = hexdump(buf, *bytes_written);
-
 	LOG_DEBUG_IO("(size=%d, buf=[%s]) -> %u", size, str,
 		      *bytes_written);
+LOG_INFO("(size=%d, buf=[%s]) -> %u", size, str, *bytes_written);
 	free(str);
+LOG_INFO("***> IN %s(%d): %s NOT OPERATIONAL END jtag bit bang ***\n", __FILE__, __LINE__, __FUNCTION__);
 	return ret;
 }
 
 static int nb_buf_remaining(void)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	return BUF_LEN - info.bufidx;
 }
 
 static void jtagserv_flush_buffer(void)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	unsigned int retlen;
 	int nb = info.bufidx, ret = ERROR_OK;
 
@@ -223,7 +227,7 @@ static void jtagserv_flush_buffer(void)
  * the buffer is filled, or if an explicit jtagserv_flush_buffer() is called.
  */
 static void jtagserv_queue_byte(uint8_t abyte)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (nb_buf_remaining() < 1)
 		jtagserv_flush_buffer();
 	info.buf[info.bufidx++] = abyte;
@@ -239,7 +243,7 @@ static void jtagserv_queue_byte(uint8_t abyte)
  * Returns pin value (1 means driven high, 0 mean driven low)
  */
 bool jtagserv_compute_pin(enum gpio_steer steer)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	switch (steer) {
 	case FIXED_0:
 		return 0;
@@ -261,7 +265,7 @@ bool jtagserv_compute_pin(enum gpio_steer steer)
  * Returns the compute bitbang mode byte
  */
 static uint8_t jtagserv_build_out(enum scan_type type)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	uint8_t abyte = 0;
 
 	abyte |= info.tms ? TMS : 0;
@@ -280,21 +284,21 @@ static uint8_t jtagserv_build_out(enum scan_type type)
  * @srst: 1 if SRST is to be asserted
  */
 static int jtagserv_reset(int trst, int srst)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-    //TODO: Implement
-    LOG_INFO("******> IN %s(%d): %s TO BE IMPLEMENTED\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+//    LOG_INFO("******> IN %s(%d): %s TO BE IMPLEMENTED\n", __FILE__, __LINE__, __FUNCTION__);
+//    return ERROR_OK;
     
-    return ERROR_OK;
-    
-    /* ubii stuff. Don't need
 	uint8_t out_value;
 
 	info.trst_asserted = trst;
 	info.srst_asserted = srst;
+
 	out_value = jtagserv_build_out(SCAN_OUT);
+
 	jtagserv_queue_byte(out_value);
 	jtagserv_flush_buffer();
-	*/
+	
+	return  ERROR_OK;
 }
 
 /**
@@ -304,7 +308,7 @@ static int jtagserv_reset(int trst, int srst)
  * Triggers a TMS transition (ie. one JTAG TAP state move).
  */
 static void jtagserv_clock_tms(int tms)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	uint8_t out;
 
 	LOG_DEBUG_IO("(tms=%d)", !!tms);
@@ -321,7 +325,7 @@ static void jtagserv_clock_tms(int tms)
  * See jtagserv_queue_tdi() comment for the usage of this function.
  */
 static void jtagserv_idle_clock(void)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	uint8_t out = jtagserv_build_out(SCAN_OUT);
 
 	LOG_DEBUG_IO(".");
@@ -394,7 +398,7 @@ static void jtagserv_clock_tdi_flip_tms(int tdi, enum scan_type type)
  * the buffer is filled, or if an explicit jtagserv_flush_buffer() is called.
  */
 static void jtagserv_queue_bytes(uint8_t *bytes, int nb_bytes)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	if (info.bufidx + nb_bytes > BUF_LEN) {
 		LOG_ERROR("buggy code, should never queue more that %d bytes",
 			  info.bufidx + nb_bytes);
@@ -424,7 +428,7 @@ static void jtagserv_queue_bytes(uint8_t *bytes, int nb_bytes)
  * low.
  */
 static void jtagserv_tms_seq(const uint8_t *bits, int nb_bits, int skip)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int i;
 
 	LOG_DEBUG_IO("(bits=%02x..., nb_bits=%d)", bits[0], nb_bits);
@@ -478,7 +482,7 @@ static void jtagserv_path_move(struct pathmove_command *cmd)
  * target state. This assumes the current state (tap_get_state()) is correct.
  */
 static void jtagserv_state_move(tap_state_t state, int skip)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	uint8_t tms_scan;
 	int tms_len;
 
@@ -681,10 +685,94 @@ static void jtagserv_stableclocks(int cycles)
  */
 static int jtagserv_scan(struct scan_command *cmd)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+    int ret = ERROR_OK;
+    
+{ //dummy block	
+	BYTE *write_bits;
+	int write_length = jtag_build_buffer(cmd, &write_bits);
+	int write_offset = 0;
+	
+	BYTE *read_bits = calloc(write_length, sizeof(BYTE));
+    int read_length = write_length;
+    int read_offset = 0;
+    
+    int length_dr = write_length;
+
+	enum scan_type type = jtag_scan_type(cmd);
+	static const char * const type2str[] = { "", "SCAN_IN", "SCAN_OUT", "SCAN_IO" };
+	char *log_buf = hexdump(write_bits, DIV_ROUND_UP(write_length, 8));
+	LOG_DEBUG_IO("Writing %s(scan=%s, type=%s, bits=%d, buf=[%s], end_state=%d)", __func__,
+		  cmd->ir_scan ? "IRSCAN" : "DRSCAN",
+		  type2str[type],
+		  write_length, log_buf, cmd->end_state);
+	free(log_buf);
+    
+    AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
+    ret = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
+    if(AJI_NO_ERROR != ret) {
+        LOG_ERROR("Cannot lock device for IR/DR Scan. Return status is %d", ret);
+//        return ERROR_FAIL;
+    }    	    
+    if(cmd->ir_scan) { //IRSCAN
+        LOG_ERROR("Not yet implemented IR SCAN");
+        ret =  AJI_FAILURE;
+    } else { //DRSCAN
+// HACKED version to read one IDCODE, i.e. SOCVHPS. I am supposed to read all IDCODE but not yet successful
+// Running a c_aji_test_logic_reset(open_id) will cause c_aji_access_ir() to fail. The code as it is
+// calls c_aji_test_logic_reset() already, but the commented code below will call it again.
+// However, if I tap in ID_ARM_IDCODE, I will get the ID_CODE for the the TAP out.
+/*
+ret = c_aji_test_logic_reset(open_id);  
+if(AJI_NO_ERROR  != ret) {
+   LOG_ERROR("       Cannot set TAP state to TEST_LOGIC_RESET. Returned %d\n", ret);
+}    
+printf("HelloA %d\n", ret);
+*/
+DWORD captured_ir = 0xFFFF;      
+ret = c_aji_access_ir(open_id, IR_ARM_IDCODE,  &captured_ir, 0);  
+if(AJI_NO_ERROR  != ret) {
+     LOG_ERROR("       Cannot send IDCODE instruction. Returned %d\n", ret);
+}
+
+            ret = c_aji_access_dr(
+	        open_id,  length_dr,  AJI_DR_NO_OPTIMIZATION,
+	        write_offset, write_length, write_bits,
+	        read_offset,  read_length,  read_bits
+	    );
+printf("Hello %d \n", ret);
+printf("                 Return DR buffer reads %02X%02X%02X%02X %02X%02X%02X%02X\n", 
+                            read_bits[3], read_bits[2], read_bits[1], read_bits[0], 
+                            read_bits[7], read_bits[6], read_bits[5], read_bits[4]
+                    );	    
+	    if(AJI_NO_ERROR != ret) {
+	        LOG_ERROR("Error performing  DR Scan. Return status is %d", ret);
+	    }    	    
+    } //end if(cmd->ir_scan)
+    c_aji_unlock(open_id);
+    ret = AJI_NO_ERROR == ret? ERROR_OK : ERROR_FAIL;
+
+    jtag_read_buffer(read_bits,cmd);
+
+    log_buf = hexdump(read_bits, DIV_ROUND_UP(read_length, 8));
+	LOG_DEBUG_IO("Reading %s(scan=%s, type=%s, bits=%d, buf=[%s], end_state=%d)", __func__,
+		  cmd->ir_scan ? "IRSCAN" : "DRSCAN",
+		  type2str[type],
+		  read_length, log_buf, cmd->end_state);
+	free(log_buf);
+    
+    if(write_bits) {
+        free(write_bits);
+    }
+    if(read_bits) {
+        free(read_bits);
+    }
+} //end dummy block
+
+{ /* To Remove Original code */
 	int scan_bits;
 	uint8_t *buf = NULL;
 	enum scan_type type;
-	int ret = ERROR_OK;
+//	int ret = ERROR_OK;
 	static const char * const type2str[] = { "", "SCAN_IN", "SCAN_OUT", "SCAN_IO" };
 	char *log_buf = NULL;
 
@@ -705,7 +793,7 @@ static int jtagserv_scan(struct scan_command *cmd)
 
 	jtagserv_queue_tdi(buf, scan_bits, type);
 
-	ret = jtag_read_buffer(buf, cmd);
+//	ret = jtag_read_buffer(buf, cmd);
 	if (buf)
 		free(buf);
 	/*
@@ -714,6 +802,8 @@ static int jtagserv_scan(struct scan_command *cmd)
 	 * to end_state.
 	 */
 	jtagserv_state_move(cmd->end_state, 1);
+} //end dummy block
+
 	return ret;
 }
 
@@ -726,29 +816,49 @@ static void jtagserv_usleep(int us)
 /* TODO: Confirm I do not need this. It is only called once, at the start
    of the openocd session. With jtagd we don'tneed to do this.
 */
-//static void jtagserv_initial_wipeout(void)
-//{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-//	static uint8_t tms_reset = 0xff;
-//	uint8_t out_value;
-//	uint32_t retlen;
-//	int i;
-//
-//	out_value = jtagserv_build_out(SCAN_OUT);
-//	for (i = 0; i < BUF_LEN; i++)
-//		info.buf[i] = out_value | ((i % 2) ? TCK : 0);
-//
-//	/*
-//	 * Flush JTAGSERV queue fifos
-//	 *  - empty the write FIFO (128 bytes)
-//	 *  - empty the read FIFO (384 bytes)
-//	 */
-//	jtagserv_buf_write(info.buf, BUF_LEN, &retlen);
-//	/*
-//	 * Put JTAG in RESET state (five 1 on TMS)
-//	 */
-//	jtagserv_tms_seq(&tms_reset, 5, 0);
-//	tap_set_state(TAP_RESET);
-//}
+static void jtagserv_initial_wipeout(void)
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+    int ret = AJI_NO_ERROR;
+    
+    /* TODO Original ublast code actually flush IR and DR. Check whether we need to do the same */
+    AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
+    ret = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
+    if(AJI_NO_ERROR != ret) {
+        LOG_ERROR("Cannot lock device for Initial Wipeout. Return status is %d", ret);
+        //Not returning, just hope for the best ;-)
+    }    	    
+
+    ret = c_aji_test_logic_reset( open_id );
+    if(AJI_NO_ERROR != ret) {
+        LOG_ERROR("Cannot perform TLR device for Initial Wipeout. Return status is %d", ret);
+    }    	    
+
+    c_aji_unlock(open_id);
+
+    tap_set_state(TAP_RESET);
+
+    /* TODO ORIGINAL CODE REmove */    
+	static uint8_t tms_reset = 0xff;
+	uint8_t out_value;
+	uint32_t retlen;
+	int i;
+
+	out_value = jtagserv_build_out(SCAN_OUT);
+	for (i = 0; i < BUF_LEN; i++)
+		info.buf[i] = out_value | ((i % 2) ? TCK : 0);
+
+	/*
+	 * Flush JTAGSERV queue fifos
+	 *  - empty the write FIFO (128 bytes)
+	 *  - empty the read FIFO (384 bytes)
+	 */
+	jtagserv_buf_write(info.buf, BUF_LEN, &retlen);
+	/*
+	 * Put JTAG in RESET state (five 1 on TMS)
+	 */
+	jtagserv_tms_seq(&tms_reset, 5, 0);
+	tap_set_state(TAP_RESET);
+}
 
 static int jtagserv_execute_queue(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
@@ -756,12 +866,12 @@ static int jtagserv_execute_queue(void)
 	int ret = ERROR_OK;
 
     /* TODO: Confirm I don't need this. */
-//	static int first_call = 1;
-//	if (first_call) {
-//	    LOG_DEBUG("******> IN %s(%d): %s - First time calling jtagserv_execute_queue() so wipe everything \n", __FILE__, __LINE__, __FUNCTION__);
-//		first_call--;
-//		jtagserv_initial_wipeout();
-//	}
+	static int first_call = 1;
+	if (first_call) {
+	    LOG_DEBUG("******> IN %s(%d): %s - First time calling jtagserv_execute_queue() so wipe everything \n", __FILE__, __LINE__, __FUNCTION__);
+		first_call--;
+		jtagserv_initial_wipeout();
+	}
     if(jtag_command_queue == NULL) {
         LOG_DEBUG("***> IN %s(%d): %s No command queued\n", __FILE__, __LINE__, __FUNCTION__);
     }
@@ -976,85 +1086,6 @@ static AJI_ERROR jtagserv_select_tap(void)
     LOG_INFO("Successfully open TAP device. status = %d", status);
     jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
     return status;
-    
-/******
-
-     if(!jtagservice.chain_pid) {
-        return AJI_CHAIN_NOT_CONFIGURED;
-    }
-    
-    
-    AJI_HARDWARE *hardware = calloc(1, sizeof(AJI_HARDWARE));
-    status = c_aji_find_hardware(jtagservice.in_use_hardware_chain_pid, hardware, 
-                JTAGSERVICE_TIMEOUT_MS
-    );
-    if(AJI_NO_ERROR != status) {
-        LOG_ERROR("Failed to find the chosen cable."
-                  " Return Status is %i\n", status
-        );
-        return status;
-    }
-    
-    status = jtagservice_lock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
-    if (AJI_NO_ERROR != status) { 
-        return status;
-    }
-    
-    DWORD device_count = 5;
-    AJI_DEVICE *device_list =  calloc(device_count, sizeof(AJI_DEVICE)); 
-    status = c_aji_read_device_chain(
-        hardware->chain_id, &device_count, device_list, 1
-    );
-    if(AJI_TOO_MANY_DEVICES == status) {
-        device_list = calloc(device_count, sizeof(AJI_DEVICE)); 
-        status = c_aji_read_device_chain(
-            hardware->chain_id, &device_count, device_list, 1
-        );
-    }    
-    if(AJI_NO_ERROR != status) {
-        LOG_ERROR("Failed to query server for TAP information. "
-                  " Return Status is %i\n", status
-        );
-        LOG_ERROR("Sometimes can get status AJI_CHAIN_NOT_CONFIGURED  = 38. TO investigate why later"); //TODO
-        jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
-        return status;
-    }
-    if(0 == device_count) {
-        LOG_ERROR("JTAG server reports that it has no hardware cable\n");
-        jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
-        return AJI_NO_DEVICES;
-    }
-    LOG_INFO("At present, will select the ARM SOCVHPS with IDCODE %X",
-             IDCODE_SOCVHPS
-    );
-    
-    for(DWORD tap_position=0; tap_position<device_count; ++tap_position) {
-        AJI_DEVICE device = device_list[tap_position];
-        LOG_DEBUG("Detected device (tap_position=%d) device_id=%08X," 
-                  " instruction_length=%d, features=%d, device_name=%s\n", 
-                    tap_position+1, 
-                    device.device_id, device.instruction_length, 
-                    device.features, device.device_name
-        );
-        if( IDCODE_SOCVHPS == device.device_id ) {
-            jtagservice.device_id = device.device_id;
-            jtagservice.device_tap_position = tap_position+1;
-            jtagservice.device_irlen = device.instruction_length;
-            LOG_DEBUG("Found SOCVHPS device at tap_position %d", tap_position+1); 
-        }
-    } //end for tap_position
-    
-    if(0 == jtagservice.device_id) {
-        LOG_DEBUG("No SOCVHPS device found.");
-        jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
-        return AJI_NO_DEVICES;
-    }
-    
-    jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
-    free(device_list);
-    
-    */
-    return AJI_NO_ERROR;
 }
 
 /**
@@ -1090,6 +1121,14 @@ static int jtagserv_init(void)
         return ERROR_JTAG_INIT_FAILED;
     }
     
+    // TAPs are not at TAP_RESET state as we haven't done it yet.
+    // However, at the first call to jtagserv_execute_queue(), 
+    // jtagserv_initial_wipeout will be called and from it, aji_test_logic_reset()
+    // will be called before any processing is done and this would had set
+    // the TAPs at TAP_RESET state before any processing commence. 
+    // As such, we set state to TAP_RESET to enable any process from here to then
+    // to treat TAPs as being at TAP_RESET state.
+    tap_set_state(TAP_RESET);
     return ERROR_OK;
 }
 
