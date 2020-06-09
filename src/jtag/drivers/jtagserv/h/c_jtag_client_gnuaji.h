@@ -73,6 +73,16 @@ AJI_API AJI_ERROR c_aji_open_device_a(AJI_CHAIN_ID chain_id, DWORD tap_position,
 } 
 
 inline
+AJI_API AJI_ERROR c_aji_close_device(AJI_OPEN_ID open_id) {
+    return _Z16aji_close_deviceP8AJI_OPEN(open_id);
+}
+
+inline
+AJI_API AJI_ERROR c_aji_open_entire_device_chain(AJI_CHAIN_ID chain_id, AJI_OPEN_ID * open_id, AJI_CHAIN_TYPE style, const char * application_name) {
+    return  _Z28aji_open_entire_device_chainP9AJI_CHAINPP8AJI_OPEN14AJI_CHAIN_TYPEPKc(chain_id, open_id, style, application_name);
+}
+
+inline
 AJI_API AJI_ERROR c_aji_test_logic_reset(AJI_OPEN_ID open_id) {
     return _Z20aji_test_logic_resetP8AJI_OPEN(open_id);
 }
