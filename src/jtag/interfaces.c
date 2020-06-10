@@ -40,7 +40,9 @@
  * that contain an adapter_driver structure that can added to this list.
  */
 
-#if BUILD_ZY1000 == 1
+#if BUILD_MINIJTAGSERV == 1
+extern struct adapter_driver minijtagserv_adapter_driver;
+#elif BUILD_ZY1000 == 1
 extern struct adapter_driver zy1000_adapter_driver;
 #elif defined(BUILD_MINIDRIVER_DUMMY)
 extern struct adapter_driver minidummy_adapter_driver;
@@ -154,7 +156,9 @@ extern struct adapter_driver stlink_dap_adapter_driver;
  * or some number of standard driver interfaces, never both.
  */
 struct adapter_driver *adapter_drivers[] = {
-#if BUILD_ZY1000 == 1
+#if BUILD_MINIJTAGSERV == 1
+        &minijtagserv_adapter_driver,
+#elif BUILD_ZY1000 == 1
 		&zy1000_adapter_driver,
 #elif defined(BUILD_MINIDRIVER_DUMMY)
 		&minidummy_adapter_driver,

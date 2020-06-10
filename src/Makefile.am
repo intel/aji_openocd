@@ -27,6 +27,11 @@ if JTAGSERV_DRIVER
 %C%_openocd_LDADD += -ljtag_client -lccl_ver -lSafeString
 endif
 
+if MINIJTAGSERV_DRIVER
+%C%_openocd_LDFLAGS += -L%D%/jtag/minijtagserv/lib64
+%C%_openocd_LDADD += -ljtag_client -lccl_ver -lSafeString
+endif
+
 %C%_libopenocd_la_CPPFLAGS =
 
 # banner output includes RELSTR appended to $VERSION from the configure script

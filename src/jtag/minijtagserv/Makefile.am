@@ -47,6 +47,10 @@ noinst_LTLIBRARIES += %D%/libocdminijtagserv.la
 MINIJTAGSERV_SRC = \
     %D%/h/aji.h %D%/h/c_aji.h  %D%/c2_aji.h \
     %D%/h/jtag_client_gnuaji.h %D%/h/c_jtag_client_gnuaji.h  \
+<<<<<<< HEAD
+=======
+    %D%/jtagservice.h %D%/jtagservice.c \
+>>>>>>> minijtagserv: Can compile and run
     %D%/minijtagserv.c
 
 

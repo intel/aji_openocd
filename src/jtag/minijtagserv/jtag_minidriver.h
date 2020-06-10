@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /***************************************************************************
  *   Copyright (C) 2007-2010 by Øyvind Harboe                              *
  *                                                                         *
@@ -180,3 +181,6 @@ static inline void shiftValueInner(const enum tap_state state,
 	data2, \
 	data3)
 #endif
+=======
+/* empty. It exists because Makefile.am wants it */
+>>>>>>> minijtagserv: Can compile and run

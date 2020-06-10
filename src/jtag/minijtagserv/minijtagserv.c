@@ -23,6 +23,40 @@
 #include <target/embeddedice.h>
 #include <jtag/minidriver.h>
 #include <jtag/interface.h>
+<<<<<<< HEAD
+=======
+
+#include "log.h"
+
+#include "c_jtag_client_gnuaji.h"
+#include "jtagservice.h"
+
+
+#define IDCODE_SOCVHPS (0x4BA00477)
+
+
+static struct jtagservice_record jtagservice  = {
+    .hardware_count = 0,
+//    .hardware_list = NULL,
+//    .server_version_info_list = NULL,
+//    .in_use_hardware = NULL,
+    .in_use_hardware_index = 0,
+    .in_use_hardware_chain_pid = 0,
+    
+    .device_count = 0,
+//    .device_list = NULL,
+
+    .in_use_device_tap_position = 0,
+//    .in_use_device = NULL,
+    .in_use_device_id = 0,
+    .in_use_device_irlen = 0,
+    
+    .locked    = NONE,
+};
+
+
+
+>>>>>>> minijtagserv: Can compile and run
 struct jtag_callback_entry {
 	struct jtag_callback_entry *next;
 
@@ -97,13 +131,228 @@ static struct jtag_interface minijtagserv_interface = {
 	.execute_queue = NULL,
 };
 
+<<<<<<< HEAD
+=======
+
+/**
+ * Find the hardware cable from the jtag server
+ * @pos Set jtagservice chain detail if return successful.
+ */
+static AJI_ERROR jtagserv_select_cable(void)
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+    AJI_ERROR status = AJI_NO_ERROR;
+
+    LOG_INFO("Querying JTAG Server ...");
+ 
+    status = c_aji_get_hardware2( 
+        &(jtagservice.hardware_count), 
+        jtagservice.hardware_list, 
+        jtagservice.server_version_info_list, 
+        JTAGSERVICE_TIMEOUT_MS
+    );
+    if(AJI_TOO_MANY_DEVICES == status) {
+        jtagservice.hardware_list = 
+            calloc(jtagservice.hardware_count, sizeof(AJI_HARDWARE));
+        jtagservice.server_version_info_list = 
+            calloc(jtagservice.hardware_count, sizeof(char*));
+        if (   jtagservice.hardware_list == NULL 
+            || jtagservice.server_version_info_list == NULL
+        ) {
+            return AJI_NO_MEMORY;
+        }
+        status = c_aji_get_hardware2( 
+            &(jtagservice.hardware_count), 
+            jtagservice.hardware_list, 
+            jtagservice.server_version_info_list, 
+            JTAGSERVICE_TIMEOUT_MS
+        );
+    } //end if (AJI_TOO_MANY_DEVICES)
+    
+    if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Failed to query server for hardware cable information. "
+                  " Return Status is %i\n", status
+        );
+        return status;
+    }
+    if(0 == jtagservice.hardware_count) {
+        LOG_ERROR("JTAG server reports that it has no hardware cable\n");
+        return AJI_BAD_HARDWARE;
+    }
+    LOG_INFO("At present, only the first hardware cable will be used"
+             " [%d cable(s) detected]", 
+             jtagservice.hardware_count
+    );
+
+    jtagservice.in_use_hardware = &(jtagservice.hardware_list[0]);
+    jtagservice.in_use_hardware_chain_pid = (jtagservice.in_use_hardware)->persistent_id;
+    if(LOG_LEVEL_IS(LOG_LVL_INFO)) {
+        AJI_HARDWARE hw = *(jtagservice.in_use_hardware);
+        LOG_INFO("Cable %u: device_name=%s, hw_name=%s, server=%s, port=%s,"
+                  " chain_id=%p, persistent_id=%d, chain_type=%d, features=%d,"
+                  " server_version_info=%s\n", 
+              1, hw.device_name, hw.hw_name, hw.server, hw.port,  
+              hw.chain_id, hw.persistent_id, hw.chain_type, hw.features,
+              jtagservice.server_version_info_list[0]
+        );
+    }
+    return status;
+}
+
+
+/**
+ * Select the TAP device to use
+ * @pre The chain is already acquired, @see jtagserv_select_cable()
+ * @pos jtagservice will be populated with the selected tap
+ */
+static AJI_ERROR jtagserv_select_tap(void)
+{   LOG_DEBUG("***> IN %s(%d): %s %d\n", __FILE__, __LINE__, __FUNCTION__, jtagservice.in_use_hardware_chain_pid);
+    AJI_ERROR status = AJI_NO_ERROR;
+
+    status = jtagservice_lock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
+    if (AJI_NO_ERROR != status) { 
+        return status;
+    }
+
+    AJI_HARDWARE hw;
+    status = c_aji_find_hardware(jtagservice.in_use_hardware_chain_pid, &hw, JTAGSERVICE_TIMEOUT_MS);
+    if(AJI_NO_ERROR != status){
+            status = c_aji_unlock_chain(hw.chain_id);        
+    }
+    status = c_aji_read_device_chain(
+        hw.chain_id, 
+        &(jtagservice.device_count), 
+        jtagservice.device_list, 
+        1
+    );
+    if(AJI_TOO_MANY_DEVICES == status) {
+        jtagservice.device_list = calloc(jtagservice.device_count, sizeof(AJI_DEVICE)); 
+        jtagservice.device_open_id_list = calloc(jtagservice.device_count, sizeof(AJI_OPEN_ID)); 
+        status = c_aji_read_device_chain(
+            hw.chain_id, 
+            &(jtagservice.device_count), 
+            jtagservice.device_list,
+            1
+        );
+    }    
+ 
+    if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Failed to query server for TAP information. "
+                  " Return Status is %i\n", status
+        );
+        jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
+        return status;
+    }
+
+    if(0 == jtagservice.device_count) {
+        LOG_ERROR("JTAG server reports that it has no TAP attached to the cable");
+        jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
+        return AJI_NO_DEVICES;
+    }
+    LOG_INFO("At present, will not honour OpenOCD target selection and"
+             " select the ARM SOCVHPS with IDCODE %X automatically",
+             IDCODE_SOCVHPS
+    );
+    LOG_INFO("Found %d TAP devices", jtagservice.device_count);
+    for(DWORD tap_position=0; tap_position<jtagservice.device_count; ++tap_position) {
+        AJI_DEVICE device = jtagservice.device_list[tap_position];
+        LOG_DEBUG("Detected device (tap_position=%d) device_id=%08X," 
+                  " instruction_length=%d, features=%d, device_name=%s", 
+                    tap_position+1, 
+                    device.device_id, device.instruction_length, 
+                    device.features, device.device_name
+        );
+        if( IDCODE_SOCVHPS == device.device_id ) {
+            jtagservice.in_use_device_id = device.device_id;
+            jtagservice.in_use_device_tap_position = tap_position;
+            jtagservice.in_use_device_irlen = device.instruction_length;
+            LOG_INFO("Found SOCVHPS device at tap_position %d", tap_position); 
+        }
+    } //end for tap_position
+    
+    if(0 == jtagservice.in_use_device_id) {
+        LOG_ERROR("No SOCVHPS device found.");
+        jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
+        return AJI_NO_DEVICES;
+    }
+    
+    AJI_CLAIM2 claims[] = {
+        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_IDCODE },
+    };
+    DWORD claims_n = sizeof(claims) / sizeof(AJI_CLAIM2);
+    
+    status = c_aji_open_device_a(jtagservice.in_use_hardware->chain_id,
+                                 jtagservice.in_use_device_tap_position,
+                                 &(jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position]),
+                                 claims, claims_n, "SOCVHPS"
+    );
+    if( AJI_NO_ERROR != status) {
+        LOG_ERROR("Cannot open device SOCVHPS.");
+        jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
+        return status;
+    }
+    LOG_INFO("Successfully open TAP device. status = %d", status);
+    jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
+    return status;
+}
+
+/**
+ * jtagserv_init - Contact the JTAG Server
+ *
+ * Returns ERROR_OK if JTAG Server found.
+ * TODO: Write a TCL Command that allows me to specify the jtagserver config file
+ */
+static int minijtagserv_init(void)
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_DEBUG("Capture server\n");
+    char *quartus_jtag_client_config = getenv("QUARTUS_JTAG_CLIENT_CONFIG");
+    if (quartus_jtag_client_config != NULL) {
+        LOG_INFO("Configuration file, set via QUARTUS_JTAG_CLIENT_CONFIG, is '%s'\n", 
+               quartus_jtag_client_config
+        );
+    } else {
+        LOG_INFO("Environment variable QUARTUS_JTAG_CLIENT_CONFIG not set\n"); //TODO: Remove this message, useful for debug will be cause user alarm unnecessarily
+    }
+    
+    AJI_ERROR status = AJI_NO_ERROR;
+    
+    status = jtagserv_select_cable();
+    if (AJI_NO_ERROR != status) {
+        LOG_ERROR("Cannot select JTAG Cable. Return status is %d", status);
+        jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
+        return ERROR_JTAG_INIT_FAILED;
+    }
+    
+    status = jtagserv_select_tap();
+    if (AJI_NO_ERROR != status) {
+        LOG_ERROR("Cannot select TAP device. Return status is %d", status);
+        return ERROR_JTAG_INIT_FAILED;
+    }
+    
+    //This driver automanage the tap_state. Hence, this is just
+    // to tell the targets which state we think our TAP interface is at.
+    tap_set_state(TAP_RESET);
+    return ERROR_OK;
+}
+
+static int minijtagserv_quit(void)
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+    //jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
+    return ERROR_OK;
+}
+
+>>>>>>> minijtagserv: Can compile and run
 struct adapter_driver minijtagserv_adapter_driver = {
 	.name = "minijtagserv",
 	.transports = jtag_only,
 	.commands = NULL,
 
+<<<<<<< HEAD
 	.init = NULL,
 	.quit = NULL,
+=======
+	.init = minijtagserv_init,
+	.quit = minijtagserv_quit,
+>>>>>>> minijtagserv: Can compile and run
 	.speed = NULL,
 	.khz = NULL,
 	.speed_div = NULL,
