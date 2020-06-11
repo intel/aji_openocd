@@ -44,6 +44,10 @@
 #include "svf/svf.h"
 #include "xsvf/xsvf.h"
 
+#if BUILD_MINIJTAGSERVE
+extern int minijtagserv_examine_chain(void);
+#endif
+
 /** The number of JTAG queue flushes (for profiling and debugging purposes). */
 static int jtag_flush_queue_count;
 
@@ -1093,6 +1097,14 @@ void jtag_sleep(uint32_t us)
 /* a larger IR length than we ever expect to autoprobe */
 #define JTAG_IRLEN_MAX          60
 
+#if BUILD_MINIJTAGSERV
+/* Minijtagserv should define its own jtag_examine_chain(). All jtag_examine_*()
+ * in this file are there to support jtag_examine_chain(). As such minijtagserv
+ * need not define them.
+ */
+extern int jtag_examine_chain(void);
+
+#else /* BUILD_MINIJTAGSERV */
 static int jtag_examine_chain_execute(uint8_t *idcode_buffer, unsigned num_idcode)
 {
 	struct scan_field field = {
@@ -1331,6 +1343,7 @@ out:
 	free(idcode_buffer);
 	return retval;
 }
+#endif /* BUILD_MINIJTAGSERV */
 
 /*
  * Validate the date loaded by entry to the Capture-IR state, to help
@@ -1647,8 +1660,6 @@ int jtag_init_inner(struct command_context *cmd_ctx)
 		jtag_notify_event(JTAG_TAP_EVENT_SETUP);
 	else
 		LOG_WARNING("Bypassing JTAG setup events due to errors");
-
-
 	return ERROR_OK;
 }
 

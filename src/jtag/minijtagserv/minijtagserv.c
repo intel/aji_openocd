@@ -23,11 +23,14 @@
 #include <target/embeddedice.h>
 #include <jtag/minidriver.h>
 #include <jtag/interface.h>
+#include <helper/jep106.h>
 
 #include "log.h"
 
 #include "c_jtag_client_gnuaji.h"
 #include "jtagservice.h"
+
+extern void jtag_tap_add(struct jtag_tap *t);
 
 
 #define IDCODE_SOCVHPS (0x4BA00477)
@@ -60,7 +63,7 @@ static struct jtagservice_record jtagservice  = {
 /*
  * Access functions to lowlevel driver, agnostic of libftdi/libftdxx
  */
-static char *hexdump(uint8_t *buf, unsigned int size)
+static char *hexdump(const uint8_t *buf, const unsigned int size)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	unsigned int i;
 	char *str = calloc(size * 2 + 1, 1);
@@ -104,6 +107,122 @@ int arm11_run_instr_data_to_core_noack_inner(struct jtag_tap *tap, uint32_t opco
 	return arm11_run_instr_data_to_core_noack_inner_default(tap, opcode, data, count);
 }
 
+
+//=================================
+// Bits that have to be implemented/copied for src/jtag/core.c
+//=================================
+
+#define JTAG_MAX_AUTO_TAPS 20
+
+/* copied from src/jtag/core.c */
+#define EXTRACT_JEP106_BANK(X) (((X) & 0xf00) >> 8)
+#define EXTRACT_JEP106_ID(X)   (((X) & 0xfe) >> 1)
+#define EXTRACT_MFG(X)  (((X) & 0xffe) >> 1)
+#define EXTRACT_PART(X) (((X) & 0xffff000) >> 12)
+#define EXTRACT_VER(X)  (((X) & 0xf0000000) >> 28)
+
+/* copied from src/jtag/core.c */
+static void jtag_examine_chain_display(enum log_levels level, const char *msg,
+	const char *name, uint32_t idcode)
+{
+	log_printf_lf(level, __FILE__, __LINE__, __func__,
+		"JTAG tap: %s %16.16s: 0x%08x "
+		"(mfg: 0x%3.3x (%s), part: 0x%4.4x, ver: 0x%1.1x)",
+		name, msg,
+		(unsigned int)idcode,
+		(unsigned int)EXTRACT_MFG(idcode),
+		jep106_manufacturer(EXTRACT_JEP106_BANK(idcode), EXTRACT_JEP106_ID(idcode)),
+		(unsigned int)EXTRACT_PART(idcode),
+		(unsigned int)EXTRACT_VER(idcode));
+}
+
+/* copied from src/jtag/core.c */
+static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
+{
+
+	if (tap->expected_ids_cnt == 0 || !tap->hasidcode)
+		return true;
+
+	/* optionally ignore the JTAG version field - bits 28-31 of IDCODE */
+	uint32_t mask = tap->ignore_version ? ~(0xfU << 28) : ~0U;
+	uint32_t idcode = tap->idcode & mask;
+
+	/* Loop over the expected identification codes and test for a match */
+	for (unsigned ii = 0; ii < tap->expected_ids_cnt; ii++) {
+		uint32_t expected = tap->expected_ids[ii] & mask;
+
+		if (idcode == expected)
+			return true;
+
+		/* treat "-expected-id 0" as a "don't-warn" wildcard */
+		if (0 == tap->expected_ids[ii])
+			return true;
+	}
+
+	/* If none of the expected ids matched, warn */
+	jtag_examine_chain_display(LOG_LVL_WARNING, "UNEXPECTED",
+		tap->dotted_name, tap->idcode);
+	for (unsigned ii = 0; ii < tap->expected_ids_cnt; ii++) {
+		char msg[32];
+
+		snprintf(msg, sizeof(msg), "expected %u of %u", ii + 1, tap->expected_ids_cnt);
+		jtag_examine_chain_display(LOG_LVL_ERROR, msg,
+			tap->dotted_name, tap->expected_ids[ii]);
+	}
+	return false;
+}
+
+/**
+ * @pre jtagservice is filled with device inforamtion. That should
+ *      already been done during adapter initialization via 
+ *      @c minijtagserv_init() function.
+ */
+int jtag_examine_chain(void)
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+    //AJI_ERROR status = AJI_NO_ERROR;
+    int retval = ERROR_OK;
+    
+    struct jtag_tap *tap = jtag_tap_next_enabled(NULL);
+    unsigned num_taps = jtagservice.device_count;
+    unsigned autocount = 0;
+    unsigned t = 0;
+    for(t = 0, tap = jtag_tap_next_enabled(NULL); 
+        t<num_taps; 
+        ++t, tap = jtag_tap_next_enabled(tap)) {
+        AJI_DEVICE device = jtagservice.device_list[t];
+        
+        if(tap == NULL) {
+        	tap = calloc(1, sizeof *tap);
+			if (!tap) {
+				return ERROR_FAIL;
+			}
+
+			tap->chip = alloc_printf("auto%u", autocount++);
+			tap->tapname = strdup("tap");
+			tap->dotted_name = alloc_printf("%s.%s", tap->chip, tap->tapname);
+
+			tap->hasidcode = true;
+			tap->idcode = device.device_id;
+
+			tap->ir_length = device.instruction_length;
+			tap->ir_capture_mask = 0x03;
+			tap->ir_capture_value = 0x01;
+
+			tap->enabled = 1;
+
+			jtag_tap_init(tap);
+			
+			jtag_examine_chain_display(LOG_LVL_INFO, "tap/device found", tap->dotted_name, tap->idcode);
+
+        } 
+        
+ 		/* ensure the TAP ID matches what was expected */
+		if (!jtag_examine_chain_match_tap(tap))
+			retval = ERROR_JTAG_INIT_SOFT_FAIL;
+
+    } //end for t
+    return ERROR_OK;
+}
 
 //=================================
 // Callbacks
@@ -389,7 +508,7 @@ static int minijtagserv_quit(void)
 }
 
 int interface_jtag_execute_queue(void)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
@@ -406,6 +525,18 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
 int interface_jtag_add_plain_ir_scan(int num_bits, const uint8_t *out_bits,
 		uint8_t *in_bits, tap_state_t state)
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+
+    {
+    int size = DIV_ROUND_UP(num_bits, 8);
+	char *outbits = hexdump(out_bits, size);
+    char *inbits  = hexdump(in_bits,  size);
+    
+	LOG_INFO("out_bits (size=%d, buf=[%s]) -> %u", size, outbits, num_bits);
+	LOG_INFO("in_bits (size=%d, buf=[%s]) -> %u", size, inbits, num_bits);
+	free(outbits);
+	free(inbits);
+    }
+
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
@@ -422,6 +553,18 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 int interface_jtag_add_plain_dr_scan(int num_bits, const uint8_t *out_bits,
 		uint8_t *in_bits, tap_state_t state)
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+
+    {
+    int size = DIV_ROUND_UP(num_bits, 8);
+	char *outbits = hexdump(out_bits, size);
+    char *inbits  = hexdump(in_bits,  size);
+    
+	LOG_INFO("out_bits (size=%d, buf=[%s]) -> %u", size, outbits, num_bits);
+	LOG_INFO("in_bits (size=%d, buf=[%s]) -> %u", size, inbits, num_bits);
+	free(outbits);
+	free(inbits);
+    }
+
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
@@ -429,13 +572,34 @@ int interface_jtag_add_plain_dr_scan(int num_bits, const uint8_t *out_bits,
 
 int interface_jtag_add_tlr()
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-	/* synchronously do the operation here */
 
-	return ERROR_OK;
+	/* synchronously do the operation here */
+	AJI_ERROR status = AJI_NO_ERROR;
+	AJI_OPEN_ID open_id = 
+        jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
+
+    status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
+    if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Cannot lock device chain. Return status is %d\n", status);
+        return ERROR_FAIL;
+    }
+    
+    status = c_aji_test_logic_reset(open_id);
+    if(AJI_NO_ERROR == status) {
+        tap_set_state(TAP_RESET);
+    } else {
+        LOG_ERROR("Unexpected error setting TAPs to TLR state. Return status is %d\n", status);
+    }
+    
+    AJI_ERROR status2 = c_aji_unlock(open_id);
+    if(AJI_NO_ERROR != status) {
+        LOG_WARNING("Unexpected error unlocking device chain. Return status is %d\n", status2);
+    }
+	return (status || status2) ? ERROR_FAIL : ERROR_OK;
 }
 
 int interface_jtag_add_reset(int req_trst, int req_srst)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_INFO("***> IN %s(%d): %s req_trst=%d, req_srst=%d\n", __FILE__, __LINE__, __FUNCTION__, req_trst, req_srst);
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
@@ -449,20 +613,35 @@ int interface_jtag_add_runtest(int num_cycles, tap_state_t state)
 }
 
 int interface_jtag_add_clocks(int num_cycles)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_INFO("***> IN %s(%d): %s num_cycyles=%d\n", __FILE__, __LINE__, __FUNCTION__, num_cycles);
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
 }
 
 int interface_jtag_add_sleep(uint32_t us)
-{
+{   LOG_INFO("***> IN %s(%d): %s us=%d\n", __FILE__, __LINE__, __FUNCTION__, us);
+
 	jtag_sleep(us);
 	return ERROR_OK;
 }
 
 int interface_jtag_add_pathmove(int num_states, const tap_state_t *path)
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+
+    { 
+    LOG_INFO("Transition from state %s to %s in %d steps. Path:", 
+             tap_state_name(cmd_queue_cur_state),
+             tap_state_name(path[num_states] -1),
+             num_states
+    );
+    printf("  %s", tap_state_name(cmd_queue_cur_state));
+    for (int i=0; i<num_states; ++i) {
+        printf(" ->$s", tap_state_name(path[i]));
+    }
+    printf("\n");
+    }
+
 	int state_count;
 	int tms = 0;
 
