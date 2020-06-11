@@ -23,8 +23,6 @@
 #include <target/embeddedice.h>
 #include <jtag/minidriver.h>
 #include <jtag/interface.h>
-<<<<<<< HEAD
-=======
 
 #include "log.h"
 
@@ -55,8 +53,62 @@ static struct jtagservice_record jtagservice  = {
 };
 
 
+//=================================
+// Helpers
+//=================================
 
->>>>>>> minijtagserv: Can compile and run
+/*
+ * Access functions to lowlevel driver, agnostic of libftdi/libftdxx
+ */
+static char *hexdump(uint8_t *buf, unsigned int size)
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+	unsigned int i;
+	char *str = calloc(size * 2 + 1, 1);
+
+	for (i = 0; i < size; i++)
+		sprintf(str + 2*i, "%02x", buf[i]);
+	return str;
+}
+
+//=================================
+// Bits that have to be implemented for ARM
+//=================================
+
+/**
+ * This is an inner loop of the open loop DCC write of data to ARM target
+ * \note It is a direct copy from \see embededdedice.c
+ *       \file embededdedice.c specifically requested that minidriver provides its own
+ *             implementation
+ */
+void embeddedice_write_dcc(struct jtag_tap *tap, int reg_addr, const uint8_t *buffer,
+		int little, int count)
+{
+	int i;
+	for (i = 0; i < count; i++) {
+		embeddedice_write_reg_inner(tap, reg_addr, fast_target_buffer_get_u32(buffer, little));
+		buffer += 4;
+	}
+}
+
+/**
+ * This is an inner loop of the open loop DCC write of data to ARM target
+ * \note It is a direct copy from \see arm11_dbgtap.c
+ *       \file arm11_dbgtap.c specifically requested that minidriver provides its own
+ *             implementation or copy the default implementation. We copied the default.
+ */
+int arm11_run_instr_data_to_core_noack_inner(struct jtag_tap *tap, uint32_t opcode,
+		uint32_t *data, size_t count)
+{
+	int arm11_run_instr_data_to_core_noack_inner_default(struct jtag_tap *tap, \
+			uint32_t opcode, uint32_t *data, size_t count);
+	return arm11_run_instr_data_to_core_noack_inner_default(tap, opcode, data, count);
+}
+
+
+//=================================
+// Callbacks
+//=================================
+
 struct jtag_callback_entry {
 	struct jtag_callback_entry *next;
 
@@ -126,13 +178,9 @@ void jtag_add_callback4(jtag_callback_t f, jtag_callback_data_t data0,
 
 
 
-
-static struct jtag_interface minijtagserv_interface = {
-	.execute_queue = NULL,
-};
-
-<<<<<<< HEAD
-=======
+//=================================
+// driver
+//=================================
 
 /**
  * Find the hardware cable from the jtag server
@@ -340,28 +388,6 @@ static int minijtagserv_quit(void)
     return ERROR_OK;
 }
 
->>>>>>> minijtagserv: Can compile and run
-struct adapter_driver minijtagserv_adapter_driver = {
-	.name = "minijtagserv",
-	.transports = jtag_only,
-	.commands = NULL,
-
-<<<<<<< HEAD
-	.init = NULL,
-	.quit = NULL,
-=======
-	.init = minijtagserv_init,
-	.quit = minijtagserv_quit,
->>>>>>> minijtagserv: Can compile and run
-	.speed = NULL,
-	.khz = NULL,
-	.speed_div = NULL,
-	.power_dropout = NULL,
-	.srst_asserted = NULL,
-
-	.jtag_ops = &minijtagserv_interface,
-};
-
 int interface_jtag_execute_queue(void)
 {
 	/* synchronously do the operation here */
@@ -371,7 +397,7 @@ int interface_jtag_execute_queue(void)
 
 int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field *fields,
 		tap_state_t state)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
@@ -379,7 +405,7 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
 
 int interface_jtag_add_plain_ir_scan(int num_bits, const uint8_t *out_bits,
 		uint8_t *in_bits, tap_state_t state)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
@@ -387,7 +413,7 @@ int interface_jtag_add_plain_ir_scan(int num_bits, const uint8_t *out_bits,
 
 int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 		const struct scan_field *fields, tap_state_t state)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
@@ -395,35 +421,35 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 
 int interface_jtag_add_plain_dr_scan(int num_bits, const uint8_t *out_bits,
 		uint8_t *in_bits, tap_state_t state)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
 }
 
 int interface_jtag_add_tlr()
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
 }
 
 int interface_jtag_add_reset(int req_trst, int req_srst)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
 }
 
 int interface_jtag_add_runtest(int num_cycles, tap_state_t state)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
 }
 
 int interface_jtag_add_clocks(int num_cycles)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
@@ -436,7 +462,7 @@ int interface_jtag_add_sleep(uint32_t us)
 }
 
 int interface_jtag_add_pathmove(int num_states, const tap_state_t *path)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	int state_count;
 	int tms = 0;
 
@@ -469,30 +495,30 @@ int interface_jtag_add_pathmove(int num_states, const tap_state_t *path)
 }
 
 int interface_add_tms_seq(unsigned num_bits, const uint8_t *seq, enum tap_state state)
-{
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
 }
 
-void embeddedice_write_dcc(struct jtag_tap *tap, int reg_addr, const uint8_t *buffer,
-		int little, int count)
-{
-	int i;
-	for (i = 0; i < count; i++) {
-		embeddedice_write_reg_inner(tap, reg_addr, fast_target_buffer_get_u32(buffer, little));
-		buffer += 4;
-	}
-}
 
-int arm11_run_instr_data_to_core_noack_inner(struct jtag_tap *tap, uint32_t opcode,
-		uint32_t *data, size_t count)
-{
-	int arm11_run_instr_data_to_core_noack_inner_default(struct jtag_tap *tap, \
-			uint32_t opcode, uint32_t *data, size_t count);
-	return arm11_run_instr_data_to_core_noack_inner_default(tap, opcode, data, count);
-}
+static struct jtag_interface minijtagserv_interface = {
+	.execute_queue = NULL,
+};
 
+struct adapter_driver minijtagserv_adapter_driver = {
+	.name = "minijtagserv",
+	.transports = jtag_only,
+	.commands = NULL,
 
+	.init = minijtagserv_init,
+	.quit = minijtagserv_quit,
+	.speed = NULL,
+	.khz = NULL,
+	.speed_div = NULL,
+	.power_dropout = NULL,
+	.srst_asserted = NULL,
 
+	.jtag_ops = &minijtagserv_interface,
+};
 
