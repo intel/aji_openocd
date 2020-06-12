@@ -43,6 +43,11 @@ AJI_API AJI_ERROR c_aji_lock(AJI_OPEN_ID open_id, DWORD timeout, AJI_PACK_STYLE 
 }
 
 inline
+AJI_API AJI_ERROR c_aji_unlock_lock_chain(AJI_OPEN_ID unlock_id, AJI_CHAIN_ID lock_id) {
+    return _Z21aji_unlock_lock_chainP8AJI_OPENP9AJI_CHAIN(unlock_id, lock_id);
+}
+
+inline
 AJI_API AJI_ERROR c_aji_unlock(AJI_OPEN_ID open_id) {   
     return _Z10aji_unlockP8AJI_OPEN(open_id);
 }
