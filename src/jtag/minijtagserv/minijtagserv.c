@@ -554,7 +554,35 @@ int interface_jtag_execute_queue(void)
 
 int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field *fields,
 		tap_state_t state)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_INFO("***> IN %s(%d): %s", __FILE__, __LINE__, __FUNCTION__);
+    {
+        LOG_INFO("tap=0x%X, num_bits=%d state=(0x%d) %s:", active->idcode, fields->num_bits, state, tap_state_name(state));
+    	
+    	int size = DIV_ROUND_UP(fields->num_bits, 8);
+    	char *value = hexdump(fields->out_value, size);
+        LOG_INFO("  out_value  (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+        free(value);
+        if(fields->in_value) {
+            value = hexdump(fields->in_value, size);
+            LOG_INFO("  in_value   (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+            free(value);
+        } else {
+            LOG_INFO("  in_value  : <NONE>");
+        }
+        if(fields->check_value) {
+            value = hexdump(fields->check_value, size);
+            LOG_INFO("  check_value (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+            free(value);
+
+            value = hexdump(fields->check_mask, size);
+            LOG_INFO("  check_mask  (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+            free(value);
+        } else {
+            LOG_INFO(" check_value : <NONE>");
+            LOG_INFO(" check_mask  : <NONE>");
+        }
+        printf("\n");
+    }
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
@@ -569,8 +597,8 @@ int interface_jtag_add_plain_ir_scan(int num_bits, const uint8_t *out_bits,
 	char *outbits = hexdump(out_bits, size);
     char *inbits  = hexdump(in_bits,  size);
     
-	LOG_INFO("out_bits (size=%d, buf=[%s]) -> %u", size, outbits, num_bits);
-	LOG_INFO("in_bits (size=%d, buf=[%s]) -> %u", size, inbits, num_bits);
+	LOG_INFO("  out_bits (size=%d, buf=[%s]) -> %u", size, outbits, num_bits);
+	LOG_INFO("  in_bits (size=%d, buf=[%s]) -> %u", size, inbits, num_bits);
 	free(outbits);
 	free(inbits);
     }
@@ -583,6 +611,34 @@ int interface_jtag_add_plain_ir_scan(int num_bits, const uint8_t *out_bits,
 int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 		const struct scan_field *fields, tap_state_t state)
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+    {
+        LOG_INFO("tap=0x%X, num_bits=%d state=(0x%d) %s:", active->idcode, fields->num_bits, state, tap_state_name(state));
+    	
+    	int size = DIV_ROUND_UP(fields->num_bits, 8);
+    	char *value = hexdump(fields->out_value, size);
+        LOG_INFO("  out_value  (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+        free(value);
+        if(fields->in_value) {
+            value = hexdump(fields->in_value, size);
+            LOG_INFO("  in_value   (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+            free(value);
+        } else {
+            LOG_INFO("  in_value  : <NONE>");
+        }
+        if(fields->check_value) {
+            value = hexdump(fields->check_value, size);
+            LOG_INFO("  check_value (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+            free(value);
+
+            value = hexdump(fields->check_mask, size);
+            LOG_INFO("  check_mask  (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+            free(value);
+        } else {
+            LOG_INFO(" check_value : <NONE>");
+            LOG_INFO(" check_mask  : <NONE>");
+        }
+        printf("\n");
+    }
 	/* synchronously do the operation here */
 
 	return ERROR_OK;
@@ -597,8 +653,8 @@ int interface_jtag_add_plain_dr_scan(int num_bits, const uint8_t *out_bits,
 	char *outbits = hexdump(out_bits, size);
     char *inbits  = hexdump(in_bits,  size);
     
-	LOG_INFO("out_bits (size=%d, buf=[%s]) -> %u", size, outbits, num_bits);
-	LOG_INFO("in_bits (size=%d, buf=[%s]) -> %u", size, inbits, num_bits);
+	LOG_INFO("  out_bits (size=%d, buf=[%s]) -> %u", size, outbits, num_bits);
+	LOG_INFO("  in_bits (size=%d, buf=[%s]) -> %u", size, inbits, num_bits);
 	free(outbits);
 	free(inbits);
     }
