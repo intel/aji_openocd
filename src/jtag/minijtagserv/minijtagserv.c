@@ -55,7 +55,6 @@ static struct jtagservice_record jtagservice  = {
     .locked    = NONE,
 };
 
-
 //=================================
 // Helpers
 //=================================
@@ -124,7 +123,7 @@ int arm11_run_instr_data_to_core_noack_inner(struct jtag_tap *tap, uint32_t opco
 /* copied from src/jtag/core.c */
 static void jtag_examine_chain_display(enum log_levels level, const char *msg,
 	const char *name, uint32_t idcode)
-{
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	log_printf_lf(level, __FILE__, __LINE__, __func__,
 		"JTAG tap: %s %16.16s: 0x%08x "
 		"(mfg: 0x%3.3x (%s), part: 0x%4.4x, ver: 0x%1.1x)",
@@ -138,7 +137,8 @@ static void jtag_examine_chain_display(enum log_levels level, const char *msg,
 
 /* copied from src/jtag/core.c */
 static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
-{
+{    LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+
 
 	if (tap->expected_ids_cnt == 0 || !tap->hasidcode)
 		return true;
@@ -211,11 +211,9 @@ int jtag_examine_chain(void)
 			tap->enabled = 1;
 
 			jtag_tap_init(tap);
-			
 			jtag_examine_chain_display(LOG_LVL_INFO, "tap/device found", tap->dotted_name, tap->idcode);
-
         } 
-        
+
  		/* ensure the TAP ID matches what was expected */
 		if (!jtag_examine_chain_match_tap(tap))
 			retval = ERROR_JTAG_INIT_SOFT_FAIL;
@@ -296,7 +294,6 @@ void jtag_add_callback4(jtag_callback_t f, jtag_callback_data_t data0,
 }
 
 
-
 //=================================
 // driver
 //=================================
@@ -375,16 +372,18 @@ static AJI_ERROR jtagserv_select_tap(void)
 {   LOG_DEBUG("***> IN %s(%d): %s %d\n", __FILE__, __LINE__, __FUNCTION__, jtagservice.in_use_hardware_chain_pid);
     AJI_ERROR status = AJI_NO_ERROR;
 
+    AJI_HARDWARE hw;
+    status = c_aji_find_hardware(jtagservice.in_use_hardware_chain_pid, &hw, JTAGSERVICE_TIMEOUT_MS);
+    if(AJI_NO_ERROR != status){
+        status = c_aji_unlock_chain(hw.chain_id); 
+        return status;       
+    }
+
     status = jtagservice_lock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
     if (AJI_NO_ERROR != status) { 
         return status;
     }
 
-    AJI_HARDWARE hw;
-    status = c_aji_find_hardware(jtagservice.in_use_hardware_chain_pid, &hw, JTAGSERVICE_TIMEOUT_MS);
-    if(AJI_NO_ERROR != status){
-            status = c_aji_unlock_chain(hw.chain_id);        
-    }
     status = c_aji_read_device_chain(
         hw.chain_id, 
         &(jtagservice.device_count), 
@@ -420,6 +419,7 @@ static AJI_ERROR jtagserv_select_tap(void)
              IDCODE_SOCVHPS
     );
     LOG_INFO("Found %d TAP devices", jtagservice.device_count);
+
     for(DWORD tap_position=0; tap_position<jtagservice.device_count; ++tap_position) {
         AJI_DEVICE device = jtagservice.device_list[tap_position];
         LOG_DEBUG("Detected device (tap_position=%d) device_id=%08X," 
@@ -428,6 +428,7 @@ static AJI_ERROR jtagserv_select_tap(void)
                     device.device_id, device.instruction_length, 
                     device.features, device.device_name
         );
+        
         if( IDCODE_SOCVHPS == device.device_id ) {
             jtagservice.in_use_device_id = device.device_id;
             jtagservice.in_use_device_tap_position = tap_position;
@@ -439,25 +440,33 @@ static AJI_ERROR jtagserv_select_tap(void)
     if(0 == jtagservice.in_use_device_id) {
         LOG_ERROR("No SOCVHPS device found.");
         jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
-        return AJI_NO_DEVICES;
+        return AJI_FAILURE;
     }
-    
+
+    char idcode[19];
+    sprintf(idcode, "%X", jtagservice.in_use_device_id);
+
     AJI_CLAIM2 claims[] = {
         { AJI_CLAIM_IR_SHARED, 0, IR_ARM_IDCODE },
     };
     DWORD claims_n = sizeof(claims) / sizeof(AJI_CLAIM2);
-    
-    status = c_aji_open_device_a(jtagservice.in_use_hardware->chain_id,
-                                 jtagservice.in_use_device_tap_position,
-                                 &(jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position]),
-                                 claims, claims_n, "SOCVHPS"
+
+    // Only allowed to open one device at a time.
+    // If you don't, then anytime after  c_aji_test_logic_reset() call, 
+    //  you can get fatal error
+    //  "*** glibc detected *** src/openocd: double free or corruption (fasttop): 0x00000000027bc7a0 ***"        
+    status = c_aji_open_device_a(
+                      jtagservice.in_use_hardware->chain_id,
+                      jtagservice.in_use_device_tap_position,
+                      &(jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position]),
+                      claims, claims_n, idcode
     );
     if( AJI_NO_ERROR != status) {
-        LOG_ERROR("Cannot open device SOCVHPS.");
-        jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
-        return status;
+            LOG_ERROR("Cannot open device number %d (IDCODE=%s)",
+                      jtagservice.in_use_device_tap_position, idcode
+            );
     }
-    LOG_INFO("Successfully open TAP device. status = %d", status);
+    
     jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
     return status;
 }
@@ -491,7 +500,7 @@ static int minijtagserv_init(void)
     
     status = jtagserv_select_tap();
     if (AJI_NO_ERROR != status) {
-        LOG_ERROR("Cannot select TAP device. Return status is %d", status);
+        LOG_ERROR("Cannot select TAP devices. Return status is %d", status);
         return ERROR_JTAG_INIT_FAILED;
     }
     
@@ -577,24 +586,25 @@ int interface_jtag_add_tlr()
 	AJI_ERROR status = AJI_NO_ERROR;
 	AJI_OPEN_ID open_id = 
         jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
-
+        
     status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Cannot lock device chain. Return status is %d\n", status);
         return ERROR_FAIL;
     }
-    
+
     status = c_aji_test_logic_reset(open_id);
     if(AJI_NO_ERROR == status) {
         tap_set_state(TAP_RESET);
     } else {
         LOG_ERROR("Unexpected error setting TAPs to TLR state. Return status is %d\n", status);
     }
-    
+
     AJI_ERROR status2 = c_aji_unlock(open_id);
     if(AJI_NO_ERROR != status) {
         LOG_WARNING("Unexpected error unlocking device chain. Return status is %d\n", status2);
     }
+
 	return (status || status2) ? ERROR_FAIL : ERROR_OK;
 }
 
