@@ -111,6 +111,8 @@ int arm11_run_instr_data_to_core_noack_inner(struct jtag_tap *tap, uint32_t opco
 // Bits that have to be implemented/copied for src/jtag/core.c
 //=================================
 
+
+/* copied from src/jtag/core.c */
 #define JTAG_MAX_AUTO_TAPS 20
 
 /* copied from src/jtag/core.c */
@@ -190,10 +192,10 @@ int jtag_examine_chain(void)
         t<num_taps; 
         ++t, tap = jtag_tap_next_enabled(tap)) {
         AJI_DEVICE device = jtagservice.device_list[t];
-        
+
         if(tap == NULL) {
         	tap = calloc(1, sizeof *tap);
-			if (!tap) {
+			if (!tap) { 
 				return ERROR_FAIL;
 			}
 
@@ -204,24 +206,51 @@ int jtag_examine_chain(void)
 			tap->hasidcode = true;
 			tap->idcode = device.device_id;
 
-			tap->ir_length = device.instruction_length;
+			tap->ir_length = device.instruction_length; 
 			tap->ir_capture_mask = 0x03;
 			tap->ir_capture_value = 0x01;
 
 			tap->enabled = 1;
-
 			jtag_tap_init(tap);
+			tap->ir_length *= -1; // set to negative to indicate to jtag_validate_ircapture() that 
+		                          // user had not set this ir_length.
+
 			jtag_examine_chain_display(LOG_LVL_INFO, "tap/device found", tap->dotted_name, tap->idcode);
         } 
-
  		/* ensure the TAP ID matches what was expected */
 		if (!jtag_examine_chain_match_tap(tap))
 			retval = ERROR_JTAG_INIT_SOFT_FAIL;
-
     } //end for t
-    return ERROR_OK;
+    return retval;
 }
 
+/*
+ * No need to validate irlen because we are trusting AJI to provide us with
+ * the correct value. However, need to produce a message telling
+ * the user to add new tap points if the TAP point were autodetected.
+ * On exit the scan chain is reset.
+ */
+int jtag_validate_ircapture(void)
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+    for (struct jtag_tap *tap = jtag_tap_next_enabled(NULL) ; 
+	     tap != NULL; 
+	     tap = jtag_tap_next_enabled(tap)
+	) {
+	    /* Negative ir_length means it was autodetected by AJI and user
+	       haven't declare the Taps. 
+	       The real ir_length is the positive ir_length value
+	     */
+		if (tap->ir_length < 0) { 
+			tap->ir_length *= -1;
+			LOG_WARNING("AUTO %s - use \"jtag newtap " "%s %s -irlen %d "
+					"-expected-id 0x%08" PRIx32 "\"",
+					tap->dotted_name, tap->chip, tap->tapname, tap->ir_length, tap->idcode);
+		}
+	}
+	jtag_add_tlr();
+	jtag_execute_queue();
+	return ERROR_OK;
+}
 //=================================
 // Callbacks
 //=================================

@@ -44,10 +44,6 @@
 #include "svf/svf.h"
 #include "xsvf/xsvf.h"
 
-#if BUILD_MINIJTAGSERVE
-extern int minijtagserv_examine_chain(void);
-#endif
-
 /** The number of JTAG queue flushes (for profiling and debugging purposes). */
 static int jtag_flush_queue_count;
 
@@ -1345,6 +1341,12 @@ out:
 }
 #endif /* BUILD_MINIJTAGSERV */
 
+#if BUILD_MINIJTAGSERV
+/* Minijtagserv should define its own jtag_validate_ircapture(void) 
+ */
+extern int jtag_validate_ircapture(void);
+
+#else /* BUILD_MINIJTAGSERV */
 /*
  * Validate the date loaded by entry to the Capture-IR state, to help
  * find errors related to scan chain configuration (wrong IR lengths)
@@ -1468,6 +1470,7 @@ done:
 	}
 	return retval;
 }
+#endif /* BUILD_MINIJTAGSERV */
 
 void jtag_tap_init(struct jtag_tap *tap)
 {
@@ -1491,6 +1494,7 @@ void jtag_tap_init(struct jtag_tap *tap)
 
 	/* TAP will be in bypass mode after jtag_validate_ircapture() */
 	tap->bypass = 1;
+
 	buf_set_ones(tap->cur_instr, tap->ir_length);
 
 	/* register the reset callback for the TAP */
@@ -1620,8 +1624,8 @@ int jtag_init_inner(struct command_context *cmd_ctx)
 	/* Examine DR values first.  This discovers problems which will
 	 * prevent communication ... hardware issues like TDO stuck, or
 	 * configuring the wrong number of (enabled) TAPs.
-	 */
-	retval = jtag_examine_chain();
+	 */ 
+	retval = jtag_examine_chain(); 
 	switch (retval) {
 		case ERROR_OK:
 			/* complete success */
