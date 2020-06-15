@@ -36,6 +36,7 @@ extern void jtag_tap_add(struct jtag_tap *t);
 #define IDCODE_SOCVHPS (0x4BA00477)
 
 
+
 static struct jtagservice_record jtagservice  = {
     .hardware_count = 0,
 //    .hardware_list = NULL,
@@ -139,7 +140,7 @@ static void jtag_examine_chain_display(enum log_levels level, const char *msg,
 
 /* copied from src/jtag/core.c */
 static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
-{    LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{    LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 
 
 	if (tap->expected_ids_cnt == 0 || !tap->hasidcode)
@@ -180,7 +181,7 @@ static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
  *      @c minijtagserv_init() function.
  */
 int jtag_examine_chain(void)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     //AJI_ERROR status = AJI_NO_ERROR;
     int retval = ERROR_OK;
     
@@ -205,7 +206,6 @@ int jtag_examine_chain(void)
 
 			tap->hasidcode = true;
 			tap->idcode = device.device_id;
-
 			tap->ir_length = device.instruction_length; 
 			tap->ir_capture_mask = 0x03;
 			tap->ir_capture_value = 0x01;
@@ -457,8 +457,8 @@ static AJI_ERROR jtagserv_select_tap(void)
                     device.device_id, device.instruction_length, 
                     device.features, device.device_name
         );
-        
         if( IDCODE_SOCVHPS == device.device_id ) {
+            jtagservice.in_use_device = &(jtagservice.device_list[tap_position]); //DO NOT use &device as device is local variable
             jtagservice.in_use_device_id = device.device_id;
             jtagservice.in_use_device_tap_position = tap_position;
             jtagservice.in_use_device_irlen = device.instruction_length;
@@ -475,11 +475,14 @@ static AJI_ERROR jtagserv_select_tap(void)
     char idcode[19];
     sprintf(idcode, "%X", jtagservice.in_use_device_id);
 
-    AJI_CLAIM2 claims[] = {
+    AJI_CLAIM2 claims[] = { /*
         { AJI_CLAIM_IR_SHARED, 0, IR_ARM_IDCODE },
+        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_DPACC  },
+        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_APACC  },
+        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_ABORT  }, */
+        { AJI_CLAIM_IR_WEAK, 0, ~0ull  }, //supposed to claim all unclaimed instruction
     };
     DWORD claims_n = sizeof(claims) / sizeof(AJI_CLAIM2);
-
     // Only allowed to open one device at a time.
     // If you don't, then anytime after  c_aji_test_logic_reset() call, 
     //  you can get fatal error
@@ -552,6 +555,7 @@ int interface_jtag_execute_queue(void)
 	return ERROR_OK;
 }
 
+
 int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field *fields,
 		tap_state_t state)
 {   LOG_INFO("***> IN %s(%d): %s", __FILE__, __LINE__, __FUNCTION__);
@@ -585,6 +589,69 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
     }
 	/* synchronously do the operation here */
 
+	/* loop over all enabled TAPs. */
+    struct jtag_tap *tap = jtag_tap_next_enabled(NULL);
+assert(tap != NULL); //not possible for no TAP
+    DWORD tap_position = jtagservice.device_count-1; /* TAPs are in reverse order */
+	for (; tap != NULL; tap = jtag_tap_next_enabled(tap), --tap_position) {
+		/* search the input field list for fields for the current TAP */
+		if (tap == active) {
+		    break;
+	    }
+	}
+assert(tap != NULL); //tap == NULL means I cannot find active tap in the list of enabled taps. As we test to confirmed that taps were present, this means missing active tap is unexepcted
+
+if(fields->num_bits != jtagservice.in_use_device->instruction_length) {
+    LOG_ERROR("Expecting fields->num_bits(%d) to be the same as irlen (%d)\n", fields->num_bits, jtagservice.in_use_device->instruction_length);
+}
+
+	if(tap_position != jtagservice.in_use_device_tap_position) {
+	    LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %d, but got tap position %d instead",
+          	      jtagservice.in_use_device_tap_position,
+	              tap_position
+	    );
+	}
+
+	AJI_ERROR  status = AJI_NO_ERROR;
+	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
+
+	status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
+	if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Failure lock before accessing IR register. Return Status is %d\n", status);
+        return ERROR_FAIL;
+    }
+    
+    BYTE out= fields->out_value[0]; //0b1010;
+    //DWORD outD= out;
+    DWORD fromDevice = 0;
+    status = c_aji_access_ir(open_id, out, &fromDevice, 0);
+printf("fields %d, %d %d\n", fields->num_bits, fields->out_value[0], fromDevice);    
+/*
+    status = c_aji_access_ir_a(
+        open_id,
+        32, //fields->num_bits,
+        (BYTE*) &outD, //fields->out_value,
+        NULL, // fields->in_value,
+        0
+    );
+*/    
+    if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Failure to access IR register. Return Status is %d\n", status);
+	    c_aji_unlock(open_id);
+        return ERROR_FAIL;
+    }
+    tap_set_state(TAP_IRUPDATE);
+    
+    if(TAP_IDLE != state) {
+        LOG_WARNING("IR SCAN not yet handle transition to state other than TAP_IDLE(%d). Requested state is %s(%d)", TAP_IDLE, tap_state_name(state), state);
+    }
+    
+    status = c_aji_run_test_idle(open_id, 2);
+    if(AJI_NO_ERROR != status) {
+        LOG_WARNING("Failed to go to TAP_IDLE after IR register write");
+    }
+
+    c_aji_unlock(open_id);
 	return ERROR_OK;
 }
 
