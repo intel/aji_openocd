@@ -91,6 +91,14 @@ inline
 AJI_API AJI_ERROR c_aji_test_logic_reset(AJI_OPEN_ID open_id) {
     return _Z20aji_test_logic_resetP8AJI_OPEN(open_id);
 }
+inline
+AJI_API AJI_ERROR c_aji_run_test_idle(AJI_OPEN_ID open_id, DWORD num_clocks) {
+    return _Z17aji_run_test_idleP8AJI_OPENj(open_id, num_clocks);
+}
+
+inline AJI_API AJI_ERROR c_aji_run_test_idle_a(AJI_OPEN_ID open_id, DWORD num_clocks, DWORD flags) {
+    return _Z17aji_run_test_idleP8AJI_OPENjj(open_id, num_clocks, flags); 
+}
 
 inline
 AJI_API AJI_ERROR c_aji_access_ir(AJI_OPEN_ID open_id, DWORD instruction, DWORD * captured_ir, DWORD flags) {
