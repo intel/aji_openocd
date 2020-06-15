@@ -5,7 +5,10 @@
 
 
 #define JTAGSERVICE_TIMEOUT_MS 10000
-#define IR_ARM_IDCODE 14 // 0b1110
+#define IR_ARM_IDCODE 14  // 0b1110 dr_len=32
+#define IR_ARM_DPACC  10  // 0b1010 dr_len=35
+#define IR_ARM_APACC  11  // 0b1011 dr_len=35
+#define IR_ARM_ABORT   8  // 0b1000 dr_len=35
 
 enum jtagservice_lock {
     NONE    = 0b000000,
