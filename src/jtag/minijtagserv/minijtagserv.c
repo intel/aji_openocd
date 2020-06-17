@@ -805,10 +805,30 @@ int interface_jtag_add_clocks(int num_cycles)
 int interface_jtag_add_sleep(uint32_t us)
 {   LOG_INFO("***> IN %s(%d): %s us=%d\n", __FILE__, __LINE__, __FUNCTION__, us);
 
-    LOG_ERROR("TO IMPLEMENT interface_jtag_add_sleep if need be");
+	/* synchronously do the operation here */
+	AJI_ERROR status = AJI_NO_ERROR;
+	AJI_OPEN_ID open_id = 
+        jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
+        
+    status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
+    if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Cannot lock device chain. Return status is %d\n", status);
+        return ERROR_FAIL;
+    }
 
-	jtag_sleep(us);
-	return ERROR_OK;
+    status = c_aji_delay(open_id, us);
+    if(AJI_NO_ERROR == status) {
+        tap_set_state(TAP_RESET);
+    } else {
+        LOG_ERROR("Unexpected error trying to sleep for %d. Return status is %d\n", us, status);
+    }
+
+    AJI_ERROR status2 = c_aji_unlock(open_id);
+    if(AJI_NO_ERROR != status) {
+        LOG_WARNING("Unexpected error unlocking device chain. Return status is %d\n", status2);
+    }
+
+	return (status || status2) ? ERROR_FAIL : ERROR_OK;
 }
 
 int interface_jtag_add_pathmove(int num_states, const tap_state_t *path)
