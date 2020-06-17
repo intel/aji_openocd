@@ -210,7 +210,7 @@ AJI_API AJI_ERROR _Z20aji_test_logic_resetP8AJI_OPEN(AJI_OPEN_ID open_id); //cin
 
 AJI_API AJI_ERROR _Z17aji_run_test_idleP8AJI_OPENjj(AJI_OPEN_ID open_id, DWORD num_clocks, DWORD flags);  //cinlyooi
 
-AJI_API AJI_ERROR _Z9aji_delayP8AJI_OPENm(AJI_OPEN_ID open_id, DWORD timeout_microseconds);
+AJI_API AJI_ERROR _Z9aji_delayP8AJI_OPENj(AJI_OPEN_ID open_id, DWORD timeout_microseconds); //cinlyooi
 
 #if 0
 AJI_API AJI_ERROR aji_watch_status(AJI_OPEN_ID open_id, DWORD status_mask, DWORD status_value, DWORD poll_interval);
