@@ -620,21 +620,28 @@ if(fields->num_bits != jtagservice.in_use_device->instruction_length) {
         LOG_ERROR("Failure lock before accessing IR register. Return Status is %d\n", status);
         return ERROR_FAIL;
     }
-    
-    BYTE out= fields->out_value[0]; //0b1010;
-    //DWORD outD= out;
-    DWORD fromDevice = 0;
-    status = c_aji_access_ir(open_id, out, &fromDevice, 0);
-printf("fields %d, %d %d\n", fields->num_bits, fields->out_value[0], fromDevice);    
-/*
-    status = c_aji_access_ir_a(
-        open_id,
-        32, //fields->num_bits,
-        (BYTE*) &outD, //fields->out_value,
-        NULL, // fields->in_value,
-        0
-    );
-*/    
+  
+    /* the code below could had been replaced by c_aji_access_ir_a(), i.e.
+       the BYTE* version of aji_access_ir(). However, for quartus 20.3
+       there is a bug where (1) it expects write_data and read_data to be
+       DWORDs and  it sends the wrong instruction to the TAP, i.e., it 
+       did not send write_bit. */  
+    DWORD instruction = 0;
+    for (int i = 0 ; i <  (fields->num_bits+7)/8 ; i++) {
+        instruction |= fields->out_value[i] << (i * 8);
+    }
+//printf("instruction = %d 0x%X\n", instruction, instruction);
+
+    DWORD capture = 0;
+    status = c_aji_access_ir(open_id, instruction, &capture, 0);
+//printf("fields %d, %d %d\n", fields->num_bits, instruction, capture);    
+
+    if(fields->in_value) {
+        for (int i = 0 ; i < (fields->num_bits+7)/8 ; i++) {
+           fields->in_value[i] = (BYTE) (capture >> (i * 8));
+        }
+    }
+
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failure to access IR register. Return Status is %d\n", status);
 	    c_aji_unlock(open_id);
