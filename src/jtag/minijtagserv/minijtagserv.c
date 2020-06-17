@@ -475,12 +475,11 @@ static AJI_ERROR jtagserv_select_tap(void)
     char idcode[19];
     sprintf(idcode, "%X", jtagservice.in_use_device_id);
 
-    AJI_CLAIM2 claims[] = { /*
+    AJI_CLAIM2 claims[] = {
         { AJI_CLAIM_IR_SHARED, 0, IR_ARM_IDCODE },
         { AJI_CLAIM_IR_SHARED, 0, IR_ARM_DPACC  },
         { AJI_CLAIM_IR_SHARED, 0, IR_ARM_APACC  },
-        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_ABORT  }, */
-        { AJI_CLAIM_IR_WEAK, 0, ~0ull  }, //supposed to claim all unclaimed instruction
+        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_ABORT  }, 
     };
     DWORD claims_n = sizeof(claims) / sizeof(AJI_CLAIM2);
     // Only allowed to open one device at a time.
@@ -551,6 +550,8 @@ static int minijtagserv_quit(void)
 int interface_jtag_execute_queue(void)
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* synchronously do the operation here */
+
+    LOG_ERROR("TO IMPLEMENT interface_jtag_execute_queue"); //need to fire call backs
 
 	return ERROR_OK;
 }
@@ -679,6 +680,9 @@ int interface_jtag_add_plain_ir_scan(int num_bits, const uint8_t *out_bits,
 
 	/* synchronously do the operation here */
 
+    /* Only needed if we are going to permit SVF or XSVF use */
+    LOG_ERROR("No plan to implement interface_jtag_add_plain_ir_scan");
+    
 	return ERROR_OK;
 }
 
@@ -715,6 +719,8 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
     }
 	/* synchronously do the operation here */
 
+    LOG_ERROR("TO IMPLEMENT interfac_jtag_add_dr_scan");
+
 	return ERROR_OK;
 }
 
@@ -734,6 +740,9 @@ int interface_jtag_add_plain_dr_scan(int num_bits, const uint8_t *out_bits,
     }
 
 	/* synchronously do the operation here */
+
+    /* Only needed if we are going to permit SVF or XSVF use */
+    LOG_ERROR("No plan to implement interface_jtag_add_plain_dr_scan");
 
 	return ERROR_OK;
 }
@@ -771,12 +780,16 @@ int interface_jtag_add_reset(int req_trst, int req_srst)
 {   LOG_INFO("***> IN %s(%d): %s req_trst=%d, req_srst=%d\n", __FILE__, __LINE__, __FUNCTION__, req_trst, req_srst);
 	/* synchronously do the operation here */
 
+    LOG_INFO("interface_jtag_add_reset not implemented because we do not need it");
 	return ERROR_OK;
 }
 
 int interface_jtag_add_runtest(int num_cycles, tap_state_t state)
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* synchronously do the operation here */
+
+    /* At present, we believe we needed this if we are going to do boundary_scan */
+    LOG_ERROR("No plan to implement interface_jtag_add_run_test");
 
 	return ERROR_OK;
 }
@@ -785,11 +798,14 @@ int interface_jtag_add_clocks(int num_cycles)
 {   LOG_INFO("***> IN %s(%d): %s num_cycyles=%d\n", __FILE__, __LINE__, __FUNCTION__, num_cycles);
 	/* synchronously do the operation here */
 
+    LOG_ERROR("interface_jtag_add_clocks to be implemented if needed");
 	return ERROR_OK;
 }
 
 int interface_jtag_add_sleep(uint32_t us)
 {   LOG_INFO("***> IN %s(%d): %s us=%d\n", __FILE__, __LINE__, __FUNCTION__, us);
+
+    LOG_ERROR("TO IMPLEMENT interface_jtag_add_sleep if need be");
 
 	jtag_sleep(us);
 	return ERROR_OK;
@@ -839,6 +855,8 @@ int interface_jtag_add_pathmove(int num_states, const tap_state_t *path)
 
 	/* synchronously do the operation here */
 
+    LOG_ERROR("Will implement interface_jtag_add_path_move if we need it");
+
 	return ERROR_OK;
 }
 
@@ -846,6 +864,7 @@ int interface_add_tms_seq(unsigned num_bits, const uint8_t *seq, enum tap_state 
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* synchronously do the operation here */
 
+    LOG_ERROR("Will implement interface_jtag_add_tms_seq if we need it");
 	return ERROR_OK;
 }
 
