@@ -197,7 +197,7 @@ int jtag_examine_chain(void)
         if(tap == NULL) {
         	tap = calloc(1, sizeof *tap);
 			if (!tap) { 
-				return ERROR_FAIL;
+				return ERROR_JTAG_INIT_FAILED;
 			}
 
 			tap->chip = alloc_printf("auto%u", autocount++);
@@ -247,8 +247,6 @@ int jtag_validate_ircapture(void)
 					tap->dotted_name, tap->chip, tap->tapname, tap->ir_length, tap->idcode);
 		}
 	}
-	jtag_add_tlr();
-	jtag_execute_queue();
 	return ERROR_OK;
 }
 //=================================
@@ -591,25 +589,29 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
 	/* synchronously do the operation here */
 
 	/* loop over all enabled TAPs. */
-    struct jtag_tap *tap = jtag_tap_next_enabled(NULL);
-assert(tap != NULL); //not possible for no TAP
+assert(NULL != jtag_tap_next_enabled(NULL)); //not possible for no TAP
     DWORD tap_position = jtagservice.device_count-1; /* TAPs are in reverse order */
-	for (; tap != NULL; tap = jtag_tap_next_enabled(tap), --tap_position) {
+    DWORD active_tap_position = jtagservice.device_count;
+	for (struct jtag_tap* tap=jtag_tap_next_enabled(NULL); tap != NULL; tap = jtag_tap_next_enabled(tap), --tap_position) {
 		/* search the input field list for fields for the current TAP */
 		if (tap == active) {
-		    break;
+		    tap->bypass = 1;
+            assert(active_tap_position == jtagservice.device_count); //Only one active tap permitted
+		    active_tap_position = tap_position;
+	    } else {
+	        tap->bypass = 0; 
 	    }
 	}
-assert(tap != NULL); //tap == NULL means I cannot find active tap in the list of enabled taps. As we test to confirmed that taps were present, this means missing active tap is unexepcted
+assert(active_tap_position != jtagservice.device_count); //found the active tap
 
 if(fields->num_bits != jtagservice.in_use_device->instruction_length) {
     LOG_ERROR("Expecting fields->num_bits(%d) to be the same as irlen (%d)\n", fields->num_bits, jtagservice.in_use_device->instruction_length);
 }
 
-	if(tap_position != jtagservice.in_use_device_tap_position) {
+	if(active_tap_position != jtagservice.in_use_device_tap_position) {
 	    LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %d, but got tap position %d instead",
           	      jtagservice.in_use_device_tap_position,
-	              tap_position
+	              active_tap_position
 	    );
 	}
 
@@ -632,10 +634,15 @@ if(fields->num_bits != jtagservice.in_use_device->instruction_length) {
         instruction |= fields->out_value[i] << (i * 8);
     }
 //printf("instruction = %d 0x%X\n", instruction, instruction);
-
     DWORD capture = 0;
     status = c_aji_access_ir(open_id, instruction, &capture, 0);
-//printf("fields %d, %d %d\n", fields->num_bits, instruction, capture);    
+printf("fields %d, %d %d\n", fields->num_bits, instruction, capture);    
+
+    if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Failure to access IR register. Return Status is %d\n", status);
+	    c_aji_unlock(open_id);
+        return ERROR_FAIL;
+    }
 
     if(fields->in_value) {
         for (int i = 0 ; i < (fields->num_bits+7)/8 ; i++) {
@@ -643,13 +650,8 @@ if(fields->num_bits != jtagservice.in_use_device->instruction_length) {
         }
     }
 
-    if(AJI_NO_ERROR != status) {
-        LOG_ERROR("Failure to access IR register. Return Status is %d\n", status);
-	    c_aji_unlock(open_id);
-        return ERROR_FAIL;
-    }
     tap_set_state(TAP_IRUPDATE);
-    
+        
     if(TAP_IDLE != state) {
         LOG_WARNING("IR SCAN not yet handle transition to state other than TAP_IDLE(%d). Requested state is %s(%d)", TAP_IDLE, tap_state_name(state), state);
     }
@@ -690,37 +692,159 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 		const struct scan_field *fields, tap_state_t state)
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     {
-        LOG_INFO("tap=0x%X, num_bits=%d state=(0x%d) %s:", active->idcode, fields->num_bits, state, tap_state_name(state));
-    	
-    	int size = DIV_ROUND_UP(fields->num_bits, 8);
-    	char *value = hexdump(fields->out_value, size);
-        LOG_INFO("  out_value  (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
-        free(value);
-        if(fields->in_value) {
-            value = hexdump(fields->in_value, size);
-            LOG_INFO("  in_value   (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
-            free(value);
-        } else {
-            LOG_INFO("  in_value  : <NONE>");
-        }
-        if(fields->check_value) {
-            value = hexdump(fields->check_value, size);
-            LOG_INFO("  check_value (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
-            free(value);
+        LOG_INFO("tap=0x%X, num_fields=%d state=(0x%d) %s:", active->idcode, num_fields, state, tap_state_name(state));
+    	for(int i=0; i<num_fields; ++i) {
+        	int size = DIV_ROUND_UP(fields[i].num_bits, 8);
+        	char *value = NULL;
+        	if(fields[i].out_value) {
+        	    hexdump(fields[i].out_value, size);
+                LOG_INFO("  fields[%d].out_value  (size=%d, buf=[%s]) -> %u", i, size, value, fields[i].num_bits);
+                free(value);
+            } else {
+                LOG_INFO("  fields[%d].out_value  : <NONE>", i);
+            }
+            if(fields[i].in_value) {
+                value = hexdump(fields[i].in_value, size);
+                LOG_INFO("  fields[%d].in_value   (size=%d, buf=[%s]) -> %u", i, size, value, fields[i].num_bits);
+                free(value);
+            } else {
+                LOG_INFO("  fields[%d].in_value  : <NONE>", i);
+            }
+            if(fields[i].check_value) {
+                value = hexdump(fields[i].check_value, size);
+                LOG_INFO("  fields[%d].check_value (size=%d, buf=[%s]) -> %u", i, size, value, fields[i].num_bits);
+                free(value);
 
-            value = hexdump(fields->check_mask, size);
-            LOG_INFO("  check_mask  (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
-            free(value);
-        } else {
-            LOG_INFO(" check_value : <NONE>");
-            LOG_INFO(" check_mask  : <NONE>");
-        }
+                value = hexdump(fields[i].check_mask, size);
+                LOG_INFO("  fields[%d].check_mask  (size=%d, buf=[%s]) -> %u", i, size, value, fields[i].num_bits);
+                free(value);
+            } else {
+                LOG_INFO("  fields[%d].check_value : <NONE>", i);
+                LOG_INFO("  fields[%d].check_mask  : <NONE>", i);
+            }
+        } //end for(i)
         printf("\n");
     }
+    
 	/* synchronously do the operation here */
 
-    LOG_ERROR("TO IMPLEMENT interfac_jtag_add_dr_scan");
 
+	/* loop over all enabled TAPs. */
+assert(NULL != jtag_tap_next_enabled(NULL)); //not possible for no TAP
+    DWORD tap_position = jtagservice.device_count-1; /* TAPs are in reverse order */
+    DWORD active_tap_position = jtagservice.device_count;
+	for (struct jtag_tap *tap = jtag_tap_next_enabled(NULL); tap != NULL; tap = jtag_tap_next_enabled(tap), --tap_position) {
+		/* search the input field list for fields for the current TAP */
+		if (tap == active) {
+	        assert(tap->bypass); //interface_jtag_add_ir() should had set bypass status
+	        assert(active_tap_position == jtagservice.device_count); //expecting only one active tap
+	        active_tap_position = tap_position;
+	    } else {
+	        assert(tap->bypass == 0); //interface_jtag_add_ir() should had set bypass status
+	    }
+	}
+assert(active_tap_position != jtagservice.device_count); //tap == NULL means I cannot find active tap in the list of enabled taps. As we test to confirmed that taps were present, this means missing active tap is unexepcted
+
+	if((DWORD) active_tap_position != jtagservice.in_use_device_tap_position) {
+	    LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %d, but got tap position %d instead",
+          	      jtagservice.in_use_device_tap_position,
+	              tap_position
+	    );
+	}
+
+//right now we are assuming ARM IR Register, which is length 35, and consist of two parts   
+//  fields[0] = a[2:0] = ACK, 3 bit
+//  field[1] = a[34:3] = data, 32 bit
+assert(num_fields == 2);
+assert(fields[0].num_bits == 3);
+assert(fields[1].num_bits == 32);
+
+    /* prepare the input/output fields for AJI */
+    DWORD length_dr = 0;
+    for(int i=0; i<num_fields; ++i) {
+        length_dr += fields[i].num_bits;
+    }
+assert(length_dr == 35);
+    _Bool write_to_dr = false;
+    BYTE *read_bits = calloc((length_dr+7)/8, sizeof(BYTE));
+//BYTE  read_bits[]  = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+    BYTE *write_bits = calloc((length_dr+7)/8, sizeof(BYTE));    
+    DWORD bit_count = 0;
+	for (int i = 0; i < num_fields; i++) {
+		if (fields[i].out_value) {	
+    		buf_set_buf(fields[i].out_value, 0, 
+	    	            write_bits,	bit_count, 
+	    	            fields[i].num_bits
+	    	);
+	    	write_to_dr = true;
+	    }
+	    bit_count += fields[i].num_bits;
+	} 
+printf("BEFORE: length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", length_dr,
+          write_bits[3],write_bits[2],write_bits[1],write_bits[0], 
+          read_bits[3],read_bits[2],read_bits[1],read_bits[0]
+    );    
+
+
+	AJI_ERROR  status = AJI_NO_ERROR;
+	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
+
+	status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
+	if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Failure lock before accessing DR register. Return Status is %d\n", status);
+        free(read_bits);
+        free(write_bits);
+        return ERROR_FAIL;
+    }
+
+    status = c_aji_access_dr(
+        open_id, length_dr, AJI_DR_UNUSED_0,
+        0, write_to_dr? length_dr : 0, write_bits,
+        0, length_dr, read_bits
+    );
+    
+printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", length_dr,
+          write_bits[3],write_bits[2],write_bits[1],write_bits[0], 
+          read_bits[3],read_bits[2],read_bits[1],read_bits[0]
+    );    
+    if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Failure to access DR register. Return Status is %d\n", status);
+	    c_aji_unlock(open_id);
+        free(read_bits);
+        free(write_bits);
+        return ERROR_FAIL;
+    }
+
+    bit_count=0;
+	for (int i = 0; i < num_fields; i++) {
+		if (fields[i].in_value) {
+			buf_set_buf(read_bits, bit_count,
+					    fields[i].in_value, 0, 
+					    fields[i].num_bits
+	        );
+	        int size =  (fields[i].num_bits+7)/8;
+            char *value = hexdump(fields[i].in_value, size);
+            LOG_INFO("FINAL:  fields[%d].in_value   (size=%d, buf=[%s]) -> %u", i, size, value, fields[i].num_bits);
+            free(value);
+        } else {
+                LOG_INFO("  fields[%d].in_value  : <NONE>", i);
+		}
+		bit_count += fields[i].num_bits;
+	}
+
+    tap_set_state(TAP_IRUPDATE);    
+    
+    if(TAP_IDLE != state) {
+        LOG_WARNING("IR SCAN not yet handle transition to state other than TAP_IDLE(%d). Requested state is %s(%d)", TAP_IDLE, tap_state_name(state), state);
+    }
+    
+    status = c_aji_run_test_idle(open_id, 2);
+    if(AJI_NO_ERROR != status) {
+        LOG_WARNING("Failed to go to TAP_IDLE after DR register write");
+    }
+    c_aji_unlock(open_id);
+    free(read_bits);
+    free(write_bits);
 	return ERROR_OK;
 }
 
