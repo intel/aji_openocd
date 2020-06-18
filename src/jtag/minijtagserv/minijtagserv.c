@@ -652,7 +652,7 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
         instruction |= fields->out_value[i] << (i * 8);
     }
     DWORD capture = 0;
-    status = c_aji_access_ir(open_id, instruction, &capture, 0);
+    status = c_aji_access_ir(open_id, instruction, fields->in_value? &capture : NULL, 0);
 
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failure to access IR register. Return Status is %d\n", status);
@@ -778,7 +778,7 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
         length_dr += fields[i].num_bits;
     }
 
-    _Bool write_to_dr = false;
+    _Bool write_to_dr = false, read_from_dr = false;
     BYTE *read_bits = calloc((length_dr+7)/8, sizeof(BYTE));
     BYTE *write_bits = calloc((length_dr+7)/8, sizeof(BYTE));    
     DWORD bit_count = 0;
@@ -789,6 +789,9 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 	    	            fields[i].num_bits
 	    	);
 	    	write_to_dr = true;
+	    }
+	    if(fields[i].in_value) {
+	        read_from_dr = true;
 	    }
 	    bit_count += fields[i].num_bits;
 	} 
@@ -811,8 +814,8 @@ printf("BEFORE: length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
 
     status = c_aji_access_dr(
         open_id, length_dr, AJI_DR_UNUSED_0,
-        0, write_to_dr? length_dr : 0, write_bits,
-        0, length_dr, read_bits
+        0, write_to_dr?  length_dr : 0, write_bits,
+        0, read_from_dr? length_dr : 0, read_bits
     );
     
 printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", length_dr,
@@ -827,22 +830,26 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
         return ERROR_FAIL;
     }
 
-    bit_count=0;
-	for (int i = 0; i < num_fields; i++) {
-		if (fields[i].in_value) {
-			buf_set_buf(read_bits, bit_count,
-					    fields[i].in_value, 0, 
-					    fields[i].num_bits
-	        );
-	        int size =  (fields[i].num_bits+7)/8;
-            char *value = hexdump(fields[i].in_value, size);
-            LOG_INFO("FINAL:  fields[%d].in_value   (size=%d, buf=[%s]) -> %u", i, size, value, fields[i].num_bits);
-            free(value);
-        } else {
-                LOG_INFO("  fields[%d].in_value  : <NONE>", i);
-		}
-		bit_count += fields[i].num_bits;
-	}
+    if(read_from_dr) {
+        bit_count=0;
+	    for (int i = 0; i < num_fields; i++) {
+	    	if (fields[i].in_value) {
+	    		buf_set_buf(read_bits, bit_count,
+	    				    fields[i].in_value, 0, 
+	    				    fields[i].num_bits
+	            );
+	            int size =  (fields[i].num_bits+7)/8;
+                char *value = hexdump(fields[i].in_value, size);
+                LOG_INFO("FINAL:  fields[%d].in_value   (size=%d, buf=[%s]) -> %u", i, size, value, fields[i].num_bits);
+                free(value);
+            } else {
+                    LOG_INFO("  fields[%d].in_value  : <NONE>", i);
+	    	}
+	    	bit_count += fields[i].num_bits;
+	    } 
+	} else {
+	    LOG_INFO("FINAL: Not reading data from TAP");
+	} //end if(read_from_dr)
 
     tap_set_state(TAP_IRUPDATE);    
     
