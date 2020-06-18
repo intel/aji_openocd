@@ -700,8 +700,9 @@ int interface_jtag_add_plain_ir_scan(int num_bits, const uint8_t *out_bits,
 
     /* Only needed if we are going to permit SVF or XSVF use */
     LOG_ERROR("No plan to implement interface_jtag_add_plain_ir_scan");
+assert("Need to implement interface_jtag_add_plain_ir_scan");
     
-	return ERROR_OK;
+	return ERROR_FAIL;
 }
 
 int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
@@ -886,8 +887,8 @@ int interface_jtag_add_plain_dr_scan(int num_bits, const uint8_t *out_bits,
 
     /* Only needed if we are going to permit SVF or XSVF use */
     LOG_ERROR("No plan to implement interface_jtag_add_plain_dr_scan");
-
-	return ERROR_OK;
+assert("Need to implement interface_jtag_add_plain_dr_scan");
+	return ERROR_FAIL;
 }
 
 int interface_jtag_add_tlr()
@@ -933,7 +934,7 @@ int interface_jtag_add_runtest(int num_cycles, tap_state_t state)
 
     /* At present, we believe we needed this if we are going to do boundary_scan */
     LOG_ERROR("No plan to implement interface_jtag_add_run_test");
-
+assert("No plan to implement interface_jtag_add_run_test");
 	return ERROR_OK;
 }
 
@@ -942,6 +943,7 @@ int interface_jtag_add_clocks(int num_cycles)
 	/* synchronously do the operation here */
 
     LOG_ERROR("interface_jtag_add_clocks to be implemented if needed");
+assert("Need to implement interface_jtag_add_clocks");
 	return ERROR_OK;
 }
 
@@ -1019,6 +1021,7 @@ int interface_jtag_add_pathmove(int num_states, const tap_state_t *path)
 	/* synchronously do the operation here */
 
     LOG_ERROR("Will implement interface_jtag_add_path_move if we need it");
+assert("Need to implement interface_jtag_add_path_move");
 
 	return ERROR_OK;
 }
@@ -1028,6 +1031,7 @@ int interface_add_tms_seq(unsigned num_bits, const uint8_t *seq, enum tap_state 
 	/* synchronously do the operation here */
 
     LOG_ERROR("Will implement interface_jtag_add_tms_seq if we need it");
+assert("Need to implement interface_jtag_add_tms_seq");
 	return ERROR_OK;
 }
 
