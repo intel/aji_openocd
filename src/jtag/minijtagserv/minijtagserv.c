@@ -589,7 +589,6 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
 	/* synchronously do the operation here */
 
 	/* loop over all enabled TAPs. */
-assert(NULL != jtag_tap_next_enabled(NULL)); //not possible for no TAP
     DWORD tap_position = jtagservice.device_count-1; /* TAPs are in reverse order */
     DWORD active_tap_position = jtagservice.device_count;
 	for (struct jtag_tap* tap=jtag_tap_next_enabled(NULL); tap != NULL; tap = jtag_tap_next_enabled(tap), --tap_position) {
@@ -602,11 +601,6 @@ assert(NULL != jtag_tap_next_enabled(NULL)); //not possible for no TAP
 	        tap->bypass = 0; 
 	    }
 	}
-assert(active_tap_position != jtagservice.device_count); //found the active tap
-
-if(fields->num_bits != jtagservice.in_use_device->instruction_length) {
-    LOG_ERROR("Expecting fields->num_bits(%d) to be the same as irlen (%d)\n", fields->num_bits, jtagservice.in_use_device->instruction_length);
-}
 
 	if(active_tap_position != jtagservice.in_use_device_tap_position) {
 	    LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %d, but got tap position %d instead",
@@ -633,10 +627,8 @@ if(fields->num_bits != jtagservice.in_use_device->instruction_length) {
     for (int i = 0 ; i <  (fields->num_bits+7)/8 ; i++) {
         instruction |= fields->out_value[i] << (i * 8);
     }
-//printf("instruction = %d 0x%X\n", instruction, instruction);
     DWORD capture = 0;
     status = c_aji_access_ir(open_id, instruction, &capture, 0);
-printf("fields %d, %d %d\n", fields->num_bits, instruction, capture);    
 
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failure to access IR register. Return Status is %d\n", status);
@@ -728,9 +720,7 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
     
 	/* synchronously do the operation here */
 
-
 	/* loop over all enabled TAPs. */
-assert(NULL != jtag_tap_next_enabled(NULL)); //not possible for no TAP
     DWORD tap_position = jtagservice.device_count-1; /* TAPs are in reverse order */
     DWORD active_tap_position = jtagservice.device_count;
 	for (struct jtag_tap *tap = jtag_tap_next_enabled(NULL); tap != NULL; tap = jtag_tap_next_enabled(tap), --tap_position) {
@@ -743,7 +733,6 @@ assert(NULL != jtag_tap_next_enabled(NULL)); //not possible for no TAP
 	        assert(tap->bypass == 0); //interface_jtag_add_ir() should had set bypass status
 	    }
 	}
-assert(active_tap_position != jtagservice.device_count); //tap == NULL means I cannot find active tap in the list of enabled taps. As we test to confirmed that taps were present, this means missing active tap is unexepcted
 
 	if((DWORD) active_tap_position != jtagservice.in_use_device_tap_position) {
 	    LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %d, but got tap position %d instead",
@@ -752,22 +741,21 @@ assert(active_tap_position != jtagservice.device_count); //tap == NULL means I c
 	    );
 	}
 
-//right now we are assuming ARM IR Register, which is length 35, and consist of two parts   
-//  fields[0] = a[2:0] = ACK, 3 bit
-//  field[1] = a[34:3] = data, 32 bit
-assert(num_fields == 2);
-assert(fields[0].num_bits == 3);
-assert(fields[1].num_bits == 32);
+    //right now we are assuming ARM IR Register, which is length 35, and consist of two parts   
+    //  fields[0] = a[2:0] = ACK, 3 bit
+    //  field[1] = a[34:3] = data, 32 bit
+    assert(num_fields == 2);
+    assert(fields[0].num_bits == 3);
+    assert(fields[1].num_bits == 32);
 
     /* prepare the input/output fields for AJI */
     DWORD length_dr = 0;
     for(int i=0; i<num_fields; ++i) {
         length_dr += fields[i].num_bits;
     }
-assert(length_dr == 35);
+
     _Bool write_to_dr = false;
     BYTE *read_bits = calloc((length_dr+7)/8, sizeof(BYTE));
-//BYTE  read_bits[]  = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
     BYTE *write_bits = calloc((length_dr+7)/8, sizeof(BYTE));    
     DWORD bit_count = 0;
 	for (int i = 0; i < num_fields; i++) {
