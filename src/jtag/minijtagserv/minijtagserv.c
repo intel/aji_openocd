@@ -547,11 +547,35 @@ static int minijtagserv_quit(void)
 
 int interface_jtag_execute_queue(void)
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+
 	/* synchronously do the operation here */
+	static int reentry;
 
-    LOG_ERROR("TO IMPLEMENT interface_jtag_execute_queue"); //need to fire call backs
+	assert(reentry == 0);
+	reentry++;
 
-	return ERROR_OK;
+    /* Original logic wants to make sure that the operation request
+     * is completed correctly before firing off the callbacks(). 
+     * Right now I am have no idea whether the commands were executed correctly
+     * and is firing blind.
+     */
+	int retval = ERROR_OK; //default_interface_jtag_execute_queue(); 
+	if (retval == ERROR_OK) {
+		struct jtag_callback_entry *entry;
+LOG_INFO("***> IN %s(%d): %s  %s\n", __FILE__, __LINE__, __FUNCTION__, jtag_callback_queue_head == NULL? "No callbacks" : "Firing callbacks");
+		for (entry = jtag_callback_queue_head; entry != NULL; entry = entry->next) {
+			retval = entry->callback(entry->data0, entry->data1, entry->data2, entry->data3);
+			if (retval != ERROR_OK)
+				break;
+		}
+	}
+
+	jtag_command_queue_reset();
+	jtag_callback_queue_reset();
+
+	reentry--;
+
+	return retval;
 }
 
 
