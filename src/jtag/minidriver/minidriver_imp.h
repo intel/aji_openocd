@@ -1,4 +1,9 @@
-/***************************************************************************
+/* WARNING 
+ * This file is copied from src/jtag/minidriver/ to src/jtag by the make
+ * process. Make sure you do not edit the copy in src/jtag as it can be 
+ * replaced by the original, and SCM is setup to ignore the copy in src/jtag
+ */
+ /***************************************************************************
  *   Copyright (C) 2005 by Dominic Rath <Dominic.Rath@gmx.de>              *
  *   Copyright (C) 2007,2008 Øyvind Harboe <oyvind.harboe@zylin.com>       *
  *   Copyright (C) 2009 Zachary T Welch <zw@superlucidity.net>             *

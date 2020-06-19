@@ -956,7 +956,7 @@ int default_interface_jtag_execute_queue(void)
 
 	int result = jtag->jtag_ops->execute_queue();
 
-#if !BUILD_ZY1000
+#if !BUILD_ZY1000 && !BUILD_MINIJTAGSERV
 	/* Only build this if we use a regular driver with a command queue.
 	 * Otherwise jtag_command_queue won't be found at compile/link time. Its
 	 * definition is in jtag/commands.c, which is only built/linked by

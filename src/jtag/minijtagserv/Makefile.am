@@ -34,9 +34,8 @@ noinst_LTLIBRARIES += %D%/libocdminijtagserv.la
 
 %C%_libocdminijtagserv_la_CPPFLAGS = -I%D%/h -I%D%/.. \
     $(AM_CPPFLAGS) \
-    $(MINIJTAGSERV_BUILTINS_CPPFLAGS) $(JTAG_SERV_GENERAL_CPPFLAGS) $(MINIJTAGSERV_ALTERA_CPPFLAGS) \
-    $(MINIJTAGSERV_MISC_FLAGS) \
-    $(LIBUSB1_CFLAGS) $(LIBFTDI_CFLAGS)
+    $(MINIJTAGSERV_BUILTINS_CPPFLAGS) $(MINIJTAGSERV_SERV_GENERAL_CPPFLAGS) $(MINIJTAGSERV_ALTERA_CPPFLAGS) \
+    $(MINIJTAGSERV_MISC_FLAGS) 
     
 %C%_libocdminijtagserv_la_LDFLAGS = -Wl,-fuse-ld=gold -z noexecstack -z relro -rdynamic \
     -fopenmp \
@@ -44,11 +43,12 @@ noinst_LTLIBRARIES += %D%/libocdminijtagserv.la
     -static-libgcc 
 %C%_libocdminijtagserv_la_LDLIBS = -ljtag_client -lccl_ver -lSafeString
 
+
+
 MINIJTAGSERV_SRC = \
     %D%/h/aji.h %D%/h/c_aji.h  %D%/c2_aji.h \
     %D%/h/jtag_client_gnuaji.h %D%/h/c_jtag_client_gnuaji.h  \
     %D%/jtagservice.h %D%/jtagservice.c \
     %D%/minijtagserv.c
-
 
 

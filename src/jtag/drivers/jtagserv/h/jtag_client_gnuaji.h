@@ -21,7 +21,7 @@
 
 #include "aji.h"
 
-#define AJI_API //JTAG_DLLEXPORT
+//#define AJI_API //JTAG_DLLEXPORT
 
 //#include "aji_sys.h"
 

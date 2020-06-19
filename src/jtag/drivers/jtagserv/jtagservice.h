@@ -1,7 +1,7 @@
 #ifndef JTAGSERVICE_H_INCLUDED
 #define JTAGSERVICE_H_INCLUDED
 
-#include "c_aji.h"
+#include "h/c_aji.h"
 
 
 #define JTAGSERVICE_TIMEOUT_MS 10000

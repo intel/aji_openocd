@@ -1,4 +1,10 @@
-/***************************************************************************
+/* WARNING 
+ * This file is copied from src/jtag/zy1000/ to src/jtag by the make
+ * process. Make sure you do not edit the copy in src/jtag as it can be 
+ * replaced by the original, and SCM is setup to ignore the copy in src/jtag
+ */
+ 
+ /***************************************************************************
  *   Copyright (C) 2007-2010 by Øyvind Harboe                              *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *

@@ -33,6 +33,7 @@ export ACLOCAL_OPTS=" -I /p/psg/swip/w/cinlyooi/.local/share/aclocal"
 ## the final openocd program.
 
 export CONFIG_OPTS='--enable-minijtagserv'
+#export CONFIG_OPTS='--enable-zy1000 --enable-zy1000-master'
 LDFLAGS='-L/usr/lib64 ' LIBS='-lutil '  ./configure --prefix=$(pwd)  ${CONFIG_OPTS}
 
 

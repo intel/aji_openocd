@@ -368,7 +368,7 @@ AJI_ERROR AJI_API aji_get_potential_hardware  (DWORD              * hardware_cou
 
 AJI_ERROR AJI_API aji_get_hardware            (DWORD              * hardware_count,
                                                AJI_HARDWARE       * hardware_list,
-                                               DWORD                timeout /*= 0x7FFFFFFF/);
+                                               DWORD                timeout = 0x7FFFFFFF);
 
 AJI_ERROR AJI_API aji_get_hardware2           (DWORD              * hardware_count,
                                                AJI_HARDWARE       * hardware_list,

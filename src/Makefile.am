@@ -22,13 +22,14 @@ else
 %C%_openocd_LDADD += -ljim
 endif
 
-if JTAGSERV_DRIVER
-%C%_openocd_LDFLAGS += -L%D%/jtag/drivers/jtagserv/lib64
+if MINIJTAGSERV
+%C%_openocd_LDFLAGS += -L%D%/jtag/minijtagserv/lib64
 %C%_openocd_LDADD += -ljtag_client -lccl_ver -lSafeString
 endif
 
-if MINIJTAGSERV_DRIVER
-%C%_openocd_LDFLAGS += -L%D%/jtag/minijtagserv/lib64
+
+if JTAGSERV_DRIVER
+%C%_openocd_LDFLAGS += -L%D%/jtag/drivers/jtagserv/lib64
 %C%_openocd_LDADD += -ljtag_client -lccl_ver -lSafeString
 endif
 

@@ -25,9 +25,10 @@
 #include <jtag/interface.h>
 #include <helper/jep106.h>
 
+#include "jtag/commands.h"
 #include "log.h"
 
-#include "c_jtag_client_gnuaji.h"
+#include "h/c_jtag_client_gnuaji.h"
 #include "jtagservice.h"
 
 extern void jtag_tap_add(struct jtag_tap *t);
@@ -449,7 +450,7 @@ static AJI_ERROR jtagserv_select_tap(void)
 
     for(DWORD tap_position=0; tap_position<jtagservice.device_count; ++tap_position) {
         AJI_DEVICE device = jtagservice.device_list[tap_position];
-        LOG_DEBUG("Detected device (tap_position=%d) device_id=%08X," 
+        LOG_DEBUG("Detected device (tap_position=%d) device_id=%08x," 
                   " instruction_length=%d, features=%d, device_name=%s", 
                     tap_position+1, 
                     device.device_id, device.instruction_length, 
@@ -975,7 +976,6 @@ int interface_jtag_add_sleep(uint32_t us)
 
 	return (status || status2) ? ERROR_FAIL : ERROR_OK;
 }
-
 int interface_jtag_add_pathmove(int num_states, const tap_state_t *path)
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 
@@ -987,7 +987,7 @@ int interface_jtag_add_pathmove(int num_states, const tap_state_t *path)
     );
     printf("  %s", tap_state_name(cmd_queue_cur_state));
     for (int i=0; i<num_states; ++i) {
-        printf(" ->$s", tap_state_name(path[i]));
+        printf(" ->%s", tap_state_name(path[i]));
     }
     printf("\n");
     }
@@ -1011,7 +1011,8 @@ int interface_jtag_add_pathmove(int num_states, const tap_state_t *path)
 		}
 
 		/* synchronously do the operation here */
-
+        tms=!!tms; //keep "unused variable tms" error at bay
+        
 		cur_state = path[state_count];
 		state_count++;
 		num_states--;
