@@ -374,19 +374,23 @@ static AJI_ERROR jtagserv_select_cable(void)
              " [%d cable(s) detected]", 
              jtagservice.hardware_count
     );
+    
+    AJI_HARDWARE hw = jtagservice.hardware_list[0];
+    LOG_INFO("Cable %u: device_name=%s, hw_name=%s, server=%s, port=%s,"
+              " chain_id=%p, persistent_id=%d, chain_type=%d, features=%d,"
+              " server_version_info=%s\n", 
+          1, hw.device_name, hw.hw_name, hw.server, hw.port,  
+          hw.chain_id, hw.persistent_id, hw.chain_type, hw.features,
+          jtagservice.server_version_info_list[0]
+    );
+    
+    if (jtagservice.hardware_list[0].hw_name == NULL) {
+        LOG_ERROR("No hardware present because hw_name is NULL");
+        return AJI_FAILURE;
+    }
 
     jtagservice.in_use_hardware = &(jtagservice.hardware_list[0]);
     jtagservice.in_use_hardware_chain_pid = (jtagservice.in_use_hardware)->persistent_id;
-    if(LOG_LEVEL_IS(LOG_LVL_INFO)) {
-        AJI_HARDWARE hw = *(jtagservice.in_use_hardware);
-        LOG_INFO("Cable %u: device_name=%s, hw_name=%s, server=%s, port=%s,"
-                  " chain_id=%p, persistent_id=%d, chain_type=%d, features=%d,"
-                  " server_version_info=%s\n", 
-              1, hw.device_name, hw.hw_name, hw.server, hw.port,  
-              hw.chain_id, hw.persistent_id, hw.chain_type, hw.features,
-              jtagservice.server_version_info_list[0]
-        );
-    }
     return status;
 }
 
@@ -399,19 +403,19 @@ static AJI_ERROR jtagserv_select_cable(void)
 static AJI_ERROR jtagserv_select_tap(void)
 {   LOG_DEBUG("***> IN %s(%d): %s %d\n", __FILE__, __LINE__, __FUNCTION__, jtagservice.in_use_hardware_chain_pid);
     AJI_ERROR status = AJI_NO_ERROR;
-
+printf("A\n");
     AJI_HARDWARE hw;
     status = c_aji_find_hardware(jtagservice.in_use_hardware_chain_pid, &hw, JTAGSERVICE_TIMEOUT_MS);
     if(AJI_NO_ERROR != status){
         status = c_aji_unlock_chain(hw.chain_id); 
         return status;       
     }
-
+printf("A1\n");
     status = jtagservice_lock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
     if (AJI_NO_ERROR != status) { 
         return status;
     }
-
+printf("A2\n");
     status = c_aji_read_device_chain(
         hw.chain_id, 
         &(jtagservice.device_count), 
@@ -428,7 +432,7 @@ static AJI_ERROR jtagserv_select_tap(void)
             1
         );
     }    
- 
+printf("A3\n"); 
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failed to query server for TAP information. "
                   " Return Status is %i\n", status
@@ -436,7 +440,7 @@ static AJI_ERROR jtagserv_select_tap(void)
         jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
         return status;
     }
-
+printf("A4\n");
     if(0 == jtagservice.device_count) {
         LOG_ERROR("JTAG server reports that it has no TAP attached to the cable");
         jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
