@@ -403,19 +403,19 @@ static AJI_ERROR jtagserv_select_cable(void)
 static AJI_ERROR jtagserv_select_tap(void)
 {   LOG_DEBUG("***> IN %s(%d): %s %d\n", __FILE__, __LINE__, __FUNCTION__, jtagservice.in_use_hardware_chain_pid);
     AJI_ERROR status = AJI_NO_ERROR;
-printf("A\n");
+
     AJI_HARDWARE hw;
     status = c_aji_find_hardware(jtagservice.in_use_hardware_chain_pid, &hw, JTAGSERVICE_TIMEOUT_MS);
     if(AJI_NO_ERROR != status){
         status = c_aji_unlock_chain(hw.chain_id); 
         return status;       
     }
-printf("A1\n");
+
     status = jtagservice_lock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
     if (AJI_NO_ERROR != status) { 
         return status;
     }
-printf("A2\n");
+
     status = c_aji_read_device_chain(
         hw.chain_id, 
         &(jtagservice.device_count), 
@@ -432,7 +432,7 @@ printf("A2\n");
             1
         );
     }    
-printf("A3\n"); 
+
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failed to query server for TAP information. "
                   " Return Status is %i\n", status
@@ -440,7 +440,7 @@ printf("A3\n");
         jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
         return status;
     }
-printf("A4\n");
+
     if(0 == jtagservice.device_count) {
         LOG_ERROR("JTAG server reports that it has no TAP attached to the cable");
         jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
@@ -567,7 +567,7 @@ int interface_jtag_execute_queue(void)
 	int retval = ERROR_OK; //default_interface_jtag_execute_queue(); 
 	if (retval == ERROR_OK) {
 		struct jtag_callback_entry *entry;
-LOG_INFO("***> IN %s(%d): %s  %s\n", __FILE__, __LINE__, __FUNCTION__, jtag_callback_queue_head == NULL? "No callbacks" : "Firing callbacks");
+//LOG_INFO("***> IN %s(%d): %s  %s\n", __FILE__, __LINE__, __FUNCTION__, jtag_callback_queue_head == NULL? "No callbacks" : "Firing callbacks");
 		for (entry = jtag_callback_queue_head; entry != NULL; entry = entry->next) {
 			retval = entry->callback(entry->data0, entry->data1, entry->data2, entry->data3);
 			if (retval != ERROR_OK)
@@ -587,7 +587,8 @@ LOG_INFO("***> IN %s(%d): %s  %s\n", __FILE__, __LINE__, __FUNCTION__, jtag_call
 int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field *fields,
 		tap_state_t state)
 {   LOG_INFO("***> IN %s(%d): %s", __FILE__, __LINE__, __FUNCTION__);
-    {
+
+/*    {
         LOG_INFO("tap=0x%X, num_bits=%d state=(0x%d) %s:", active->idcode, fields->num_bits, state, tap_state_name(state));
     	
     	int size = DIV_ROUND_UP(fields->num_bits, 8);
@@ -615,6 +616,7 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
         }
         printf("\n");
     }
+/*
 	/* synchronously do the operation here */
 
 	/* loop over all enabled TAPs. */
@@ -643,10 +645,21 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
 
 	status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
 	if(AJI_NO_ERROR != status) {
-        LOG_ERROR("Failure lock before accessing IR register. Return Status is %d\n", status);
+        LOG_ERROR("Failure to lock before accessing IR register. Return Status is %d\n", status);
         return ERROR_FAIL;
     }
   
+  
+    if(fields->out_value) {
+        int size = DIV_ROUND_UP(fields->num_bits, 8);
+	    char *value = hexdump(fields->out_value, size);
+        LOG_INFO("IR write  (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+	    free(value);
+    } else {
+        LOG_INFO("No IR read");
+    }
+
+    
     /* the code below could had been replaced by c_aji_access_ir_a(), i.e.
        the BYTE* version of aji_access_ir(). However, for quartus 20.3
        there is a bug where (1) it expects write_data and read_data to be
@@ -666,11 +679,26 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
     }
 
     if(fields->in_value) {
+        int size = DIV_ROUND_UP(fields->num_bits, 8);
+    	char *value = hexdump((uint8_t*) &capture, size);
+        LOG_INFO("IR read  (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+    	free(value);
+    } else {
+        LOG_INFO("No IR read");
+    }
+    
+    if(fields->in_value) {
         for (int i = 0 ; i < (fields->num_bits+7)/8 ; i++) {
            fields->in_value[i] = (BYTE) (capture >> (i * 8));
         }
     }
-
+    if(fields->in_value) {
+        int size = DIV_ROUND_UP(fields->num_bits, 8);
+    	char *value = hexdump(fields->in_value, size);
+        LOG_INFO("fields.in_value  (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+    	free(value);
+    }
+    
     tap_set_state(TAP_IRUPDATE);
         
     if(TAP_IDLE != state) {
@@ -713,7 +741,8 @@ assert("Need to implement interface_jtag_add_plain_ir_scan");
 int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 		const struct scan_field *fields, tap_state_t state)
 {   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-    {
+
+/*    {
         LOG_INFO("tap=0x%X, num_fields=%d state=(0x%d) %s:", active->idcode, num_fields, state, tap_state_name(state));
     	for(int i=0; i<num_fields; ++i) {
         	int size = DIV_ROUND_UP(fields[i].num_bits, 8);
@@ -747,7 +776,7 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
         } //end for(i)
         printf("\n");
     }
-    
+*/    
 	/* synchronously do the operation here */
 
 	/* loop over all enabled TAPs. */
@@ -801,18 +830,26 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 	    }
 	    bit_count += fields[i].num_bits;
 	} 
-printf("BEFORE: length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", length_dr,
+/*printf("BEFORE: length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", length_dr,
           write_bits[3],write_bits[2],write_bits[1],write_bits[0], 
           read_bits[3],read_bits[2],read_bits[1],read_bits[0]
     );    
+*/
 
-
+    if (write_to_dr) { 
+        int size = DIV_ROUND_UP(length_dr, 8);
+	    char *value = hexdump(fields->out_value, size);
+        LOG_INFO("DR write  (size=%d, buf=[%s]) -> %u", size, value, length_dr);
+	    free(value);
+    } else {
+        LOG_INFO("No DR write");
+    }
 	AJI_ERROR  status = AJI_NO_ERROR;
 	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
 
 	status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
 	if(AJI_NO_ERROR != status) {
-        LOG_ERROR("Failure lock before accessing DR register. Return Status is %d\n", status);
+        LOG_ERROR("Failure to lock before accessing DR register. Return Status is %d\n", status);
         free(read_bits);
         free(write_bits);
         return ERROR_FAIL;
@@ -823,11 +860,12 @@ printf("BEFORE: length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
         0, write_to_dr?  length_dr : 0, write_bits,
         0, read_from_dr? length_dr : 0, read_bits
     );
-    
+/*    
 printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", length_dr,
           write_bits[3],write_bits[2],write_bits[1],write_bits[0], 
           read_bits[3],read_bits[2],read_bits[1],read_bits[0]
-    );    
+    ); 
+*/   
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failure to access DR register. Return Status is %d\n", status);
 	    c_aji_unlock(open_id);
@@ -836,6 +874,14 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
         return ERROR_FAIL;
     }
 
+    if (read_from_dr) { 
+        int size = DIV_ROUND_UP(length_dr, 8);
+    	char *value = hexdump(read_bits, size);
+        LOG_INFO("DR read   (size=%d, buf=[%s]) -> %u", size, value, length_dr);
+    	free(value);
+    } else {
+        LOG_INFO("No DR read");
+    }
     if(read_from_dr) {
         bit_count=0;
 	    for (int i = 0; i < num_fields; i++) {
@@ -892,7 +938,7 @@ int interface_jtag_add_plain_dr_scan(int num_bits, const uint8_t *out_bits,
 
     /* Only needed if we are going to permit SVF or XSVF use */
     LOG_ERROR("No plan to implement interface_jtag_add_plain_dr_scan");
-assert("Need to implement interface_jtag_add_plain_dr_scan");
+assert(0); //"Need to implement interface_jtag_add_plain_dr_scan");
 	return ERROR_FAIL;
 }
 
@@ -934,12 +980,38 @@ int interface_jtag_add_reset(int req_trst, int req_srst)
 }
 
 int interface_jtag_add_runtest(int num_cycles, tap_state_t state)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_INFO("***> IN %s(%d): %s num_cycles=%d, end state = (%d) %s\n", __FILE__, __LINE__, __FUNCTION__, num_cycles, state, tap_state_name(state));
+
 	/* synchronously do the operation here */
 
-    /* At present, we believe we needed this if we are going to do boundary_scan */
-    LOG_ERROR("No plan to implement interface_jtag_add_run_test");
-assert("No plan to implement interface_jtag_add_run_test");
+	AJI_ERROR status = AJI_NO_ERROR;
+	AJI_OPEN_ID open_id = 
+        jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
+        
+    status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
+    if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Cannot lock device chain. Return status is %d\n", status);
+        return ERROR_FAIL;
+    }
+    
+    status = c_aji_run_test_idle(open_id, num_cycles);
+    if(AJI_NO_ERROR == status) {
+        tap_set_state(TAP_IDLE);
+    } else {
+        LOG_ERROR("Unexpected error setting TAPs to RUN/IDLE state. Return status is %d\n", status);
+    }
+
+    AJI_ERROR status2 = c_aji_unlock(open_id);
+    if(AJI_NO_ERROR != status) {
+        LOG_WARNING("Unexpected error unlocking device chain. Return status is %d\n", status2);
+    }
+
+    if(state != TAP_IDLE) {
+        LOG_WARNING("Not yet support interface_jtag_add_runtest() to finish in non TAP_IDLE state. "
+                    "State %s (%d) requested", tap_state_name(state), state);
+    }
+	return (status || status2) ? ERROR_FAIL : ERROR_OK;
+
 	return ERROR_OK;
 }
 
@@ -948,7 +1020,7 @@ int interface_jtag_add_clocks(int num_cycles)
 	/* synchronously do the operation here */
 
     LOG_ERROR("interface_jtag_add_clocks to be implemented if needed");
-assert("Need to implement interface_jtag_add_clocks");
+assert(0); // "Need to implement interface_jtag_add_clocks"
 	return ERROR_OK;
 }
 
@@ -1026,7 +1098,7 @@ int interface_jtag_add_pathmove(int num_states, const tap_state_t *path)
 	/* synchronously do the operation here */
 
     LOG_ERROR("Will implement interface_jtag_add_path_move if we need it");
-assert("Need to implement interface_jtag_add_path_move");
+assert(0); //"Need to implement interface_jtag_add_path_move");
 
 	return ERROR_OK;
 }
@@ -1036,7 +1108,7 @@ int interface_add_tms_seq(unsigned num_bits, const uint8_t *seq, enum tap_state 
 	/* synchronously do the operation here */
 
     LOG_ERROR("Will implement interface_jtag_add_tms_seq if we need it");
-assert("Need to implement interface_jtag_add_tms_seq");
+assert(0); //"Need to implement interface_jtag_add_tms_seq");
 	return ERROR_OK;
 }
 
