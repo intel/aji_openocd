@@ -126,11 +126,19 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
     if(me->device_count != 0) {
         free(me->device_list);
         free(me->device_open_id_list);
+        
+        me->device_count = 0;
+        me->device_list = NULL;
+        me->device_open_id_list = NULL;
     }
 
     if(me->hardware_count != 0) {
         free(me->hardware_list);
         free(me->server_version_info_list);
+        
+        me->hardware_count = 0;
+        me->hardware_list = NULL;
+        me->server_version_info_list = NULL;
     }
     return AJI_NO_ERROR;
 }
