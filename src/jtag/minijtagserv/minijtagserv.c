@@ -65,7 +65,7 @@ static struct jtagservice_record jtagservice  = {
  * Access functions to lowlevel driver, agnostic of libftdi/libftdxx
  */
 static char *hexdump(const uint8_t *buf, const unsigned int size)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	unsigned int i;
 	char *str = calloc(size * 2 + 1, 1);
 
@@ -505,6 +505,47 @@ static AJI_ERROR jtagserv_select_tap(void)
     return status;
 }
 
+AJI_ERROR jtagserv_reacquire_open_id(void) 
+{  LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+    int max_try = 5;
+    int sleep_duration = 5; //seconds
+    AJI_ERROR status = AJI_NO_ERROR;
+    
+    for(int try=0; try<max_try; ++try) {
+        if(try) {
+            LOG_INFO("Sleep %d sec before reattempting cable acquisition", sleep_duration);
+            sleep(sleep_duration);
+        }
+        LOG_INFO("Attempt to reacquire cable. Try %d of %d ... ", try+1, max_try);
+        status = jtagserv_select_cable();
+        if(AJI_NO_ERROR == status) {
+            LOG_INFO(" ... Succeeded");
+            break;
+        }
+        LOG_INFO(" ... Not successful. Return status is %d", status);
+    }
+    
+    if(AJI_NO_ERROR != status) {
+       LOG_INFO("Give Up!");
+       return status;
+    }
+
+    for(int try=0; try<max_try; ++try) {
+        if(try) {
+            LOG_INFO("Sleep %d sec before reattempting tap selection", sleep_duration);
+            sleep(sleep_duration);
+        }
+        LOG_INFO("Attempt to select tap. Try %d of %d ... ", try+1, max_try);
+        status = jtagserv_select_tap();
+        if(AJI_NO_ERROR == status) {
+            LOG_INFO(" ... Succeeded");
+            break;
+        }
+        LOG_INFO(" ... Not successful. Return status is %d", status);
+    }
+    return status;
+}
+
 /**
  * jtagserv_init - Contact the JTAG Server
  *
@@ -643,7 +684,12 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
 	AJI_ERROR  status = AJI_NO_ERROR;
 	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
 
-	status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
+	status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_NEVER);
+	if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Failure to lock before accessing IR register. Return Status is %d. Reacquiring lock ...\n", status);
+    	status = jtagserv_reacquire_open_id();
+    }
+
 	if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failure to lock before accessing IR register. Return Status is %d\n", status);
 assert(0);
@@ -851,7 +897,11 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 	AJI_ERROR  status = AJI_NO_ERROR;
 	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
 
-	status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
+	status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_NEVER);
+	if(AJI_NO_ERROR != status) {
+        LOG_ERROR("Failure to lock before accessing DR register. Return Status is %d. Reacquiring lock ...\n", status);
+    	status = jtagserv_reacquire_open_id();
+    }
 	if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failure to lock before accessing DR register. Return Status is %d\n", status);
         free(read_bits);
@@ -958,7 +1008,7 @@ int interface_jtag_add_tlr()
 	AJI_OPEN_ID open_id = 
         jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
         
-    status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
+    status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_NEVER);
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Cannot lock device chain. Return status is %d\n", status);
         return ERROR_FAIL;
@@ -996,7 +1046,7 @@ int interface_jtag_add_runtest(int num_cycles, tap_state_t state)
 	AJI_OPEN_ID open_id = 
         jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
         
-    status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
+    status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_NEVER);
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Cannot lock device chain. Return status is %d\n", status);
         return ERROR_FAIL;
@@ -1040,7 +1090,7 @@ int interface_jtag_add_sleep(uint32_t us)
 	AJI_OPEN_ID open_id = 
         jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
         
-    status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_AUTO);
+    status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_NEVER);
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Cannot lock device chain. Return status is %d\n", status);
         return ERROR_FAIL;
