@@ -1,0 +1,40 @@
+#! /bin/bash -xe
+
+##
+## Executable Script
+## Creating 64 bit OpenOCD
+##
+## You will need a working "MSYS MinGW 64-bit" shell
+##
+##
+## Modified from https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/building-openocd-windows.html
+##
+###############################################
+
+export http_proxy=http://proxy-chain.intel.com:911
+export https_proxy=http://proxy-chain.intel.com:911
+
+## Downloading packages. There may be messages you
+## need to respond to so don't go away
+pacman -Syuu
+pacman -S --noconfirm --needed autoconf automake git make \
+mingw-w64-x86_64-gcc \
+mingw-w64-x86_64-toolchain \
+mingw-w64-x86_64-libtool \
+mingw-w64-x86_64-pkg-config \
+mingw-w64-x86_64-winpthreads-git \
+p7zip
+
+
+## Copy libusb
+pushd ..
+wget https://github.com/libusb/libusb/releases/download/v1.0.23/libusb-1.0.23.7z
+7z x -olibusb ./libusb-1.0.23.7z    #Or any later versions
+export LDFLAGS="$LDFLAGS -L${PWD}/libusb/MinGW64/dll"
+popd
+
+
+## initialize submodules
+git submodule update --init
+
+

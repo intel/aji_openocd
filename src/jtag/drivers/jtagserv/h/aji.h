@@ -22,11 +22,20 @@
 #ifndef AJI_SYS_H_INCLUDED
 #define AJI_SYS_H_INCLUDED
 
+
 //# INCLUDE FILES //////////////////////////////////////////////////////////
+//FOR OPENOCD
+#include "config.h"  
 
 //# MACRO DEFINITIONS //////////////////////////////////////////////////////
 
-#if PORT==WINDOWS
+//OpenOCD define IS_WIN32 if it is on Windows platform
+//TODO: Disable warning for PORT redefined
+#if IS_WIN32
+#define PORT WINDOWS
+#endif
+
+#if PORT==WINDOWS 
 #define AJI_API __declspec(dllimport)
 #else
 #define AJI_API
@@ -34,13 +43,18 @@
 
 typedef unsigned char       BYTE;
 // On UNIX 64-bit, long is a 64 bit type (4 words)
-#if PORT==UNIX && defined(MODE_64_BIT)
+#if IS_WIN32
+    typedef unsigned long   DWORD;
+#elif PORT==UNIX && defined(MODE_64_BIT)
     typedef unsigned int    DWORD;
 #else
     typedef unsigned long   DWORD;
 #endif
 
-#if PORT==WINDOWS
+#if IS_WIN32==1
+    //When compiling with for 64 bit and in OpenOCD, __int64 is not defined
+    typedef unsigned long long  QWORD;
+#elif PORT==WINDOWS
     typedef unsigned __int64    QWORD;
 #else
     typedef unsigned long long  QWORD;

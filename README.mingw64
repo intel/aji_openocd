@@ -1,0 +1,29 @@
+#! /bin/bash -xe
+
+##
+## Executable Script
+## Creating 64 bit OpenOCD
+##
+## You will need a working "MSYS MinGW 64-bit" shell
+## You will need to run README.ming64.setup to setup the dependent software
+##
+## Modified from https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/building-openocd-windows.html
+##
+###############################################
+
+export http_proxy=http://proxy-chain.intel.com:911
+export https_proxy=http://proxy-chain.intel.com:911
+
+
+## Build
+export CPPFLAGS="$CPPFLAGS -D__USE_MINGW_ANSI_STDIO=1 -Wno-error"; 
+export CFLAGS="$CFLAGS -Wno-error"
+./bootstrap
+./configure --disable-doxygen-pdf \
+   --enable-ftdi --enable-jlink --enable-ulink \
+   --build=x86_64-w64-mingw32 --host=x86_64-w64-mingw32
+make -j8  #Assuming you have a 4-cores processor.
+cp ../libusb/MinGW64/dll/libusb-1.0.dll ./src
+cp /opt/x86_64-w64-mingw32/bin/libwinpthread-1.dll ./src
+
+
