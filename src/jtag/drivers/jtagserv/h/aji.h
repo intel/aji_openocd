@@ -26,14 +26,21 @@
 //# INCLUDE FILES //////////////////////////////////////////////////////////
 //FOR OPENOCD
 #include "config.h"  
+/*Dealing with what used to be Makefile.am line 
+      MINIJTAGSERV_BUILTINS_CPPFLAGS += -DLITTLE=1 -DBIG=2 -DENDIAN=LITTLE
+  but only works for gcc 4.6 or later
+*/
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define ENDIAN 1
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define ENDIAN 2
+#elif
+#error Cannot handle __ORDER_PDP__ENDIAN__
+#else
+#error Unknown Byte Order (Endian) or not gcc >4.6
+#endif
 
 //# MACRO DEFINITIONS //////////////////////////////////////////////////////
-
-//OpenOCD define IS_WIN32 if it is on Windows platform
-//TODO: Disable warning for PORT redefined
-#if IS_WIN32
-#define PORT WINDOWS
-#endif
 
 #if PORT==WINDOWS 
 #define AJI_API __declspec(dllimport)
@@ -43,18 +50,13 @@
 
 typedef unsigned char       BYTE;
 // On UNIX 64-bit, long is a 64 bit type (4 words)
-#if IS_WIN32
-    typedef unsigned long   DWORD;
-#elif PORT==UNIX && defined(MODE_64_BIT)
+#if PORT==UNIX && defined(MODE_64_BIT)
     typedef unsigned int    DWORD;
 #else
     typedef unsigned long   DWORD;
 #endif
 
-#if IS_WIN32==1
-    //When compiling with for 64 bit and in OpenOCD, __int64 is not defined
-    typedef unsigned long long  QWORD;
-#elif PORT==WINDOWS
+#if PORT==WINDOWS
     typedef unsigned __int64    QWORD;
 #else
     typedef unsigned long long  QWORD;

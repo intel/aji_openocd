@@ -638,6 +638,9 @@ AS_IF([test "x$build_target64" = "xyes"], [
 # that functions from libSafeString is not available, even if on the command line, 
 # one can see -lSafeString
 # @TODO Should extend tests to include libSafeString.so and libccl_ver.so
+# @TODO Should test for jtag_client.dll and ccl_ver.dll 0if it is windows,
+#       as right now it is assuming if libjtag_client is available,
+#       win64/jtag_client.dll is also available
 #AC_CHECK_LIB([jtag_client], [_Z16aji_get_hardwarePjP12AJI_HARDWAREj])
 AC_CHECK_FILE([src/jtag/drivers/jtagserv/lib64/libjtag_client.so],[
     use_jtagserv=yes

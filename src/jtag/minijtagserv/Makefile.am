@@ -1,5 +1,9 @@
-MINIJTAGSERV_BUILTINS_CPPFLAGS = -DWINDOWS=1 -DUNIX=2 -DPORT=UNIX -DLINUX=3 -DSYS=LINUX
-MINIJTAGSERV_BUILTINS_CPPFLAGS += -DLITTLE=1 -DBIG=2 -DENDIAN=LITTLE
+MINIJTAGSERV_BUILTINS_CPPFLAGS = -DWINDOWS=1 -DUNIX=2 -DLINUX=3
+if IS_WIN32
+MINIJTAGSERV_BUILTINS_CPPFLAGS += -DPORT=WINDOWS -DSYS=WINDOWS
+else
+MINIJTAGSERV_BUILTINS_CPPFLAGS += -DPORT=UNIX -DSYS=LINUX
+endif
 
 MINIJTAGSERV_GENERAL_CPPFLAGS = -DUSE_STD_NAMESPACE -DUSE_STD_IOSTREAMS -D_CRT_NONSTDC_NO_WARNINGS
 MINIJTAGSERV_ALTERA_CPPFLAGS  = -DALTERA_NO_FSTREAM_WRAPPER  -DUSE_QT5 -DMODE_64_BIT \
@@ -36,13 +40,18 @@ noinst_LTLIBRARIES += %D%/libocdminijtagserv.la
     $(AM_CPPFLAGS) \
     $(MINIJTAGSERV_BUILTINS_CPPFLAGS) $(MINIJTAGSERV_SERV_GENERAL_CPPFLAGS) $(MINIJTAGSERV_ALTERA_CPPFLAGS) \
     $(MINIJTAGSERV_MISC_FLAGS) 
-    
+
 %C%_libocdminijtagserv_la_LDFLAGS = -Wl,-fuse-ld=gold -z noexecstack -z relro -rdynamic \
     -fopenmp \
-    -L%D%/lib64  \
     -static-libgcc 
-%C%_libocdminijtagserv_la_LDLIBS = -ljtag_client -lccl_ver -lSafeString
+%C%_libocdminijtagserv_la_LDLIBS = -ljtag_client -lccl_ver
 
+if IS_WIN32
+%C%_libocdminijtagserv_la_LDFLAGS += -L%D%/win64
+else
+%C%_libocdminijtagserv_la_LDFLAGS += -L%D%/lib64
+%C%_libocdminijtagserv_la_LDLIBS += -lSafeString
+endif
 
 
 MINIJTAGSERV_SRC = \
@@ -52,3 +61,5 @@ MINIJTAGSERV_SRC = \
     %D%/minijtagserv.c
 
 
+#@TODO During installation, copy all the dependent libraries
+#      to its final location

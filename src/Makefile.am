@@ -23,8 +23,13 @@ else
 endif
 
 if MINIJTAGSERV
+%C%_openocd_LDADD += -ljtag_client -lccl_ver -lssp
+if IS_WIN32
+%C%_openocd_LDFLAGS += -L%D%/jtag/minijtagserv/win64
+else
 %C%_openocd_LDFLAGS += -L%D%/jtag/minijtagserv/lib64
-%C%_openocd_LDADD += -ljtag_client -lccl_ver -lSafeString
+%C%_openocd_LDADD += -lSafeString
+endif
 endif
 
 
