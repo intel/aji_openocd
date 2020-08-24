@@ -249,6 +249,7 @@ AJI_API AJI_ERROR _Z13aji_find_nodeP9AJI_CHAINiimPK9AJI_CLAIMmPKcPP8AJI_OPENPm(A
 AJI_API AJI_ERROR _Z17aji_get_node_infoP8AJI_OPENPmS1_(AJI_OPEN_ID node_id, DWORD * device_index, DWORD * info);
 
 AJI_API AJI_ERROR _Z18aji_access_overlayP8AJI_OPENmPm(AJI_OPEN_ID node_id, DWORD overlay, DWORD * captured_overlay);
+
 #ifdef __cplusplus
 } //end extern "C"
 #endif 
