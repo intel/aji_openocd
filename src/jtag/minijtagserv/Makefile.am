@@ -60,6 +60,11 @@ MINIJTAGSERV_SRC = \
     %D%/jtagservice.h %D%/jtagservice.c \
     %D%/minijtagserv.c
 
+if IS_WIN32
+MINIJTAGSERV_SRC += %D%/h/jtag_cleint_gnuaji_win64.h
+else
+MINIJTAGSERV_SRC += %D%/h/jtag_cleint_gnuaji_lib64.h
+endif
 
 #@TODO During installation, copy all the dependent libraries
 #      to its final location
