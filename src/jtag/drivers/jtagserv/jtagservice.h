@@ -1,6 +1,10 @@
 #ifndef JTAGSERVICE_H_INCLUDED
 #define JTAGSERVICE_H_INCLUDED
 
+#if IS_WIN32
+#include <windows.h>
+#endif
+
 #include "h/c_aji.h"
 
 
@@ -43,9 +47,7 @@ struct jtagservice_record {
     AJI_DEVICE *in_use_device;
     DWORD       in_use_device_id; 
     BYTE        in_use_device_irlen;
-     
 
-    
     //state tracking
     enum jtagservice_lock locked;
 };
@@ -54,6 +56,8 @@ struct jtagservice_record {
 _Bool jtagservice_is_locked(jtagservice_record *me, enum jtagservice_lock lock);
 AJI_ERROR jtagservice_lock(jtagservice_record *me, enum jtagservice_lock, DWORD timeout);
 AJI_ERROR jtagservice_unlock(jtagservice_record *me, enum jtagservice_lock, DWORD timeout);
+
+AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout);
 AJI_ERROR jtagservice_free(jtagservice_record *me, DWORD timeout);
 
 

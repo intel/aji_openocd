@@ -29,43 +29,62 @@ MINIJTAGSERV_MISC_FLAGS = -Wno-error=coverage-mismatch    -fPIC -fvisibility=hid
     -DBOOST_NO_AUTO_PTR -DBOOST_SYSTEM_NO_DEPRECATED -D_GLIBCXX_USE_CXX11_ABI=0 -Wno-misleading-indentation \
     -Wno-deprecated -Wno-attributes -Wno-unused-but-set-variable -Wno-nonnull-compare -Wno-unused-const-variable \
     -D_GNU_SOURCE -D_REENTRANT -flifetime-dse=1 -frecord-gcc-switches -fstack-protector-strong \
-    -Wformat -Wformat-security -fPIE -fPIC -D_FORTIFY_SOURCE=2 -Werror=delete-incomplete
+    -Wformat-security -fPIE -fPIC -D_FORTIFY_SOURCE=2 -Werror=delete-incomplete
+
+## @FIXME Now disabling print string format check on windows to avoid problem with 
+## src/jtag/minijtagserv/minijtagserv.c:858:16: warning: format '%u' expects argument of type 'unsigned int', 
+##     but argument 7 has type 'DWORD' {aka 'long unsigned int'} [-Wformat=]
+##  858 |      LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %d, but got tap position %u instead",
+##      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##  859 |                  jtagservice.in_use_device_tap_position,
+##  860 |                tap_position
+##      |                ~~~~~~~~~~~~
+##      |                |
+##      |                DWORD {aka long unsigned int}
+##
+##  The reason for this is the formating string is written for with DWORD for linux in mind, this causes problem when 
+##  DWORD for windows is a different datatype from linux
+
+if !IS_WIN32
+MINIJTAGSERV_MISC_FLAGS += -Wformat
+endif
+
 
 
 noinst_LTLIBRARIES += %D%/libocdminijtagserv.la
 
-%C%_libocdminijtagserv_la_SOURCES = $(MINIJTAGSERV_SRC)
+%C%_libocdminijtagserv_la_SOURCES = 
+%C%_libocdminijtagserv_la_CPPFLAGS =
+%C%_libocdminijtagserv_la_LDFLAGS = 
+%C%_libocdminijtagserv_la_LDLIBS =
+%C%_libocdminijtagserv_la_LIBADD =
 
-%C%_libocdminijtagserv_la_CPPFLAGS = -I%D%/h -I%D%/.. \
+include %D%/h/Makefile.am
+%C%_libocdminijtagserv_la_LIBADD += $(top_builddir)/%D%/h/libocdcaji.la
+
+
+%C%_libocdminijtagserv_la_SOURCES += $(MINIJTAGSERV_SRC)
+
+%C%_libocdminijtagserv_la_CPPFLAGS += -I%D%/h -I%D%/.. \
     $(AM_CPPFLAGS) \
-    $(MINIJTAGSERV_BUILTINS_CPPFLAGS) $(MINIJTAGSERV_SERV_GENERAL_CPPFLAGS) $(MINIJTAGSERV_ALTERA_CPPFLAGS) \
+    $(MINIJTAGSERV_BUILTINS_CPPFLAGS) $(MINIJTAGSERV_GENERAL_CPPFLAGS) $(MINIJTAGSERV_ALTERA_CPPFLAGS) \
     $(MINIJTAGSERV_MISC_FLAGS) 
 
-%C%_libocdminijtagserv_la_LDFLAGS = -Wl,-fuse-ld=gold -z noexecstack -z relro -rdynamic \
+%C%_libocdminijtagserv_la_LDFLAGS += -Wl,-fuse-ld=gold -z noexecstack -z relro -rdynamic \
     -fopenmp \
     -static-libgcc 
-%C%_libocdminijtagserv_la_LDLIBS = -ljtag_client -lccl_ver
-
-if IS_WIN32
-%C%_libocdminijtagserv_la_LDFLAGS += -L%D%/win64
-else
-%C%_libocdminijtagserv_la_LDFLAGS += -L%D%/lib64
-%C%_libocdminijtagserv_la_LDLIBS += -lSafeString
-endif
-
 
 MINIJTAGSERV_SRC = \
     %D%/h/aji.h %D%/h/c_aji.h  %D%/c2_aji.h \
     %D%/h/jtag_client_gnuaji.h %D%/h/c_jtag_client_gnuaji.h  \
     %D%/jtagservice.h %D%/jtagservice.c \
-    %D%/minijtagserv.c
+    %D%/minijtagserv.c 
 
-if IS_WIN32
+#if IS_WIN32
 MINIJTAGSERV_SRC += %D%/h/jtag_client_gnuaji_win64.h %D%/h/c_jtag_client_gnuaji_win64.h
-## %D%/h/c_jtag_client_gnuaji_win64.c
-else
-MINIJTAGSERV_SRC += %D%/h/jtag_client_gnuaji_lib64.h %D%/h/c_jtag_client_gnuaji_lib64.h
-endif
+#else
+#MINIJTAGSERV_SRC += %D%/h/jtag_client_gnuaji_lib64.h %D%/h/c_jtag_client_gnuaji_lib64.h
+#endif
 
 #@TODO During installation, copy all the dependent libraries
 #      to its final location

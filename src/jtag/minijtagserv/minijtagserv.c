@@ -53,7 +53,7 @@ static struct jtagservice_record jtagservice  = {
 //    .in_use_device = NULL,
     .in_use_device_id = 0,
     .in_use_device_irlen = 0,
-    
+
     .locked    = NONE,
 };
 
@@ -565,7 +565,15 @@ static int minijtagserv_init(void)
     }
     
     AJI_ERROR status = AJI_NO_ERROR;
-    
+
+#if IS_WIN32
+    status = c_jtag_client_gnuaji_init();
+    if (AJI_NO_ERROR != status) {
+        LOG_ERROR("Cannot initialize C_JTAG_CLIENT library. Return status is %d", status);
+        jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
+        return ERROR_JTAG_INIT_FAILED;
+    }
+#endif
     status = jtagserv_select_cable();
     if (AJI_NO_ERROR != status) {
         LOG_ERROR("Cannot select JTAG Cable. Return status is %d", status);
@@ -843,7 +851,7 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 	}
 
 	if((DWORD) active_tap_position != jtagservice.in_use_device_tap_position) {
-	    LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %d, but got tap position %d instead",
+	    LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %d, but got tap position %u instead",
           	      jtagservice.in_use_device_tap_position,
 	              tap_position
 	    );

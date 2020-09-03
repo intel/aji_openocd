@@ -1,7 +1,7 @@
 #include "jtagservice.h"
 
 #include "log.h"
-#include "c_jtag_client_gnuaji.h"
+#include "h/c_jtag_client_gnuaji.h"
 
 
 /**
@@ -117,6 +117,27 @@ AJI_ERROR jtagservice_unlock(jtagservice_record *me, enum jtagservice_lock lock,
     return status;
 }
 
+AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout) {
+    me->hardware_count = 0;
+    //    me->hardware_list = NULL,
+    //    me->server_version_info_list = NULL,
+    //    me->in_use_hardware = NULL,
+    me->in_use_hardware_index = 0;
+    me->in_use_hardware_chain_pid = 0;
+
+    me->device_count = 0;
+    //    me->device_list = NULL,
+
+    me->in_use_device_tap_position = 0;
+    //    me->in_use_device = NULL,
+    me->in_use_device_id = 0;
+    me->in_use_device_irlen = 0;
+
+    me->locked = NONE;
+
+    return AJI_NO_ERROR;
+}
+
 AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout) 
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     
@@ -140,6 +161,11 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
         me->hardware_list = NULL;
         me->server_version_info_list = NULL;
     }
+
+#if IS_WIN32
+    c_jtag_client_gnuaji_free();
+#endif
+
     return AJI_NO_ERROR;
 }
 
@@ -147,8 +173,8 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
 
 
 
-
- 
+#ifndef IS_WIN32
+//not yet port to Windows 
 int jtagservice_query_main(void) {
     printf("Check inputs\n");
     char *quartus_jtag_client_config = getenv("QUARTUS_JTAG_CLIENT_CONFIG");
@@ -356,4 +382,4 @@ int jtagservice_query_main(void) {
 	return 0;
 }
 
-
+#endif
