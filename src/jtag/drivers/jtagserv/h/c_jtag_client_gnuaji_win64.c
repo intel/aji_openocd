@@ -30,11 +30,12 @@ AJI_ERROR c_jtag_client_gnuaji_init(void) {
     return AJI_NO_ERROR;
 }
 
-void c_jtag_client_gnuaji_free(void) {
+AJI_ERROR c_jtag_client_gnuaji_free(void) {
     if (c_jtag_client_lib != NULL) {
         FreeLibrary(c_jtag_client_lib);
     }
     c_jtag_client_lib = NULL;
+    return AJI_NO_ERROR;
 }
 
 
