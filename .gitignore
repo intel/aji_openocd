@@ -1,5 +1,9 @@
 # stuff "git status" should ignore
 
+# Copied windows DLL
+src/libusb-1.0.dll
+src/libwinpthread-1.dll
+
 # build output
 .libs
 .deps
