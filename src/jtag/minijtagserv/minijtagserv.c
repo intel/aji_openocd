@@ -371,13 +371,13 @@ static AJI_ERROR jtagserv_select_cable(void)
         return AJI_BAD_HARDWARE;
     }
     LOG_INFO("At present, only the first hardware cable will be used"
-             " [%d cable(s) detected]", 
+             " [%lu cable(s) detected]", 
              jtagservice.hardware_count
     );
     
     AJI_HARDWARE hw = jtagservice.hardware_list[0];
     LOG_INFO("Cable %u: device_name=%s, hw_name=%s, server=%s, port=%s,"
-              " chain_id=%p, persistent_id=%d, chain_type=%d, features=%d,"
+              " chain_id=%p, persistent_id=%lu, chain_type=%d, features=%lu,"
               " server_version_info=%s\n", 
           1, hw.device_name, hw.hw_name, hw.server, hw.port,  
           hw.chain_id, hw.persistent_id, hw.chain_type, hw.features,
@@ -401,7 +401,7 @@ static AJI_ERROR jtagserv_select_cable(void)
  * @pos jtagservice will be populated with the selected tap
  */
 static AJI_ERROR jtagserv_select_tap(void)
-{   LOG_DEBUG("***> IN %s(%d): %s %d\n", __FILE__, __LINE__, __FUNCTION__, jtagservice.in_use_hardware_chain_pid);
+{   LOG_DEBUG("***> IN %s(%d): %s %lu\n", __FILE__, __LINE__, __FUNCTION__, jtagservice.in_use_hardware_chain_pid);
     AJI_ERROR status = AJI_NO_ERROR;
 
     AJI_HARDWARE hw;
@@ -450,12 +450,12 @@ static AJI_ERROR jtagserv_select_tap(void)
              " select the ARM SOCVHPS with IDCODE %X automatically",
              IDCODE_SOCVHPS
     );
-    LOG_INFO("Found %d TAP devices", jtagservice.device_count);
+    LOG_INFO("Found %lx TAP devices", jtagservice.device_count);
 
     for(DWORD tap_position=0; tap_position<jtagservice.device_count; ++tap_position) {
         AJI_DEVICE device = jtagservice.device_list[tap_position];
-        LOG_DEBUG("Detected device (tap_position=%d) device_id=%08x," 
-                  " instruction_length=%d, features=%d, device_name=%s", 
+        LOG_DEBUG("Detected device (tap_position=%lu) device_id=%08lx," 
+                  " instruction_length=%d, features=%lu, device_name=%s", 
                     tap_position+1, 
                     device.device_id, device.instruction_length, 
                     device.features, device.device_name
@@ -465,7 +465,7 @@ static AJI_ERROR jtagserv_select_tap(void)
             jtagservice.in_use_device_id = device.device_id;
             jtagservice.in_use_device_tap_position = tap_position;
             jtagservice.in_use_device_irlen = device.instruction_length;
-            LOG_INFO("Found SOCVHPS device at tap_position %d", tap_position); 
+            LOG_INFO("Found SOCVHPS device at tap_position %lu", tap_position); 
         }
     } //end for tap_position
     
@@ -476,7 +476,7 @@ static AJI_ERROR jtagserv_select_tap(void)
     }
 
     char idcode[19];
-    sprintf(idcode, "%X", jtagservice.in_use_device_id);
+    sprintf(idcode, "%lX", jtagservice.in_use_device_id);
 
     AJI_CLAIM2 claims[] = {
         { AJI_CLAIM_IR_SHARED, 0, IR_ARM_IDCODE },
@@ -496,7 +496,7 @@ static AJI_ERROR jtagserv_select_tap(void)
                       claims, claims_n, idcode
     );
     if( AJI_NO_ERROR != status) {
-            LOG_ERROR("Cannot open device number %d (IDCODE=%s)",
+            LOG_ERROR("Cannot open device number %lu (IDCODE=%s)",
                       jtagservice.in_use_device_tap_position, idcode
             );
     }
@@ -683,7 +683,7 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
 	}
 
 	if(active_tap_position != jtagservice.in_use_device_tap_position) {
-	    LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %d, but got tap position %d instead",
+	    LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %lu, but got tap position %lu instead",
           	      jtagservice.in_use_device_tap_position,
 	              active_tap_position
 	    );
@@ -851,7 +851,7 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 	}
 
 	if((DWORD) active_tap_position != jtagservice.in_use_device_tap_position) {
-	    LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %d, but got tap position %u instead",
+	    LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %lu, but got tap position %lu instead",
           	      jtagservice.in_use_device_tap_position,
 	              tap_position
 	    );
