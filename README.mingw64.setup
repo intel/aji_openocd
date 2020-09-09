@@ -37,4 +37,5 @@ popd
 ## initialize submodules
 git submodule update --init
 
-
+## setup git to handle symlinks
+sh -xe README.mingw64.git.setup
