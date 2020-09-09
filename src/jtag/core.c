@@ -324,7 +324,7 @@ int jtag_call_event_callbacks(enum jtag_event event)
 {
 	struct jtag_event_callback *callback = jtag_event_callbacks;
 
-	LOG_DEBUG("jtag event: %s", jtag_event_strings[event]);
+    LOG_DEBUG("jtag event: %s", jtag_event_strings[event]);
 
 	while (callback) {
 		struct jtag_event_callback *next;
@@ -553,7 +553,7 @@ int jtag_add_statemove(tap_state_t goal_state)
 	tap_state_t cur_state = cmd_queue_cur_state;
 
 	if (goal_state != cur_state) {
-		LOG_DEBUG("cur_state=%s goal_state=%s",
+        LOG_DEBUG("cur_state=%s goal_state=%s",
 			tap_state_name(cur_state),
 			tap_state_name(goal_state));
 	}
@@ -706,7 +706,6 @@ static void legacy_jtag_add_reset(int req_tlr_or_trst, int req_srst)
 			return;
 		}
 	}
-
 	/* SRST resets everything hooked up to that signal */
 	if (jtag_srst != new_srst) {
 		jtag_srst = new_srst;
@@ -953,7 +952,7 @@ int default_interface_jtag_execute_queue(void)
 
 	int result = jtag->jtag_ops->execute_queue();
 
-#if !BUILD_ZY1000
+#if !BUILD_ZY1000 && !BUILD_MINIJTAGSERV
 	/* Only build this if we use a regular driver with a command queue.
 	 * Otherwise jtag_command_queue won't be found at compile/link time. Its
 	 * definition is in jtag/commands.c, which is only built/linked by
@@ -1090,6 +1089,14 @@ void jtag_sleep(uint32_t us)
 /* a larger IR length than we ever expect to autoprobe */
 #define JTAG_IRLEN_MAX          60
 
+#if BUILD_MINIJTAGSERV
+/* Minijtagserv should define its own jtag_examine_chain(). All jtag_examine_*()
+ * in this file are there to support jtag_examine_chain(). As such minijtagserv
+ * need not define them.
+ */
+extern int jtag_examine_chain(void);
+
+#else /* BUILD_MINIJTAGSERV */
 static int jtag_examine_chain_execute(uint8_t *idcode_buffer, unsigned num_idcode)
 {
 	struct scan_field field = {
@@ -1328,7 +1335,14 @@ out:
 	free(idcode_buffer);
 	return retval;
 }
+#endif /* BUILD_MINIJTAGSERV */
 
+#if BUILD_MINIJTAGSERV
+/* Minijtagserv should define its own jtag_validate_ircapture(void) 
+ */
+extern int jtag_validate_ircapture(void);
+
+#else /* BUILD_MINIJTAGSERV */
 /*
  * Validate the date loaded by entry to the Capture-IR state, to help
  * find errors related to scan chain configuration (wrong IR lengths)
@@ -1452,6 +1466,7 @@ done:
 	}
 	return retval;
 }
+#endif /* BUILD_MINIJTAGSERV */
 
 void jtag_tap_init(struct jtag_tap *tap)
 {
@@ -1475,6 +1490,7 @@ void jtag_tap_init(struct jtag_tap *tap)
 
 	/* TAP will be in bypass mode after jtag_validate_ircapture() */
 	tap->bypass = 1;
+
 	buf_set_ones(tap->cur_instr, tap->ir_length);
 
 	/* register the reset callback for the TAP */
@@ -1604,8 +1620,8 @@ int jtag_init_inner(struct command_context *cmd_ctx)
 	/* Examine DR values first.  This discovers problems which will
 	 * prevent communication ... hardware issues like TDO stuck, or
 	 * configuring the wrong number of (enabled) TAPs.
-	 */
-	retval = jtag_examine_chain();
+	 */ 
+	retval = jtag_examine_chain(); 
 	switch (retval) {
 		case ERROR_OK:
 			/* complete success */
@@ -1644,8 +1660,6 @@ int jtag_init_inner(struct command_context *cmd_ctx)
 		jtag_notify_event(JTAG_TAP_EVENT_SETUP);
 	else
 		LOG_WARNING("Bypassing JTAG setup events due to errors");
-
-
 	return ERROR_OK;
 }
 
@@ -1754,7 +1768,7 @@ int jtag_init(struct command_context *cmd_ctx)
 	int retval = adapter_init(cmd_ctx);
 	if (retval != ERROR_OK)
 		return retval;
-
+		
 	/* guard against oddball hardware: force resets to be inactive */
 	jtag_add_reset(0, 0);
 
@@ -1765,6 +1779,7 @@ int jtag_init(struct command_context *cmd_ctx)
 		else
 			LOG_WARNING("\'srst_nogate\' reset_config option is required");
 	}
+	
 	retval = jtag_execute_queue();
 	if (retval != ERROR_OK)
 		return retval;

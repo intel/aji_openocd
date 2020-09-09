@@ -1,11 +1,12 @@
 /* WARNING 
- * This file is copied from src/jtag/minidriver/ to src/jtag by the make
+ * This file is copied from src/jtag/minijtagserv/ to src/jtag by the make
  * process. Make sure you do not edit the copy in src/jtag as it can be 
  * replaced by the original, and SCM is setup to ignore the copy in src/jtag
  */
+ 
  /***************************************************************************
  *   Copyright (C) 2005 by Dominic Rath <Dominic.Rath@gmx.de>              *
- *   Copyright (C) 2007,2008 Øyvind Harboe <oyvind.harboe@zylin.com>       *
+ *   Copyright (C) 2007-2009 Øyvind Harboe <oyvind.harboe@zylin.com>       *
  *   Copyright (C) 2009 Zachary T Welch <zw@superlucidity.net>             *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -22,14 +23,10 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
 
-#ifndef OPENOCD_JTAG_MINIDRIVER_MINIDRIVER_IMP_H
-#define OPENOCD_JTAG_MINIDRIVER_MINIDRIVER_IMP_H
+#ifndef OPENOCD_JTAG_MINIJTAGSERV_JTAG_MINIDRIVER_H
+#define OPENOCD_JTAG_MINIJTAGSERV_JTAG_MINIDRIVER_H
 
-#include <jtag/jtag_minidriver.h>
+/* Currently Empty. Required file for build system */
 
-#define jtag_add_callback(callback, in) interface_jtag_add_callback(callback, in)
+#endif /* OPENOCD_JTAG_MINIJTAGSERV_MINIDRIVER_IMP_H */
 
-#define jtag_add_callback4(callback, in, data1, data2, data3) \
-	interface_jtag_add_callback4(callback, in, data1, data2, data3)
-
-#endif /* OPENOCD_JTAG_MINIDRIVER_MINIDRIVER_IMP_H */

@@ -1,4 +1,8 @@
 noinst_LTLIBRARIES += %D%/libocdjtagdrivers.la
+%C%_libocdjtagdrivers_la_LDFLAGS =
+
+%C%_libocdjtagdrivers_la_LDLIBS =
+
 %C%_libocdjtagdrivers_la_LIBADD =
 
 %C%_libocdjtagdrivers_la_SOURCES = \
@@ -20,6 +24,12 @@ DRIVERFILES =
 # Standard Driver: common files
 DRIVERFILES += %D%/driver.c
 DRIVERFILES += %D%/jtag_usb_common.c
+
+
+if USE_JTAGSERV
+%C%_libocdjtagdrivers_la_CPPFLAGS += $(LIBJTAGSERV_CFLAGS)
+%C%_libocdjtagdrivers_la_LIBADD += $(LIBJTAGSERV_LIBS)
+endif
 
 if USE_LIBUSB1
 DRIVERFILES += %D%/libusb_helper.c
@@ -85,6 +95,10 @@ endif
 if USB_BLASTER_DRIVER
 %C%_libocdjtagdrivers_la_LIBADD += %D%/usb_blaster/libocdusbblaster.la
 include %D%/usb_blaster/Makefile.am
+endif
+if JTAGSERV_DRIVER
+%C%_libocdjtagdrivers_la_LIBADD += %D%/jtagserv/libocdjtagserv.la 
+include %D%/jtagserv/Makefile.am
 endif
 if FT232R
 DRIVERFILES += %D%/ft232r.c

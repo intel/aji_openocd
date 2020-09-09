@@ -52,7 +52,6 @@
 #include <jtag/interface.h>
 #include <time.h>
 #include <helper/time_support.h>
-
 #include <netinet/tcp.h>
 
 /* Assume we're connecting to a revc w/60MHz clock. */

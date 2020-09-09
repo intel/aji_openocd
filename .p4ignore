@@ -1,9 +1,5 @@
 # stuff "git status" should ignore
 
-# Copied windows DLL
-src/libusb-1.0.dll
-src/libwinpthread-1.dll
-
 # build output
 .libs
 .deps
@@ -78,6 +74,7 @@ Makefile
 !contrib/loaders/**/Makefile
 mdate-sh
 missing
+
 stamp-h1
 stamp-vti
 INSTALL
@@ -103,3 +100,15 @@ TAGS
 
 # ctags tag files
 tags
+
+
+# submodules
+jimctl
+tools/git2cl
+src/jtag/drivers/libjaylink
+
+
+# for testing/examples/STR710Test/
+testing/examples/STR710Test/.dep
+testing/examples/STR710Test/src/main.lst
+

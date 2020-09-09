@@ -117,7 +117,6 @@ COMMAND_HANDLER(handle_noinit_command)
 /* OpenOCD can't really handle failure of this command. Patches welcome! :-) */
 COMMAND_HANDLER(handle_init_command)
 {
-
 	if (CMD_ARGC != 0)
 		return ERROR_COMMAND_SYNTAX_ERROR;
 
@@ -127,7 +126,6 @@ COMMAND_HANDLER(handle_init_command)
 		return ERROR_OK;
 
 	initialized = 1;
-
 	retval = command_run_line(CMD_CTX, "target init");
 	if (ERROR_OK != retval)
 		return ERROR_FAIL;
@@ -137,8 +135,6 @@ COMMAND_HANDLER(handle_init_command)
 		/* we must be able to set up the debug adapter */
 		return retval;
 	}
-
-	LOG_DEBUG("Debug Adapter init complete");
 
 	/* "transport init" verifies the expected devices are present;
 	 * for JTAG, it checks the list of configured TAPs against
@@ -155,7 +151,6 @@ COMMAND_HANDLER(handle_init_command)
 	if (ERROR_OK != retval)
 		return ERROR_FAIL;
 
-	LOG_DEBUG("Examining targets...");
 	if (target_examine() != ERROR_OK)
 		LOG_DEBUG("target examination failed");
 
@@ -308,7 +303,7 @@ static int openocd_thread(int argc, char *argv[], struct command_context *cmd_ct
 			return ERROR_FAIL;
 		}
 	}
-
+	
 	ret = server_loop(cmd_ctx);
 
 	int last_signal = server_quit();
@@ -324,8 +319,7 @@ static int openocd_thread(int argc, char *argv[], struct command_context *cmd_ct
  * into application, then this fn will not be invoked, but rather that
  * application will have it's own implementation of main(). */
 int openocd_main(int argc, char *argv[])
-{
-	int ret;
+{	int ret;
 
 	/* initialize commandline interface */
 	struct command_context *cmd_ctx;

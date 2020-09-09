@@ -1,0 +1,41 @@
+#! sh -xe      ##Yes. This is actually a bash script:
+
+## proxy
+export https_proxy=http://proxy-chain.intel.com:911
+export http_proxy=${https_proxy}
+
+
+##
+## if you have problems with git submodule, i.e. you get reports
+## that tools/git2cl, jimctl or src/jtag/drivers/libjaylink 
+## directories does not exit, do the steps below to recover
+##
+##
+#   #Remove all submodule entries in .git/config:wq
+
+#   rm -fr tools/git2cl jimtcl src/jtag/drviers/libjaylink
+#	git submodule add https://repo.or.cz/git2cl.git tools/git2cl
+#	git submodule add https://github.com/msteveb/jimtcl.git  jimtcl
+#	git submodule add https://repo.or.cz/libjaylink.git src/jtag/drivers/libjaylink
+
+##
+
+
+## You can use ACLOCAL_OPTS to set options for aclocal command in bootstrap
+## In the example below I use my own m4 package directory
+export ACLOCAL_OPTS=" -I /p/psg/swip/w/cinlyooi/.local/share/aclocal"
+./bootstrap
+
+
+## If you are on gcc 7.2.0, then you need to set system to find
+## /usr/lib64/libutil.so, which contains the openpty that jimctl 
+## uses, but OpenOCD did not recognize and add in when linking
+## the final openocd program.
+
+export CONFIG_OPTS='--enable-minijtagserv'
+#export CONFIG_OPTS='--enable-zy1000 --enable-zy1000-master'
+LDFLAGS='-L/usr/lib64 ' LIBS='-lutil '  ./configure --prefix=$(pwd)  ${CONFIG_OPTS}
+
+
+## To use USB_BLASTER_II you need to compile openocd on a machine 
+## with libudev which in turn must be installed by administrator.

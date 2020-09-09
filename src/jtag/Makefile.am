@@ -8,16 +8,24 @@ CLEANFILES += %D%/minidriver_imp.h
 
 if MINIDRIVER
 
+if MINIJTAGSERV
+include %D%/minijtagserv/Makefile.am
+JTAG_MINIDRIVER_DIR = %D%/minijtagserv
+%C%_libjtag_la_LIBADD += $(top_builddir)/%D%/minijtagserv/libocdminijtagserv.la
+MINIDRIVER_IMP_DIR = %D%/minijtagserv
+endif
 if ZY1000
 JTAG_SRCS += %D%/zy1000/zy1000.c
 JTAG_MINIDRIVER_DIR = %D%/zy1000
+MINIDRIVER_IMP_DIR = %D%/minidriver
 endif
 if MINIDRIVER_DUMMY
 JTAG_SRCS += %D%/minidummy/minidummy.c
 JTAG_MINIDRIVER_DIR = %D%/minidummy
+MINIDRIVER_IMP_DIR = %D%/minidriver
 endif
 
-MINIDRIVER_IMP_DIR = %D%/minidriver
+
 
 %D%/jtag_minidriver.h: $(JTAG_MINIDRIVER_DIR)/jtag_minidriver.h
 	cp $< $@
@@ -71,3 +79,4 @@ endif
 	$(JTAG_SRCS)
 
 STARTUP_TCL_SRCS += %D%/startup.tcl
+

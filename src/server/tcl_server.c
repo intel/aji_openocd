@@ -328,8 +328,7 @@ COMMAND_HANDLER(handle_tcl_trace_command)
 }
 
 static const struct command_registration tcl_command_handlers[] = {
-	{
-		.name = "tcl_port",
+	{	.name = "tcl_port",
 		.handler = handle_tcl_port_command,
 		.mode = COMMAND_CONFIG,
 		.help = "Specify port on which to listen "
