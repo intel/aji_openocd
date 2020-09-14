@@ -35,7 +35,7 @@ extern void jtag_tap_add(struct jtag_tap *t);
 
 
 #define IDCODE_SOCVHPS (0x4BA00477)
-
+#define IDCODE_FE310_G002 (0x20000913)
 
 
 static struct jtagservice_record jtagservice  = {
@@ -65,7 +65,7 @@ static struct jtagservice_record jtagservice  = {
  * Access functions to lowlevel driver, agnostic of libftdi/libftdxx
  */
 static char *hexdump(const uint8_t *buf, const unsigned int size)
-{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	unsigned int i;
 	char *str = calloc(size * 2 + 1, 1);
 
@@ -141,7 +141,7 @@ static void jtag_examine_chain_display(enum log_levels level, const char *msg,
 
 /* copied from src/jtag/core.c */
 static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
-{    LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{    LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 
 
 	if (tap->expected_ids_cnt == 0 || !tap->hasidcode)
@@ -182,7 +182,7 @@ static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
  *      @c minijtagserv_init() function.
  */
 int jtag_examine_chain(void)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     //AJI_ERROR status = AJI_NO_ERROR;
     int retval = ERROR_OK;
     
@@ -448,14 +448,16 @@ static AJI_ERROR jtagserv_select_tap(void)
         return AJI_NO_DEVICES;
     }
     LOG_INFO("At present, will not honour OpenOCD target selection and"
-             " select the ARM SOCVHPS with IDCODE %X automatically",
-             IDCODE_SOCVHPS
+             " try to select the ARM SOCVHPS with IDCODE %X or "
+             " SiFive chip with IDCODE %X automatically",
+             IDCODE_SOCVHPS,
+             IDCODE_FE310_G002
     );
-    LOG_INFO("Found %lx TAP devices", (unsigned long) jtagservice.device_count);
+    LOG_INFO("Will serach through %lx TAP devices", (unsigned long) jtagservice.device_count);
 
     for(DWORD tap_position=0; tap_position<jtagservice.device_count; ++tap_position) {
         AJI_DEVICE device = jtagservice.device_list[tap_position];
-        LOG_DEBUG("Detected device (tap_position=%lu) device_id=%08lx," 
+        LOG_INFO("Detected device (tap_position=%lu) device_id=%08lx," 
                   " instruction_length=%d, features=%lu, device_name=%s", 
                     (unsigned long) tap_position+1, 
                     (unsigned long) device.device_id, 
@@ -463,12 +465,19 @@ static AJI_ERROR jtagserv_select_tap(void)
                     (unsigned long) device.features, 
                     device.device_name
         );
+        if (IDCODE_FE310_G002 == device.device_id) {
+            jtagservice.in_use_device = &(jtagservice.device_list[tap_position]); //DO NOT use &device as device is local variable
+            jtagservice.in_use_device_id = device.device_id;
+            jtagservice.in_use_device_tap_position = tap_position;
+            jtagservice.in_use_device_irlen = device.instruction_length;
+            LOG_INFO("Found SiFive device at tap_position %lu", (unsigned long)tap_position);
+        }
         if( IDCODE_SOCVHPS == device.device_id ) {
             jtagservice.in_use_device = &(jtagservice.device_list[tap_position]); //DO NOT use &device as device is local variable
             jtagservice.in_use_device_id = device.device_id;
             jtagservice.in_use_device_tap_position = tap_position;
             jtagservice.in_use_device_irlen = device.instruction_length;
-            LOG_INFO("Found SOCVHPS device at tap_position %lu", (unsigned long) tap_position); 
+            LOG_INFO("Found SOCVHPS device at tap_position %lu.", (unsigned long) tap_position); 
         }
     } //end for tap_position
     
@@ -482,10 +491,10 @@ static AJI_ERROR jtagserv_select_tap(void)
     sprintf(idcode, "%lX", jtagservice.in_use_device_id);
 
     AJI_CLAIM2 claims[] = {
-        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_IDCODE },
-        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_DPACC  },
-        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_APACC  },
-        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_ABORT  }, 
+//        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_IDCODE },
+//        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_DPACC  },
+//        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_APACC  },
+//        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_ABORT  }, 
     };
     DWORD claims_n = sizeof(claims) / sizeof(AJI_CLAIM2);
     // Only allowed to open one device at a time.
@@ -510,7 +519,7 @@ static AJI_ERROR jtagserv_select_tap(void)
 }
 
 AJI_ERROR jtagserv_reacquire_open_id(void) 
-{  LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{  LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     int max_try = 5;
     int sleep_duration = 5; //seconds
     AJI_ERROR status = AJI_NO_ERROR;
@@ -604,7 +613,7 @@ static int minijtagserv_quit(void)
 }
 
 int interface_jtag_execute_queue(void)
-{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 
 	/* synchronously do the operation here */
 	static int reentry;
@@ -620,7 +629,7 @@ int interface_jtag_execute_queue(void)
 	int retval = ERROR_OK; //default_interface_jtag_execute_queue(); 
 	if (retval == ERROR_OK) {
 		struct jtag_callback_entry *entry;
-//LOG_INFO("***> IN %s(%d): %s  %s\n", __FILE__, __LINE__, __FUNCTION__, jtag_callback_queue_head == NULL? "No callbacks" : "Firing callbacks");
+//LOG_DEBUG("***> IN %s(%d): %s  %s\n", __FILE__, __LINE__, __FUNCTION__, jtag_callback_queue_head == NULL? "No callbacks" : "Firing callbacks");
 		for (entry = jtag_callback_queue_head; entry != NULL; entry = entry->next) {
 			retval = entry->callback(entry->data0, entry->data1, entry->data2, entry->data3);
 			if (retval != ERROR_OK)
@@ -639,7 +648,7 @@ int interface_jtag_execute_queue(void)
 
 int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field *fields,
 		tap_state_t state)
-{   //LOG_INFO("***> IN %s(%d): %s", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s", __FILE__, __LINE__, __FUNCTION__);
 
 /*    {
         LOG_INFO("tap=0x%X, num_bits=%d state=(0x%d) %s:", active->idcode, fields->num_bits, state, tap_state_name(state));
@@ -777,7 +786,7 @@ assert(0);
 
 int interface_jtag_add_plain_ir_scan(int num_bits, const uint8_t *out_bits,
 		uint8_t *in_bits, tap_state_t state)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 
     {
     int size = DIV_ROUND_UP(num_bits, 8);
@@ -991,7 +1000,7 @@ assert(0);
 
 int interface_jtag_add_plain_dr_scan(int num_bits, const uint8_t *out_bits,
 		uint8_t *in_bits, tap_state_t state)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 
     {
     int size = DIV_ROUND_UP(num_bits, 8);
@@ -1013,7 +1022,7 @@ assert(0); //"Need to implement interface_jtag_add_plain_dr_scan");
 }
 
 int interface_jtag_add_tlr()
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 
 	/* synchronously do the operation here */
 	AJI_ERROR status = AJI_NO_ERROR;
@@ -1042,7 +1051,7 @@ int interface_jtag_add_tlr()
 }
 
 int interface_jtag_add_reset(int req_trst, int req_srst)
-{   LOG_INFO("***> IN %s(%d): %s req_trst=%d, req_srst=%d\n", __FILE__, __LINE__, __FUNCTION__, req_trst, req_srst);
+{   LOG_DEBUG("***> IN %s(%d): %s req_trst=%d, req_srst=%d\n", __FILE__, __LINE__, __FUNCTION__, req_trst, req_srst);
 	/* synchronously do the operation here */
 
     LOG_INFO("interface_jtag_add_reset not implemented because we do not need it");
@@ -1050,7 +1059,7 @@ int interface_jtag_add_reset(int req_trst, int req_srst)
 }
 
 int interface_jtag_add_runtest(int num_cycles, tap_state_t state)
-{   //LOG_INFO("***> IN %s(%d): %s num_cycles=%d, end state = (%d) %s\n", __FILE__, __LINE__, __FUNCTION__, num_cycles, state, tap_state_name(state));
+{   LOG_DEBUG("***> IN %s(%d): %s num_cycles=%d, end state = (%d) %s\n", __FILE__, __LINE__, __FUNCTION__, num_cycles, state, tap_state_name(state));
 
 	/* synchronously do the operation here */
 
@@ -1086,7 +1095,7 @@ int interface_jtag_add_runtest(int num_cycles, tap_state_t state)
 }
 
 int interface_jtag_add_clocks(int num_cycles)
-{   LOG_INFO("***> IN %s(%d): %s num_cycyles=%d\n", __FILE__, __LINE__, __FUNCTION__, num_cycles);
+{   LOG_DEBUG("***> IN %s(%d): %s num_cycyles=%d\n", __FILE__, __LINE__, __FUNCTION__, num_cycles);
 	/* synchronously do the operation here */
 
     LOG_ERROR("interface_jtag_add_clocks to be implemented if needed");
@@ -1095,7 +1104,7 @@ assert(0); // "Need to implement interface_jtag_add_clocks"
 }
 
 int interface_jtag_add_sleep(uint32_t us)
-{   LOG_INFO("***> IN %s(%d): %s us=%d\n", __FILE__, __LINE__, __FUNCTION__, us);
+{   LOG_DEBUG("***> IN %s(%d): %s us=%d\n", __FILE__, __LINE__, __FUNCTION__, us);
 
 	/* synchronously do the operation here */
 	AJI_ERROR status = AJI_NO_ERROR;
@@ -1123,7 +1132,7 @@ int interface_jtag_add_sleep(uint32_t us)
 	return (status || status2) ? ERROR_FAIL : ERROR_OK;
 }
 int interface_jtag_add_pathmove(int num_states, const tap_state_t *path)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 
     { 
     LOG_INFO("Transition from state %s to %s in %d steps. Path:", 
@@ -1174,7 +1183,7 @@ assert(0); //"Need to implement interface_jtag_add_path_move");
 }
 
 int interface_add_tms_seq(unsigned num_bits, const uint8_t *seq, enum tap_state state)
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	/* synchronously do the operation here */
 
     LOG_ERROR("Will implement interface_jtag_add_tms_seq if we need it");

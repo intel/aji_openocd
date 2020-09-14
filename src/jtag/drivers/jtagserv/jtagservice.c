@@ -69,7 +69,7 @@ _Bool jtagservice_is_locked(jtagservice_record *me, enum jtagservice_lock lock)
 }
 
 AJI_ERROR jtagservice_lock(jtagservice_record *me, enum jtagservice_lock lock, DWORD timeout) 
-{   LOG_INFO("***> IN %s(%d): %s %d\n", __FILE__, __LINE__, __FUNCTION__, me->locked);
+{   LOG_DEBUG("***> IN %s(%d): %s %d\n", __FILE__, __LINE__, __FUNCTION__, me->locked);
   
     if(NONE == lock) {
         return AJI_NO_ERROR;
@@ -101,7 +101,7 @@ AJI_ERROR jtagservice_lock(jtagservice_record *me, enum jtagservice_lock lock, D
 
 
 AJI_ERROR jtagservice_unlock(jtagservice_record *me, enum jtagservice_lock lock, DWORD timeout) 
-{   LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
  
     AJI_ERROR status = AJI_NO_ERROR;
     if((CHAIN & lock) && jtagservice_is_locked(me, CHAIN)) {
