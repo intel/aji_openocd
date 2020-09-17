@@ -38,76 +38,8 @@ extern void jtag_tap_add(struct jtag_tap *t);
 #define IDCODE_SOCVHPS (0x4BA00477)
 #define IDCODE_FE310_G002 (0x20000913)
 
-#define JTAGSERV_IR_ARM_ABORT  0b1000 // dr_len=35
-#define JTAGSERV_IR_ARM_DPACC  0b1010 // dr_len=35
-#define JTAGSERV_IR_ARM_APACC  0b1011 // dr_len=35
-#define JTAGSERV_IR_ARM_IDCODE 0b1110 // dr_len=32
-#define JTAGSERV_IR_ARM_BYPASS 0b1111 // dr_len=1
+static struct jtagservice_record jtagservice; 
 
-#define JTAGSERV_IR_RISCV_BYPASS0       0x00  // dr_len=1
-#define JTAGSERV_IR_RISCV_IDCODE        0x01  // dr_len=32       
-#define JTAGSERV_IR_RISCV_DTMCS         0x10  // dr_len=32
-#define JTAGSERV_IR_RISCV_DMI           0x11  // dr_len=<address_length>+34
-#define JTAGSERV_IR_RISCV_BYPASS        0x1f  // dr_len=1
-
-typedef struct CLAIM_RECORD CLAIM_RECORD;
-struct CLAIM_RECORD {
-    const DWORD claims_n;
-    const AJI_CLAIM* claims;
-};
-enum DEVICE_TYPE {
-    ARM = 1, ///! ARM device, with IR length = 4 bit
-    RISCV = 2, ///! RISCV device, with IR length = 5 bit 
-};
-
-
-static const AJI_CLAIM ARM_CLAIMS[] = {
-    { AJI_CLAIM_IR_SHARED, JTAGSERV_IR_ARM_IDCODE },
-    { AJI_CLAIM_IR_SHARED, JTAGSERV_IR_ARM_DPACC },
-    { AJI_CLAIM_IR_SHARED, JTAGSERV_IR_ARM_APACC },
-    { AJI_CLAIM_IR_SHARED, JTAGSERV_IR_ARM_ABORT },
-};
-static const AJI_CLAIM RISCV_CLAIMS[] = {
-   { AJI_CLAIM_IR_SHARED, JTAGSERV_IR_RISCV_IDCODE },
-   { AJI_CLAIM_IR_SHARED, JTAGSERV_IR_RISCV_DTMCS  },
-   { AJI_CLAIM_IR_SHARED, JTAGSERV_IR_RISCV_DMI    },
-};
-
-static const CLAIM_RECORD ARM_CLAIM_RECORD = {
-    .claims_n = 4,
-    .claims = ARM_CLAIMS,
-};
-
-static const CLAIM_RECORD RISCV_CLAIM_RECORD = {
-    .claims_n = 3,
-    .claims = RISCV_CLAIMS,
-};
-
-static const CLAIM_RECORD *DEVICE_CLAIMS_LIST[] = {
-    [ARM] =  &ARM_CLAIM_RECORD,
-    [RISCV] = &RISCV_CLAIM_RECORD,
-};
-
-
-static struct jtagservice_record jtagservice; /* = {
-    .hardware_count = 0,
-//    .hardware_list = NULL,
-//    .server_version_info_list = NULL,
-//    .in_use_hardware = NULL,
-    .in_use_hardware_index = 0,
-    .in_use_hardware_chain_pid = 0,
-    
-    .device_count = 0,
-//    .device_list = NULL,
-
-    .in_use_device_tap_position = 0,
-//    .in_use_device = NULL,
-    .in_use_device_id = 0,
-    .in_use_device_irlen = 0,
-
-    .locked    = NONE,
-};
-*/
 //=================================
 // Helpers
 //=================================
@@ -230,7 +162,7 @@ static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
 /**
  * @pre jtagservice is filled with device inforamtion. That should
  *      already been done during adapter initialization via 
- *      @c minijtagserv_init() function.
+ *      @c miniinit() function.
  */
 int jtag_examine_chain(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
@@ -381,7 +313,7 @@ void jtag_add_callback4(jtag_callback_t f, jtag_callback_data_t data0,
  * Find the hardware cable from the jtag server
  * @pos Set jtagservice chain detail if return successful.
  */
-static AJI_ERROR jtagserv_select_cable(void)
+static AJI_ERROR select_cable(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     AJI_ERROR status = AJI_NO_ERROR;
 
@@ -449,10 +381,10 @@ static AJI_ERROR jtagserv_select_cable(void)
 
 /**
  * Select the TAP device to use
- * @pre The chain is already acquired, @see jtagserv_select_cable()
+ * @pre The chain is already acquired, @see select_cable()
  * @pos jtagservice will be populated with the selected tap
  */
-static AJI_ERROR jtagserv_select_tap(void)
+static AJI_ERROR select_tap(void)
 {   LOG_DEBUG("***> IN %s(%d): %s %lu\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long) jtagservice.in_use_hardware_chain_pid);
     AJI_ERROR status = AJI_NO_ERROR;
 
@@ -544,17 +476,18 @@ static AJI_ERROR jtagserv_select_tap(void)
     char idcode[19];
     sprintf(idcode, "%lX", jtagservice.in_use_device_id);
 
-    const CLAIM_RECORD *claims = DEVICE_CLAIMS_LIST[jtagservice.device_type_list[jtagservice.in_use_device_tap_position]];
-/*
+    CLAIM_RECORD claims = 
+        jtagservice.claims[jtagservice.device_type_list[jtagservice.in_use_device_tap_position]];
+
     printf("tap_position=%ld, device_type_list_entry=%ld claims_n=%ld\n", 
                 jtagservice.in_use_device_tap_position, 
                 jtagservice.device_type_list[jtagservice.in_use_device_tap_position],
-                claims->claims_n
+                claims.claims_n
     );
-    for (DWORD i = 0; i < claims->claims_n; ++i) {
-        printf(" -- claim %lu : type=%d, value=%ld\n", i, claims->claims[i].type, claims->claims[i].value);
+    for (DWORD i = 0; i < claims.claims_n; ++i) {
+        printf(" -- claim %lu : type=%d, value=%ld\n", i, claims.claims[i].type, claims.claims[i].value);
     }
-*/
+
     // Only allowed to open one device at a time.
     // If you don't, then anytime after  c_aji_test_logic_reset() call, 
     //  you can get fatal error
@@ -563,7 +496,7 @@ static AJI_ERROR jtagserv_select_tap(void)
         jtagservice.in_use_hardware->chain_id,
         jtagservice.in_use_device_tap_position,
         &(jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position]),
-        claims->claims, claims->claims_n, idcode
+        claims.claims, claims.claims_n, idcode
     );
 
     if( AJI_NO_ERROR != status) {
@@ -577,7 +510,7 @@ static AJI_ERROR jtagserv_select_tap(void)
     return status;
 }
 
-AJI_ERROR jtagserv_reacquire_open_id(void) 
+AJI_ERROR reacquire_open_id(void) 
 {  LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     int max_try = 5;
     int sleep_duration = 5; //seconds
@@ -589,7 +522,7 @@ AJI_ERROR jtagserv_reacquire_open_id(void)
             sleep(sleep_duration);
         }
         LOG_INFO("Attempt to reacquire cable. Try %d of %d ... ", try+1, max_try);
-        status = jtagserv_select_cable();
+        status = select_cable();
         if(AJI_NO_ERROR == status) {
             LOG_INFO(" ... Succeeded");
             break;
@@ -608,7 +541,7 @@ AJI_ERROR jtagserv_reacquire_open_id(void)
             sleep(sleep_duration);
         }
         LOG_INFO("Attempt to select tap. Try %d of %d ... ", try+1, max_try);
-        status = jtagserv_select_tap();
+        status = select_tap();
         if(AJI_NO_ERROR == status) {
             LOG_INFO(" ... Succeeded");
             break;
@@ -619,12 +552,12 @@ AJI_ERROR jtagserv_reacquire_open_id(void)
 }
 
 /**
- * jtagserv_init - Contact the JTAG Server
+ * init - Contact the JTAG Server
  *
  * Returns ERROR_OK if JTAG Server found.
  * TODO: Write a TCL Command that allows me to specify the jtagserver config file
  */
-static int minijtagserv_init(void)
+static int miniinit(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     LOG_DEBUG("Capture server\n");
     char *quartus_jtag_client_config = getenv("QUARTUS_JTAG_CLIENT_CONFIG");
@@ -647,14 +580,14 @@ static int minijtagserv_init(void)
         return ERROR_JTAG_INIT_FAILED;
     }
 #endif
-    status = jtagserv_select_cable();
+    status = select_cable();
     if (AJI_NO_ERROR != status) {
         LOG_ERROR("Cannot select JTAG Cable. Return status is %d", status);
         jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
         return ERROR_JTAG_INIT_FAILED;
     }
     
-    status = jtagserv_select_tap();
+    status = select_tap();
     if (AJI_NO_ERROR != status) {
         LOG_ERROR("Cannot select TAP devices. Return status is %d", status);
         return ERROR_JTAG_INIT_FAILED;
@@ -666,7 +599,7 @@ static int minijtagserv_init(void)
     return ERROR_OK;
 }
 
-static int minijtagserv_quit(void)
+static int miniquit(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     //jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
     return ERROR_OK;
@@ -768,7 +701,7 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
 	status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_NEVER);
 	if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failure to lock before accessing IR register. Return Status is %d. Reacquiring lock ...\n", status);
-    	status = jtagserv_reacquire_open_id();
+    	status = reacquire_open_id();
     }
 
 	if(AJI_NO_ERROR != status) {
@@ -982,7 +915,7 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 	status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_NEVER);
 	if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failure to lock before accessing DR register. Return Status is %d. Reacquiring lock ...\n", status);
-    	status = jtagserv_reacquire_open_id();
+    	status = reacquire_open_id();
     }
 	if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failure to lock before accessing DR register. Return Status is %d\n", status);
@@ -1253,7 +1186,7 @@ assert(0); //"Need to implement interface_jtag_add_tms_seq");
 }
 
 
-static struct jtag_interface minijtagserv_interface = {
+static struct jtag_interface miniinterface = {
 	.execute_queue = NULL,
 };
 
@@ -1262,14 +1195,14 @@ struct adapter_driver minijtagserv_adapter_driver = {
 	.transports = jtag_only,
 	.commands = NULL,
 
-	.init = minijtagserv_init,
-	.quit = minijtagserv_quit,
+	.init = miniinit,
+	.quit = miniquit,
 	.speed = NULL,
 	.khz = NULL,
 	.speed_div = NULL,
 	.power_dropout = NULL,
 	.srst_asserted = NULL,
 
-	.jtag_ops = &minijtagserv_interface,
+	.jtag_ops = &miniinterface,
 };
 

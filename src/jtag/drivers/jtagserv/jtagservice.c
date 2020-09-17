@@ -97,7 +97,7 @@ AJI_ERROR jtagservice_lock(jtagservice_record *me, enum jtagservice_lock lock, D
     }
     
     return status;
-} //end jtagserv_lock
+} //end lock
 
 
 AJI_ERROR jtagservice_unlock(jtagservice_record *me, enum jtagservice_lock lock, DWORD timeout) 
@@ -116,8 +116,68 @@ AJI_ERROR jtagservice_unlock(jtagservice_record *me, enum jtagservice_lock lock,
     }    //end if(jtagservice_is_locked(CHAIN)
     return status;
 }
+/**
+ * Create the claim records. One for each device_type
+ * @param records On input, an array of size records_n. 
+ *                On output, array will be filled with claims information. 
+ *                index = @see JTAGSERVE_DEVICE_TYPE
+ * @param records_n On input, size of records. On output, if return AJI_TOO_MANY_CLAIMS,
+ *                  will contain the required size to host all claims
+ * @return AJI_NO_ERROR if there is no error. 
+ *         AJI_TOO_MANY_CLAIMS if the records array is too small
+ *         AJI_NO_MEMORY if run out of memory
+ * @note Memory allocated here freed as part of @jtagservice_free()
+ */
+AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * records_n) {
+    if (ARM < *records_n) {
+        DWORD csize = 4;
+        AJI_CLAIM *claims = calloc(csize, sizeof(AJI_CLAIM));
+        if (claims == NULL) {
+            return AJI_NO_MEMORY;
+        }
+
+        claims[0].type = AJI_CLAIM_IR_SHARED;
+        claims[0].value = IR_ARM_IDCODE;
+        claims[1].type = AJI_CLAIM_IR_SHARED;
+        claims[1].value = IR_ARM_DPACC;
+        claims[2].type = AJI_CLAIM_IR_SHARED;
+        claims[2].value = IR_ARM_APACC;
+        claims[3].type = AJI_CLAIM_IR_SHARED;
+        claims[3].value = IR_ARM_ABORT;
+
+        records[ARM].claims_n = csize;
+        records[ARM].claims = claims;
+    }
+
+    if (RISCV < *records_n) {
+        DWORD csize = 3;
+        AJI_CLAIM* claims = calloc(csize, sizeof(AJI_CLAIM));
+        if (claims == NULL) {
+            return AJI_NO_MEMORY;
+        }
+
+        claims[0].type = AJI_CLAIM_IR_SHARED;
+        claims[0].value = IR_RISCV_IDCODE;
+        claims[1].type = AJI_CLAIM_IR_SHARED;
+        claims[1].value = IR_RISCV_DTMCS;
+        claims[2].type = AJI_CLAIM_IR_SHARED;
+        claims[2].value = IR_RISCV_DMI;
+
+        records[RISCV].claims_n = csize;
+        records[RISCV].claims = claims;
+    }
+
+    AJI_ERROR status = AJI_NO_ERROR;
+    if (*records_n < DEVICE_TYPE_COUNT) {
+        status = AJI_TOO_MANY_CLAIMS;
+        *records_n = DEVICE_TYPE_COUNT;
+    }
+    return status;
+}
 
 AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout) {
+    AJI_ERROR status = AJI_NO_ERROR;
+
     me->hardware_count = 0;
     me->hardware_list = NULL,
     me->server_version_info_list = NULL,
@@ -138,24 +198,14 @@ AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout) {
 
     me->locked = NONE;
 
-/*
-    me->claims = calloc(DEVICE_TYPE_SIZE, sizeof(DEVICE_TYPE));
-    me->claims[UNKNOWN] = NULL;
-    me->claims[ARM] = calloc(3, sizeof(AJI_CLAIM));
-    me->claims[ARM][0].type = AJI_CLAIM_IR_SHARED;
-    me->claims[ARM][0].value = JTAGSERV_IR_ARM_ABORT;
-    me->claims[ARM][1].type = AJI_CLAIM_IR_SHARED;
-    me->claims[ARM][1].value = JTAGSERV_IR_ARM_DPACC;
-    me->claims[ARM][2].type = AJI_CLAIM_IR_SHARED;
-    me->claims[ARM][2].value = JTAGSERV_IR_ARM_APACC;
+    me->claims_count = 10; 
+    me->claims = calloc(10, sizeof(CLAIM_RECORD));
+    if (NULL == me->claims) {
+        return AJI_NO_MEMORY;
+    }
+    status = jtagservice_create_claim_records(me->claims, &me->claims_count); 
 
-    me->claims[RISCV] = calloc(2, sizeof(AJI_CLAIM));
-    me->claims[RISCV][0].type = AJI_CLAIM_IR_SHARED;
-    me->claims[RISCV][0].value = JTAGSERV_IR_RISCV_DTMCS;
-    me->claims[RISCV][1].type = AJI_CLAIM_IR_SHARED;
-    me->claims[RISCV][1].value = JTAGSERV_IR_RISCV_DMI;
-*/
-    return AJI_NO_ERROR;
+    return status;
 }
 
 AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout) 
@@ -182,6 +232,16 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
         me->hardware_count = 0;
         me->hardware_list = NULL;
         me->server_version_info_list = NULL;
+    }
+
+    if (me->claims_count) {
+        for (DWORD i = 0; i < me->claims_count; ++i) {
+            if (0 != me->claims[i].claims_n) {
+                free(me->claims[i].claims);
+                me->claims[i].claims = NULL;
+                me->claims[i].claims_n = 0;
+            }
+        }
     }
 
 #if IS_WIN32

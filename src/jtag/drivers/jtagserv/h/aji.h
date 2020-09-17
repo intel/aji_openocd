@@ -122,7 +122,10 @@ enum AJI_ERROR // These are transmitted from client to server so must not change
     AJI_TOO_MANY_HUBS        = 257,
     AJI_NO_MATCHING_NODES    = 258,
     AJI_TOO_MANY_MATCHING_NODES = 259,
-    AJI_TOO_MANY_HIERARCHIES = 260
+    AJI_TOO_MANY_HIERARCHIES = 260,
+
+// OpenOCD
+    AJI_TOO_MANY_CLAIMS = 512,
 };
 
 typedef enum AJI_CHAIN_TYPE AJI_CHAIN_TYPE;
