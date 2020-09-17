@@ -10,19 +10,6 @@
 
 #define JTAGSERVICE_TIMEOUT_MS 10000
 
-#define IR_ARM_ABORT  0b1000 // dr_len=35
-#define IR_ARM_DPACC  0b1010 // dr_len=35
-#define IR_ARM_APACC  0b1011 // dr_len=35
-#define IR_ARM_IDCODE 0b1110 // dr_len=32
-#define IR_ARM_BYPASS 0b1111 // dr_len=1
-
-#define IR_RISCV_BYPASS0       0x00  // dr_len=1
-#define IR_RISCV_IDCODE        0x01  // dr_len=32       
-#define IR_RISCV_DTMCS         0x10  // dr_len=32
-#define IR_RISCV_DMI           0x11  // dr_len=<address_length>+34
-#define IR_RISCV_BYPASS        0x1f  // dr_len=1
-
-
 enum jtagservice_lock {
     NONE    = 0b000000,
     CHAIN   = 0b000001,
@@ -51,6 +38,7 @@ struct jtagservice_record {
     DWORD        device_count;
     AJI_DEVICE  *device_list;
     AJI_OPEN_ID *device_open_id_list;
+    DEVICE_TYPE *device_type_list;
     
     DWORD       in_use_device_tap_position;
     AJI_DEVICE *in_use_device;
@@ -59,6 +47,8 @@ struct jtagservice_record {
 
     //state tracking
     enum jtagservice_lock locked;
+
+    AJI_CLAIM** claims; ///! List of AJI_CLAIM, by DEVICE_TYPE
 };
  
 

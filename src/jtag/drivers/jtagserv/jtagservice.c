@@ -119,22 +119,42 @@ AJI_ERROR jtagservice_unlock(jtagservice_record *me, enum jtagservice_lock lock,
 
 AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout) {
     me->hardware_count = 0;
-    //    me->hardware_list = NULL,
-    //    me->server_version_info_list = NULL,
-    //    me->in_use_hardware = NULL,
+    me->hardware_list = NULL,
+    me->server_version_info_list = NULL,
+    
     me->in_use_hardware_index = 0;
+    me->in_use_hardware = NULL,
     me->in_use_hardware_chain_pid = 0;
 
     me->device_count = 0;
-    //    me->device_list = NULL,
+    me->device_list = NULL,
+    me->device_open_id_list = NULL,
+    me->device_type_list = NULL,
 
     me->in_use_device_tap_position = 0;
-    //    me->in_use_device = NULL,
+    me->in_use_device = NULL,
     me->in_use_device_id = 0;
     me->in_use_device_irlen = 0;
 
     me->locked = NONE;
 
+/*
+    me->claims = calloc(DEVICE_TYPE_SIZE, sizeof(DEVICE_TYPE));
+    me->claims[UNKNOWN] = NULL;
+    me->claims[ARM] = calloc(3, sizeof(AJI_CLAIM));
+    me->claims[ARM][0].type = AJI_CLAIM_IR_SHARED;
+    me->claims[ARM][0].value = JTAGSERV_IR_ARM_ABORT;
+    me->claims[ARM][1].type = AJI_CLAIM_IR_SHARED;
+    me->claims[ARM][1].value = JTAGSERV_IR_ARM_DPACC;
+    me->claims[ARM][2].type = AJI_CLAIM_IR_SHARED;
+    me->claims[ARM][2].value = JTAGSERV_IR_ARM_APACC;
+
+    me->claims[RISCV] = calloc(2, sizeof(AJI_CLAIM));
+    me->claims[RISCV][0].type = AJI_CLAIM_IR_SHARED;
+    me->claims[RISCV][0].value = JTAGSERV_IR_RISCV_DTMCS;
+    me->claims[RISCV][1].type = AJI_CLAIM_IR_SHARED;
+    me->claims[RISCV][1].value = JTAGSERV_IR_RISCV_DMI;
+*/
     return AJI_NO_ERROR;
 }
 
@@ -147,10 +167,12 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
     if(me->device_count != 0) {
         free(me->device_list);
         free(me->device_open_id_list);
-        
+        free(me->device_type_list);
+
         me->device_count = 0;
         me->device_list = NULL;
         me->device_open_id_list = NULL;
+        me->device_type_list = NULL;
     }
 
     if(me->hardware_count != 0) {

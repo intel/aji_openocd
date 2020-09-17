@@ -28,6 +28,7 @@
 #include "jtag/commands.h"
 #include "log.h"
 
+#include "h/aji.h"
 #include "h/c_jtag_client_gnuaji.h"
 #include "jtagservice.h"
 
@@ -37,8 +38,58 @@ extern void jtag_tap_add(struct jtag_tap *t);
 #define IDCODE_SOCVHPS (0x4BA00477)
 #define IDCODE_FE310_G002 (0x20000913)
 
+#define JTAGSERV_IR_ARM_ABORT  0b1000 // dr_len=35
+#define JTAGSERV_IR_ARM_DPACC  0b1010 // dr_len=35
+#define JTAGSERV_IR_ARM_APACC  0b1011 // dr_len=35
+#define JTAGSERV_IR_ARM_IDCODE 0b1110 // dr_len=32
+#define JTAGSERV_IR_ARM_BYPASS 0b1111 // dr_len=1
 
-static struct jtagservice_record jtagservice  = {
+#define JTAGSERV_IR_RISCV_BYPASS0       0x00  // dr_len=1
+#define JTAGSERV_IR_RISCV_IDCODE        0x01  // dr_len=32       
+#define JTAGSERV_IR_RISCV_DTMCS         0x10  // dr_len=32
+#define JTAGSERV_IR_RISCV_DMI           0x11  // dr_len=<address_length>+34
+#define JTAGSERV_IR_RISCV_BYPASS        0x1f  // dr_len=1
+
+typedef struct CLAIM_RECORD CLAIM_RECORD;
+struct CLAIM_RECORD {
+    const DWORD claims_n;
+    const AJI_CLAIM* claims;
+};
+enum DEVICE_TYPE {
+    ARM = 1, ///! ARM device, with IR length = 4 bit
+    RISCV = 2, ///! RISCV device, with IR length = 5 bit 
+};
+
+
+static const AJI_CLAIM ARM_CLAIMS[] = {
+    { AJI_CLAIM_IR_SHARED, JTAGSERV_IR_ARM_IDCODE },
+    { AJI_CLAIM_IR_SHARED, JTAGSERV_IR_ARM_DPACC },
+    { AJI_CLAIM_IR_SHARED, JTAGSERV_IR_ARM_APACC },
+    { AJI_CLAIM_IR_SHARED, JTAGSERV_IR_ARM_ABORT },
+};
+static const AJI_CLAIM RISCV_CLAIMS[] = {
+   { AJI_CLAIM_IR_SHARED, JTAGSERV_IR_RISCV_IDCODE },
+   { AJI_CLAIM_IR_SHARED, JTAGSERV_IR_RISCV_DTMCS  },
+   { AJI_CLAIM_IR_SHARED, JTAGSERV_IR_RISCV_DMI    },
+};
+
+static const CLAIM_RECORD ARM_CLAIM_RECORD = {
+    .claims_n = 4,
+    .claims = ARM_CLAIMS,
+};
+
+static const CLAIM_RECORD RISCV_CLAIM_RECORD = {
+    .claims_n = 3,
+    .claims = RISCV_CLAIMS,
+};
+
+static const CLAIM_RECORD *DEVICE_CLAIMS_LIST[] = {
+    [ARM] =  &ARM_CLAIM_RECORD,
+    [RISCV] = &RISCV_CLAIM_RECORD,
+};
+
+
+static struct jtagservice_record jtagservice; /* = {
     .hardware_count = 0,
 //    .hardware_list = NULL,
 //    .server_version_info_list = NULL,
@@ -56,7 +107,7 @@ static struct jtagservice_record jtagservice  = {
 
     .locked    = NONE,
 };
-
+*/
 //=================================
 // Helpers
 //=================================
@@ -425,7 +476,8 @@ static AJI_ERROR jtagserv_select_tap(void)
     );
     if(AJI_TOO_MANY_DEVICES == status) {
         jtagservice.device_list = calloc(jtagservice.device_count, sizeof(AJI_DEVICE)); 
-        jtagservice.device_open_id_list = calloc(jtagservice.device_count, sizeof(AJI_OPEN_ID)); 
+        jtagservice.device_open_id_list = calloc(jtagservice.device_count, sizeof(AJI_OPEN_ID));
+        jtagservice.device_type_list = calloc(jtagservice.device_count, sizeof(DEVICE_TYPE));
         status = c_aji_read_device_chain(
             hw.chain_id, 
             &(jtagservice.device_count), 
@@ -470,14 +522,16 @@ static AJI_ERROR jtagserv_select_tap(void)
             jtagservice.in_use_device_id = device.device_id;
             jtagservice.in_use_device_tap_position = tap_position;
             jtagservice.in_use_device_irlen = device.instruction_length;
-            LOG_INFO("Found SiFive device at tap_position %lu", (unsigned long)tap_position);
+            jtagservice.device_type_list[tap_position] = RISCV;
+            LOG_INFO("Found SiFive device at tap_position %lu", (unsigned long) tap_position);
         }
         if( IDCODE_SOCVHPS == device.device_id ) {
             jtagservice.in_use_device = &(jtagservice.device_list[tap_position]); //DO NOT use &device as device is local variable
             jtagservice.in_use_device_id = device.device_id;
             jtagservice.in_use_device_tap_position = tap_position;
             jtagservice.in_use_device_irlen = device.instruction_length;
-            LOG_INFO("Found SOCVHPS device at tap_position %lu.", (unsigned long) tap_position); 
+            jtagservice.device_type_list[tap_position] = ARM;
+            LOG_INFO("Found SOCVHPS device at tap_position %lu.", (unsigned long) tap_position);
         }
     } //end for tap_position
     
@@ -489,39 +543,18 @@ static AJI_ERROR jtagserv_select_tap(void)
 
     char idcode[19];
     sprintf(idcode, "%lX", jtagservice.in_use_device_id);
+
+    const CLAIM_RECORD *claims = DEVICE_CLAIMS_LIST[jtagservice.device_type_list[jtagservice.in_use_device_tap_position]];
 /*
-    AJI_CLAIM2 claims[] = {
-        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_IDCODE },
-        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_DPACC  },
-        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_APACC  },
-        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_ABORT  }, 
-    };
-
-    AJI_CLAIM2 claims[] = {
-        { AJI_CLAIM_IR_SHARED, 0,  1llu }, //0x01 }, //IR_RISCV_IDCODE },
-        { AJI_CLAIM_IR_SHARED, 0, 16llu }, //0x10 }, //IR_RISCV_DTMCS  },
-        { AJI_CLAIM_IR_SHARED, 0, 17llu }, //0x11 }, //IR_RISCV_DMI },
-    };
-
-    DWORD claims_n = sizeof(claims) / sizeof(AJI_CLAIM2);
-    // Only allowed to open one device at a time.
-    // If you don't, then anytime after  c_aji_test_logic_reset() call, 
-    //  you can get fatal error
-    //  "*** glibc detected *** src/openocd: double free or corruption (fasttop): 0x00000000027bc7a0 ***"        
-    status = c_aji_open_device_a(
-                      jtagservice.in_use_hardware->chain_id,
-                      jtagservice.in_use_device_tap_position,
-                      &(jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position]),
-                      claims, claims_n, idcode
+    printf("tap_position=%ld, device_type_list_entry=%ld claims_n=%ld\n", 
+                jtagservice.in_use_device_tap_position, 
+                jtagservice.device_type_list[jtagservice.in_use_device_tap_position],
+                claims->claims_n
     );
+    for (DWORD i = 0; i < claims->claims_n; ++i) {
+        printf(" -- claim %lu : type=%d, value=%ld\n", i, claims->claims[i].type, claims->claims[i].value);
+    }
 */
-    AJI_CLAIM claims[] = {
-        { AJI_CLAIM_IR_SHARED, IR_RISCV_IDCODE },
-        { AJI_CLAIM_IR_SHARED, IR_RISCV_DTMCS  },
-        { AJI_CLAIM_IR_SHARED, IR_RISCV_DMI    },
-    };
-
-    DWORD claims_n = sizeof(claims) / sizeof(AJI_CLAIM);
     // Only allowed to open one device at a time.
     // If you don't, then anytime after  c_aji_test_logic_reset() call, 
     //  you can get fatal error
@@ -530,7 +563,7 @@ static AJI_ERROR jtagserv_select_tap(void)
         jtagservice.in_use_hardware->chain_id,
         jtagservice.in_use_device_tap_position,
         &(jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position]),
-        claims, claims_n, idcode
+        claims->claims, claims->claims_n, idcode
     );
 
     if( AJI_NO_ERROR != status) {
@@ -603,6 +636,7 @@ static int minijtagserv_init(void)
         LOG_INFO("Environment variable QUARTUS_JTAG_CLIENT_CONFIG not set\n"); //TODO: Remove this message, useful for debug will be cause user alarm unnecessarily
     }
     
+    jtagservice_init(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
     AJI_ERROR status = AJI_NO_ERROR;
 
 #if IS_WIN32
