@@ -9,10 +9,19 @@
 
 
 #define JTAGSERVICE_TIMEOUT_MS 10000
-#define IR_ARM_IDCODE 14  // 0b1110 dr_len=32
-#define IR_ARM_DPACC  10  // 0b1010 dr_len=35
-#define IR_ARM_APACC  11  // 0b1011 dr_len=35
-#define IR_ARM_ABORT   8  // 0b1000 dr_len=35
+
+#define IR_ARM_ABORT  0b1000 // dr_len=35
+#define IR_ARM_DPACC  0b1010 // dr_len=35
+#define IR_ARM_APACC  0b1011 // dr_len=35
+#define IR_ARM_IDCODE 0b1110 // dr_len=32
+#define IR_ARM_BYPASS 0b1111 // dr_len=1
+
+#define IR_RISCV_BYPASS0       0x00  // dr_len=1
+#define IR_RISCV_IDCODE        0x01  // dr_len=32       
+#define IR_RISCV_DTMCS         0x10  // dr_len=32
+#define IR_RISCV_DMI           0x11  // dr_len=<address_length>+34
+#define IR_RISCV_BYPASS        0x1f  // dr_len=1
+
 
 enum jtagservice_lock {
     NONE    = 0b000000,

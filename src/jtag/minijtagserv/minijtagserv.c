@@ -489,13 +489,20 @@ static AJI_ERROR jtagserv_select_tap(void)
 
     char idcode[19];
     sprintf(idcode, "%lX", jtagservice.in_use_device_id);
+/*
+    AJI_CLAIM2 claims[] = {
+        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_IDCODE },
+        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_DPACC  },
+        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_APACC  },
+        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_ABORT  }, 
+    };
 
     AJI_CLAIM2 claims[] = {
-//        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_IDCODE },
-//        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_DPACC  },
-//        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_APACC  },
-//        { AJI_CLAIM_IR_SHARED, 0, IR_ARM_ABORT  }, 
+        { AJI_CLAIM_IR_SHARED, 0,  1llu }, //0x01 }, //IR_RISCV_IDCODE },
+        { AJI_CLAIM_IR_SHARED, 0, 16llu }, //0x10 }, //IR_RISCV_DTMCS  },
+        { AJI_CLAIM_IR_SHARED, 0, 17llu }, //0x11 }, //IR_RISCV_DMI },
     };
+
     DWORD claims_n = sizeof(claims) / sizeof(AJI_CLAIM2);
     // Only allowed to open one device at a time.
     // If you don't, then anytime after  c_aji_test_logic_reset() call, 
@@ -507,6 +514,25 @@ static AJI_ERROR jtagserv_select_tap(void)
                       &(jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position]),
                       claims, claims_n, idcode
     );
+*/
+    AJI_CLAIM claims[] = {
+        { AJI_CLAIM_IR_SHARED, IR_RISCV_IDCODE },
+        { AJI_CLAIM_IR_SHARED, IR_RISCV_DTMCS  },
+        { AJI_CLAIM_IR_SHARED, IR_RISCV_DMI    },
+    };
+
+    DWORD claims_n = sizeof(claims) / sizeof(AJI_CLAIM);
+    // Only allowed to open one device at a time.
+    // If you don't, then anytime after  c_aji_test_logic_reset() call, 
+    //  you can get fatal error
+    //  "*** glibc detected *** src/openocd: double free or corruption (fasttop): 0x00000000027bc7a0 ***"        
+    status = c_aji_open_device(
+        jtagservice.in_use_hardware->chain_id,
+        jtagservice.in_use_device_tap_position,
+        &(jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position]),
+        claims, claims_n, idcode
+    );
+
     if( AJI_NO_ERROR != status) {
             LOG_ERROR("Cannot open device number %lu (IDCODE=%s)",
                       (unsigned long) jtagservice.in_use_device_tap_position, 
@@ -650,27 +676,27 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
 		tap_state_t state)
 {   LOG_DEBUG("***> IN %s(%d): %s", __FILE__, __LINE__, __FUNCTION__);
 
-/*    {
+    {
         LOG_INFO("tap=0x%X, num_bits=%d state=(0x%d) %s:", active->idcode, fields->num_bits, state, tap_state_name(state));
     	
     	int size = DIV_ROUND_UP(fields->num_bits, 8);
     	char *value = hexdump(fields->out_value, size);
-        LOG_INFO("  out_value  (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+        LOG_INFO("  out_value  (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
         free(value);
         if(fields->in_value) {
             value = hexdump(fields->in_value, size);
-            LOG_INFO("  in_value   (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+            LOG_INFO("  in_value   (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
             free(value);
         } else {
             LOG_INFO("  in_value  : <NONE>");
         }
         if(fields->check_value) {
             value = hexdump(fields->check_value, size);
-            LOG_INFO("  check_value (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+            LOG_INFO("  check_value (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
             free(value);
 
             value = hexdump(fields->check_mask, size);
-            LOG_INFO("  check_mask  (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+            LOG_INFO("  check_mask  (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
             free(value);
         } else {
             LOG_INFO(" check_value : <NONE>");
@@ -678,7 +704,7 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
         }
         printf("\n");
     }
-/*
+
 	/* synchronously do the operation here */
 
 	/* loop over all enabled TAPs. */
@@ -717,16 +743,16 @@ assert(0);
         return ERROR_FAIL;
     }
   
-/*  
+  
     if(fields->out_value) {
         int size = DIV_ROUND_UP(fields->num_bits, 8);
 	    char *value = hexdump(fields->out_value, size);
-        LOG_INFO("IR write  (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+        LOG_INFO("IR write  (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
 	    free(value);
     } else {
         LOG_INFO("No IR read");
     }
-*/
+
     
     /* the code below could had been replaced by c_aji_access_ir_a(), i.e.
        the BYTE* version of aji_access_ir(). However, for quartus 20.3
@@ -737,6 +763,7 @@ assert(0);
     for (int i = 0 ; i <  (fields->num_bits+7)/8 ; i++) {
         instruction |= fields->out_value[i] << (i * 8);
     }
+printf("instruction = %lu\n", (unsigned long) instruction);
     DWORD capture = 0;
     status = c_aji_access_ir(open_id, instruction, fields->in_value? &capture : NULL, 0);
 
@@ -746,16 +773,16 @@ assert(0);
 assert(0);   
         return ERROR_FAIL;
     }
-/*
+
     if(fields->in_value) {
         int size = DIV_ROUND_UP(fields->num_bits, 8);
     	char *value = hexdump((uint8_t*) &capture, size);
-        LOG_INFO("IR read  (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+        LOG_INFO("IR read  (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
     	free(value);
     } else {
         LOG_INFO("No IR read");
     }
-*/    
+    
     if(fields->in_value) {
         for (int i = 0 ; i < (fields->num_bits+7)/8 ; i++) {
            fields->in_value[i] = (BYTE) (capture >> (i * 8));
@@ -764,7 +791,7 @@ assert(0);
     if(fields->in_value) {
         int size = DIV_ROUND_UP(fields->num_bits, 8);
     	char *value = hexdump(fields->in_value, size);
-        LOG_DEBUG("fields.in_value  (size=%d, buf=[%s]) -> %u", size, value, fields->num_bits);
+        LOG_DEBUG("fields.in_value  (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
     	free(value);
     }
     
@@ -793,8 +820,8 @@ int interface_jtag_add_plain_ir_scan(int num_bits, const uint8_t *out_bits,
 	char *outbits = hexdump(out_bits, size);
     char *inbits  = hexdump(in_bits,  size);
     
-	LOG_INFO("  out_bits (size=%d, buf=[%s]) -> %u", size, outbits, num_bits);
-	LOG_INFO("  in_bits (size=%d, buf=[%s]) -> %u", size, inbits, num_bits);
+	LOG_INFO("  out_bits (size=%d, buf=[0x%s]) -> %u", size, outbits, num_bits);
+	LOG_INFO("  in_bits (size=%d, buf=[0x%s]) -> %u", size, inbits, num_bits);
 	free(outbits);
 	free(inbits);
     }
@@ -819,25 +846,25 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
         	char *value = NULL;
         	if(fields[i].out_value) {
         	    hexdump(fields[i].out_value, size);
-                LOG_INFO("  fields[%d].out_value  (size=%d, buf=[%s]) -> %u", i, size, value, fields[i].num_bits);
+                LOG_INFO("  fields[%d].out_value  (size=%d, buf=[0x%s]) -> %u", i, size, value, fields[i].num_bits);
                 free(value);
             } else {
                 LOG_INFO("  fields[%d].out_value  : <NONE>", i);
             }
             if(fields[i].in_value) {
                 value = hexdump(fields[i].in_value, size);
-                LOG_INFO("  fields[%d].in_value   (size=%d, buf=[%s]) -> %u", i, size, value, fields[i].num_bits);
+                LOG_INFO("  fields[%d].in_value   (size=%d, buf=[0x%s]) -> %u", i, size, value, fields[i].num_bits);
                 free(value);
             } else {
                 LOG_INFO("  fields[%d].in_value  : <NONE>", i);
             }
             if(fields[i].check_value) {
                 value = hexdump(fields[i].check_value, size);
-                LOG_INFO("  fields[%d].check_value (size=%d, buf=[%s]) -> %u", i, size, value, fields[i].num_bits);
+                LOG_INFO("  fields[%d].check_value (size=%d, buf=[0x%s]) -> %u", i, size, value, fields[i].num_bits);
                 free(value);
 
                 value = hexdump(fields[i].check_mask, size);
-                LOG_INFO("  fields[%d].check_mask  (size=%d, buf=[%s]) -> %u", i, size, value, fields[i].num_bits);
+                LOG_INFO("  fields[%d].check_mask  (size=%d, buf=[0x%s]) -> %u", i, size, value, fields[i].num_bits);
                 free(value);
             } else {
                 LOG_INFO("  fields[%d].check_value : <NONE>", i);
@@ -905,16 +932,16 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
           read_bits[3],read_bits[2],read_bits[1],read_bits[0]
     );    
 */
-/*
+
     if (write_to_dr) { 
         int size = DIV_ROUND_UP(length_dr, 8);
 	    char *value = hexdump(fields->out_value, size);
-        LOG_INFO("DR write  (size=%d, buf=[%s]) -> %u", size, value, length_dr);
+        LOG_INFO("DR write  (size=%d, buf=[0x%s]) -> %lu", size, value, (unsigned long) length_dr);
 	    free(value);
     } else {
         LOG_INFO("No DR write");
     }
-*/
+
 	AJI_ERROR  status = AJI_NO_ERROR;
 	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
 
@@ -951,16 +978,16 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
         free(write_bits);
         return ERROR_FAIL;
     }
-/*
+
     if (read_from_dr) { 
         int size = DIV_ROUND_UP(length_dr, 8);
     	char *value = hexdump(read_bits, size);
-        LOG_INFO("DR read   (size=%d, buf=[%s]) -> %u", size, value, length_dr);
+        LOG_INFO("DR read   (size=%d, buf=[0x%s]) -> %lu", size, value, (unsigned long) length_dr);
     	free(value);
     } else {
         LOG_INFO("No DR read");
     }
-*/
+
     if(read_from_dr) {
         bit_count=0;
 	    for (int i = 0; i < num_fields; i++) {
@@ -971,7 +998,7 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
 	            );
 	            int size =  (fields[i].num_bits+7)/8;
                 char *value = hexdump(fields[i].in_value, size);
-                LOG_DEBUG("FINAL:  fields[%d].in_value   (size=%d, buf=[%s]) -> %u", i, size, value, fields[i].num_bits);
+                LOG_DEBUG("FINAL:  fields[%d].in_value   (size=%d, buf=[0x%s]) -> %u", i, size, value, fields[i].num_bits);
                 free(value);
             } else {
                     //LOG_ERROR("  fields[%d].in_value  : <NONE>", i);
@@ -1007,8 +1034,8 @@ int interface_jtag_add_plain_dr_scan(int num_bits, const uint8_t *out_bits,
 	char *outbits = hexdump(out_bits, size);
     char *inbits  = hexdump(in_bits,  size);
     
-	LOG_INFO("  out_bits (size=%d, buf=[%s]) -> %u", size, outbits, num_bits);
-	LOG_INFO("  in_bits (size=%d, buf=[%s]) -> %u", size, inbits, num_bits);
+	LOG_INFO("  out_bits (size=%d, buf=[0x%s]) -> %u", size, outbits, num_bits);
+	LOG_INFO("  in_bits (size=%d, buf=[0x%s]) -> %u", size, inbits, num_bits);
 	free(outbits);
 	free(inbits);
     }
