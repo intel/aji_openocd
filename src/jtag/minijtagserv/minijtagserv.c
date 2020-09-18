@@ -642,7 +642,7 @@ int interface_jtag_execute_queue(void)
 int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field *fields,
 		tap_state_t state)
 {   LOG_DEBUG("***> IN %s(%d): %s", __FILE__, __LINE__, __FUNCTION__);
-
+    /*
     {
         LOG_INFO("tap=0x%X, num_bits=%d state=(0x%d) %s:", active->idcode, fields->num_bits, state, tap_state_name(state));
     	
@@ -671,7 +671,7 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
         }
         printf("\n");
     }
-
+    */
 	/* synchronously do the operation here */
 
 	/* loop over all enabled TAPs. */
@@ -730,7 +730,7 @@ assert(0);
     for (int i = 0 ; i <  (fields->num_bits+7)/8 ; i++) {
         instruction |= fields->out_value[i] << (i * 8);
     }
-printf("instruction = %lu\n", (unsigned long) instruction);
+//printf("instruction = %lu\n", (unsigned long) instruction);
     DWORD capture = 0;
     status = c_aji_access_ir(open_id, instruction, fields->in_value? &capture : NULL, 0);
 
@@ -740,7 +740,7 @@ printf("instruction = %lu\n", (unsigned long) instruction);
 assert(0);   
         return ERROR_FAIL;
     }
-
+    
     if(fields->in_value) {
         int size = DIV_ROUND_UP(fields->num_bits, 8);
     	char *value = hexdump((uint8_t*) &capture, size);
@@ -755,13 +755,14 @@ assert(0);
            fields->in_value[i] = (BYTE) (capture >> (i * 8));
         }
     }
+    /*
     if(fields->in_value) {
         int size = DIV_ROUND_UP(fields->num_bits, 8);
     	char *value = hexdump(fields->in_value, size);
         LOG_DEBUG("fields.in_value  (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
     	free(value);
     }
-    
+    */
     tap_set_state(TAP_IRUPDATE);
         
     if(TAP_IDLE != state) {
@@ -867,9 +868,9 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
     //right now we are assuming ARM IR Register, which is length 35, and consist of two parts   
     //  fields[0] = a[2:0] = ACK, 3 bit
     //  field[1] = a[34:3] = data, 32 bit
-    assert(num_fields == 2);
-    assert(fields[0].num_bits == 3);
-    assert(fields[1].num_bits == 32);
+    //assert(num_fields == 2);
+    //assert(fields[0].num_bits == 3);
+    //assert(fields[1].num_bits == 32);
 
     /* prepare the input/output fields for AJI */
     DWORD length_dr = 0;
@@ -945,7 +946,7 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
         free(write_bits);
         return ERROR_FAIL;
     }
-
+    
     if (read_from_dr) { 
         int size = DIV_ROUND_UP(length_dr, 8);
     	char *value = hexdump(read_bits, size);
@@ -954,7 +955,7 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
     } else {
         LOG_INFO("No DR read");
     }
-
+    
     if(read_from_dr) {
         bit_count=0;
 	    for (int i = 0; i < num_fields; i++) {
@@ -965,7 +966,7 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
 	            );
 	            int size =  (fields[i].num_bits+7)/8;
                 char *value = hexdump(fields[i].in_value, size);
-                LOG_DEBUG("FINAL:  fields[%d].in_value   (size=%d, buf=[0x%s]) -> %u", i, size, value, fields[i].num_bits);
+                LOG_DEBUG("DR read:  fields[%d].in_value   (size=%d, buf=[0x%s]) -> %u", i, size, value, fields[i].num_bits);
                 free(value);
             } else {
                     //LOG_ERROR("  fields[%d].in_value  : <NONE>", i);
@@ -978,7 +979,7 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
     tap_set_state(TAP_IRUPDATE);    
     
     if(TAP_IDLE != state) {
-        LOG_WARNING("IR SCAN not yet handle transition to state other than TAP_IDLE(%d). Requested state is %s(%d)", TAP_IDLE, tap_state_name(state), state);
+        LOG_WARNING("DR SCAN not yet handle transition to state other than TAP_IDLE(%d). Requested state is %s(%d)", TAP_IDLE, tap_state_name(state), state);
 assert(0);
     }
     
