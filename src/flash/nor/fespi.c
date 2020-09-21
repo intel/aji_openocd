@@ -919,10 +919,16 @@ static int fespi_probe(struct flash_bank *bank)
 	fespi_info->probed = false;
 
 	if (fespi_info->ctrl_base == 0) {
-		for (target_device = target_devices ; target_device->name ; ++target_device)
+		for (target_device = target_devices ; target_device->name ; ++target_device) {
+printf("Searching %s ( == %s, %08x == %08x) ? %s\n", 
+	target->tap->tapname, target_device->name,
+	target->tap->idcode, target_device->tap_idcode, 
+	target_device->tap_idcode == target->tap->idcode? "Yes": "No"
+);
+break;
 			if (target_device->tap_idcode == target->tap->idcode)
 				break;
-
+		}
 		if (!target_device->name) {
 			LOG_ERROR("Device ID 0x%" PRIx32 " is not known as FESPI capable",
 					target->tap->idcode);
