@@ -710,16 +710,16 @@ assert(0);
         return ERROR_FAIL;
     }
   
-  
+    /*
     if(fields->out_value) {
         int size = DIV_ROUND_UP(fields->num_bits, 8);
 	    char *value = hexdump(fields->out_value, size);
         LOG_INFO("IR write  (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
 	    free(value);
     } else {
-        LOG_INFO("No IR read");
+        LOG_INFO("No IR write");
     }
-
+    */
     
     /* the code below could had been replaced by c_aji_access_ir_a(), i.e.
        the BYTE* version of aji_access_ir(). However, for quartus 20.3
@@ -740,7 +740,7 @@ assert(0);
 assert(0);   
         return ERROR_FAIL;
     }
-    
+    /*
     if(fields->in_value) {
         int size = DIV_ROUND_UP(fields->num_bits, 8);
     	char *value = hexdump((uint8_t*) &capture, size);
@@ -749,7 +749,7 @@ assert(0);
     } else {
         LOG_INFO("No IR read");
     }
-    
+    */
     if(fields->in_value) {
         for (int i = 0 ; i < (fields->num_bits+7)/8 ; i++) {
            fields->in_value[i] = (BYTE) (capture >> (i * 8));
@@ -900,7 +900,7 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
           read_bits[3],read_bits[2],read_bits[1],read_bits[0]
     );    
 */
-
+    /*
     if (write_to_dr) { 
         int size = DIV_ROUND_UP(length_dr, 8);
 	    char *value = hexdump(fields->out_value, size);
@@ -909,6 +909,7 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
     } else {
         LOG_INFO("No DR write");
     }
+    */
 
 	AJI_ERROR  status = AJI_NO_ERROR;
 	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
@@ -946,7 +947,7 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
         free(write_bits);
         return ERROR_FAIL;
     }
-    
+    /*
     if (read_from_dr) { 
         int size = DIV_ROUND_UP(length_dr, 8);
     	char *value = hexdump(read_bits, size);
@@ -955,7 +956,7 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
     } else {
         LOG_INFO("No DR read");
     }
-    
+    */
     if(read_from_dr) {
         bit_count=0;
 	    for (int i = 0; i < num_fields; i++) {
