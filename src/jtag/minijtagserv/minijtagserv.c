@@ -137,7 +137,6 @@ static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
 	/* Loop over the expected identification codes and test for a match */
 	for (unsigned ii = 0; ii < tap->expected_ids_cnt; ii++) {
 		uint32_t expected = tap->expected_ids[ii] & mask;
-
 		if (idcode == expected)
 			return true;
 
@@ -201,7 +200,21 @@ int jtag_examine_chain(void)
 
 			jtag_examine_chain_display(LOG_LVL_INFO, "tap/device found", tap->dotted_name, tap->idcode);
         } 
- 		/* ensure the TAP ID matches what was expected */
+        
+        if ((device.device_id & 1) == 0) {
+            /* Zero for LSB indicates a device in bypass */
+            LOG_INFO("TAP %s does not have valid IDCODE (idcode=0x%l" PRIx32 ")",  tap->dotted_name, device.device_id);
+            tap->hasidcode = false;
+            tap->idcode = 0;
+        }
+        else {
+            /* Friendly devices support IDCODE */
+            tap->idcode = device.device_id;
+            tap->hasidcode = true;
+            jtag_examine_chain_display(LOG_LVL_INFO, "tap/device found", tap->dotted_name, tap->idcode);
+        }
+
+        /* ensure the TAP ID matches what was expected */
 		if (!jtag_examine_chain_match_tap(tap))
 			retval = ERROR_JTAG_INIT_SOFT_FAIL;
     } //end for t
