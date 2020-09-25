@@ -38,7 +38,33 @@ extern void jtag_tap_add(struct jtag_tap *t);
 #define IDCODE_SOCVHPS (0x4BA00477)
 #define IDCODE_FE310_G002 (0x20000913)
 
-static struct jtagservice_record jtagservice; 
+//=================================
+// Global variables
+//=================================
+static struct jtagservice_record jtagservice;
+
+
+/**
+ * Store user configuration/request.
+ * @pre Function must not require any initialization. It is intended to be used
+ *      as global/static instance where it is automatically initialized to all zero
+ *      (or zero equivalent such as NULL). Initialization is guaranteed by C99.
+ */
+struct minijtagserv_parameters {
+    char* requested_hardware; //<AJI compliant hardware descriptor. @see aji_find_hardware
+};
+typedef struct minijtagserv_parameters minijtagserv_parameters;
+
+minijtagserv_parameters minijtagserv_config;
+
+AJI_ERROR minijtagserv_parameters_free(minijtagserv_parameters *me) {
+    if (me->requested_hardware) {
+        free(me->requested_hardware);
+        me->requested_hardware = NULL;
+    }
+    return AJI_NO_ERROR;
+}
+
 
 //=================================
 // Helpers
@@ -331,31 +357,62 @@ static AJI_ERROR select_cable(void)
     AJI_ERROR status = AJI_NO_ERROR;
 
     LOG_INFO("Querying JTAG Server ...");
- 
-    status = c_aji_get_hardware2( 
-        &(jtagservice.hardware_count), 
-        jtagservice.hardware_list, 
-        jtagservice.server_version_info_list, 
-        JTAGSERVICE_TIMEOUT_MS
-    );
-    if(AJI_TOO_MANY_DEVICES == status) {
-        jtagservice.hardware_list = 
+    if (minijtagserv_config.requested_hardware != NULL) {
+        LOG_INFO("Attempting to find '%s'", minijtagserv_config.requested_hardware);
+        jtagservice.hardware_count = 1;
+        jtagservice.hardware_list =
             calloc(jtagservice.hardware_count, sizeof(AJI_HARDWARE));
-        jtagservice.server_version_info_list = 
+        jtagservice.server_version_info_list =
             calloc(jtagservice.hardware_count, sizeof(char*));
-        if (   jtagservice.hardware_list == NULL 
+        if (jtagservice.hardware_list == NULL
             || jtagservice.server_version_info_list == NULL
-        ) {
+            ) {
             return AJI_NO_MEMORY;
         }
-        status = c_aji_get_hardware2( 
-            &(jtagservice.hardware_count), 
-            jtagservice.hardware_list, 
-            jtagservice.server_version_info_list, 
+
+        status = c_aji_find_hardware_a(
+            minijtagserv_config.requested_hardware,
+            &(jtagservice.hardware_list[0]),
             JTAGSERVICE_TIMEOUT_MS
         );
-    } //end if (AJI_TOO_MANY_DEVICES)
-    
+        /* Documentation says retry immediately after a timeout,
+           as AJI is still trying to connect at the background
+           after timeout so immediate retry might be successful 
+         */
+        if (AJI_TIMEOUT == status) {
+            status = c_aji_find_hardware_a(
+                minijtagserv_config.requested_hardware,
+                &(jtagservice.hardware_list[0]),
+                JTAGSERVICE_TIMEOUT_MS
+            );
+        }
+    }
+    else {
+        LOG_INFO("No cable specified, so searching for cables");
+        status = c_aji_get_hardware2(
+            &(jtagservice.hardware_count),
+            jtagservice.hardware_list,
+            jtagservice.server_version_info_list,
+            JTAGSERVICE_TIMEOUT_MS
+        );
+        if (AJI_TOO_MANY_DEVICES == status) {
+            jtagservice.hardware_list =
+                calloc(jtagservice.hardware_count, sizeof(AJI_HARDWARE));
+            jtagservice.server_version_info_list =
+                calloc(jtagservice.hardware_count, sizeof(char*));
+            if (jtagservice.hardware_list == NULL
+                || jtagservice.server_version_info_list == NULL
+                ) {
+                return AJI_NO_MEMORY;
+            }
+            status = c_aji_get_hardware2(
+                &(jtagservice.hardware_count),
+                jtagservice.hardware_list,
+                jtagservice.server_version_info_list,
+                JTAGSERVICE_TIMEOUT_MS
+            );
+        } //end if (AJI_TOO_MANY_DEVICES)
+    }
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failed to query server for hardware cable information. "
                   " Return Status is %i\n", status
@@ -366,11 +423,14 @@ static AJI_ERROR select_cable(void)
         LOG_ERROR("JTAG server reports that it has no hardware cable\n");
         return AJI_BAD_HARDWARE;
     }
-    LOG_INFO("At present, only the first hardware cable will be used"
-             " [%lu cable(s) detected]", 
-             (unsigned long) jtagservice.hardware_count
-    );
-    
+
+    if (minijtagserv_config.requested_hardware == NULL) {
+        LOG_INFO("At present, only the first hardware cable will be used"
+            " [%lu cable(s) detected]",
+            (unsigned long)jtagservice.hardware_count
+        );
+    }
+
     AJI_HARDWARE hw = jtagservice.hardware_list[0];
     LOG_INFO("Cable %u: device_name=%s, hw_name=%s, server=%s, port=%s,"
               " chain_id=%p, persistent_id=%lu, chain_type=%d, features=%lu,"
@@ -420,9 +480,17 @@ static AJI_ERROR select_tap(void)
         1
     );
     if(AJI_TOO_MANY_DEVICES == status) {
+        printf("DEVICE COUNT = %d\n", jtagservice.device_count);
         jtagservice.device_list = calloc(jtagservice.device_count, sizeof(AJI_DEVICE)); 
         jtagservice.device_open_id_list = calloc(jtagservice.device_count, sizeof(AJI_OPEN_ID));
         jtagservice.device_type_list = calloc(jtagservice.device_count, sizeof(DEVICE_TYPE));
+
+        if (jtagservice.device_list == NULL
+            || jtagservice.device_open_id_list == NULL
+            || jtagservice.device_type_list == NULL
+        ) {
+            return AJI_NO_MEMORY;
+        }
         status = c_aji_read_device_chain(
             hw.chain_id, 
             &(jtagservice.device_count), 
@@ -479,20 +547,20 @@ static AJI_ERROR select_tap(void)
             LOG_INFO("Found SOCVHPS device at tap_position %lu.", (unsigned long) tap_position);
         }
     } //end for tap_position
-    
+
     if(0 == jtagservice.in_use_device_id) {
-        LOG_ERROR("No SOCVHPS device found.");
+        LOG_ERROR("No SOCVHPS or FE310-G002 device found.");
         jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
         return AJI_FAILURE;
     }
 
-    char idcode[19];
-    sprintf(idcode, "%lX", jtagservice.in_use_device_id);
+    char idcode[9];
+    sprintf(idcode, "%08X", jtagservice.in_use_device_id);
 
-    CLAIM_RECORD claims = 
+    CLAIM_RECORD claims =
         jtagservice.claims[jtagservice.device_type_list[jtagservice.in_use_device_tap_position]];
 
-    printf("tap_position=%ld, device_type_list_entry=%ld claims_n=%ld\n", 
+    printf("tap_position=%ld, device_type_list_entry=%ld claims_n=%ld\n",
                 jtagservice.in_use_device_tap_position, 
                 jtagservice.device_type_list[jtagservice.in_use_device_tap_position],
                 claims.claims_n
@@ -518,7 +586,7 @@ static AJI_ERROR select_tap(void)
                       idcode
             );
     }
-    
+
     jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
     return status;
 }
@@ -590,6 +658,7 @@ static int miniinit(void)
     if (AJI_NO_ERROR != status) {
         LOG_ERROR("Cannot initialize C_JTAG_CLIENT library. Return status is %d", status);
         jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
+        minijtagserv_parameters_free(&minijtagserv_config);
         return ERROR_JTAG_INIT_FAILED;
     }
 #endif
@@ -597,6 +666,7 @@ static int miniinit(void)
     if (AJI_NO_ERROR != status) {
         LOG_ERROR("Cannot select JTAG Cable. Return status is %d", status);
         jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
+        minijtagserv_parameters_free(&minijtagserv_config);
         return ERROR_JTAG_INIT_FAILED;
     }
     
@@ -614,7 +684,8 @@ static int miniinit(void)
 
 static int miniquit(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-    //jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
+    jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
+    minijtagserv_parameters_free(&minijtagserv_config);
     return ERROR_OK;
 }
 
@@ -1202,22 +1273,21 @@ assert(0); //"Need to implement interface_jtag_add_tms_seq");
 
 COMMAND_HANDLER(minijtagserv_handle_minijtagserv_hardware_command)
 {
-    int  count = 0;
-    char hardware[128];
-
     if (CMD_ARGC == 1) {
-        count = strlen(CMD_ARGV[0]);
-        if (count >= 127) {
-            command_print(CMD, "Argument '%s' is too long. Must be less than 127 characters.", CMD_ARGV[0]);
+        int count = strlen(CMD_ARGV[0]);
+
+        if (count < 1) {
+            command_print(CMD, "Invalid argument: %s.", CMD_ARGV[0]);
             return ERROR_COMMAND_SYNTAX_ERROR;
         }
-        strncpy(hardware, CMD_ARGV[0], 128);
 
+        minijtagserv_config.requested_hardware = calloc(count + 1, sizeof(char));
+        strncpy(minijtagserv_config.requested_hardware, CMD_ARGV[0], count);
+        printf(";;;;;;;;;; requested_hardware=%s\n\n", minijtagserv_config.requested_hardware);
     } else {
         command_print(CMD, "Need exactly one argument for 'minijtagserv hardware'.");
         return ERROR_COMMAND_SYNTAX_ERROR;
     }
-    LOG_INFO("Requested hardware is '%s' (%d)", hardware, count);
     return ERROR_OK;
 }
 
