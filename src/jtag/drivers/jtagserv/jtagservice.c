@@ -214,6 +214,15 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
     jtagservice_unlock(me, ALL, timeout);
 
     //TODO: Free the variables    
+    if (me->hardware_count != 0) {
+        free(me->hardware_list);
+        free(me->server_version_info_list);
+
+        me->hardware_count = 0;
+        me->hardware_list = NULL;
+        me->server_version_info_list = NULL;
+    }
+
     if(me->device_count != 0) {
         free(me->device_list);
         free(me->device_open_id_list);
@@ -223,15 +232,6 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
         me->device_list = NULL;
         me->device_open_id_list = NULL;
         me->device_type_list = NULL;
-    }
-
-    if(me->hardware_count != 0) {
-        free(me->hardware_list);
-        free(me->server_version_info_list);
-        
-        me->hardware_count = 0;
-        me->hardware_list = NULL;
-        me->server_version_info_list = NULL;
     }
 
     if (me->claims_count) {
