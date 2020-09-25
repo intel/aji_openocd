@@ -480,7 +480,6 @@ static AJI_ERROR select_tap(void)
         1
     );
     if(AJI_TOO_MANY_DEVICES == status) {
-        printf("DEVICE COUNT = %d\n", jtagservice.device_count);
         jtagservice.device_list = calloc(jtagservice.device_count, sizeof(AJI_DEVICE)); 
         jtagservice.device_open_id_list = calloc(jtagservice.device_count, sizeof(AJI_OPEN_ID));
         jtagservice.device_type_list = calloc(jtagservice.device_count, sizeof(DEVICE_TYPE));
@@ -555,19 +554,10 @@ static AJI_ERROR select_tap(void)
     }
 
     char idcode[9];
-    sprintf(idcode, "%08X", jtagservice.in_use_device_id);
+    sprintf(idcode, "%08lX", jtagservice.in_use_device_id);
 
     CLAIM_RECORD claims =
         jtagservice.claims[jtagservice.device_type_list[jtagservice.in_use_device_tap_position]];
-
-    printf("tap_position=%ld, device_type_list_entry=%ld claims_n=%ld\n",
-                jtagservice.in_use_device_tap_position, 
-                jtagservice.device_type_list[jtagservice.in_use_device_tap_position],
-                claims.claims_n
-    );
-    for (DWORD i = 0; i < claims.claims_n; ++i) {
-        printf(" -- claim %lu : type=%d, value=%ld\n", i, claims.claims[i].type, claims.claims[i].value);
-    }
 
     // Only allowed to open one device at a time.
     // If you don't, then anytime after  c_aji_test_logic_reset() call, 
@@ -1283,7 +1273,6 @@ COMMAND_HANDLER(minijtagserv_handle_minijtagserv_hardware_command)
 
         minijtagserv_config.requested_hardware = calloc(count + 1, sizeof(char));
         strncpy(minijtagserv_config.requested_hardware, CMD_ARGV[0], count);
-        printf(";;;;;;;;;; requested_hardware=%s\n\n", minijtagserv_config.requested_hardware);
     } else {
         command_print(CMD, "Need exactly one argument for 'minijtagserv hardware'.");
         return ERROR_COMMAND_SYNTAX_ERROR;
