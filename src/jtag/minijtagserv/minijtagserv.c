@@ -1200,6 +1200,49 @@ assert(0); //"Need to implement interface_jtag_add_tms_seq");
 	return ERROR_OK;
 }
 
+COMMAND_HANDLER(minijtagserv_handle_minijtagserv_hardware_command)
+{
+    int  count = 0;
+    char hardware[128];
+
+    if (CMD_ARGC == 1) {
+        count = strlen(CMD_ARGV[0]);
+        if (count >= 127) {
+            command_print(CMD, "Argument '%s' is too long. Must be less than 127 characters.", CMD_ARGV[0]);
+            return ERROR_COMMAND_SYNTAX_ERROR;
+        }
+        strncpy(hardware, CMD_ARGV[0], 128);
+
+    } else {
+        command_print(CMD, "Need exactly one argument for 'minijtagserv hardware'.");
+        return ERROR_COMMAND_SYNTAX_ERROR;
+    }
+    LOG_INFO("Requested hardware is '%s' (%d)", hardware, count);
+    return ERROR_OK;
+}
+
+static const struct command_registration minijtagserv_subcommand_handlers[] = {
+    {
+        .name = "hardware",
+        .handler = &minijtagserv_handle_minijtagserv_hardware_command,
+        .mode = COMMAND_CONFIG,
+        .help = "select the hardware",
+        .usage = "<type>[<port>]",
+    },
+    COMMAND_REGISTRATION_DONE
+};
+
+static const struct command_registration minijtagserv_command_handlers[] = {
+    {
+        .name = "minijtagserv",
+        .mode = COMMAND_CONFIG,
+        .help = "Perform minijtagserv management",
+        .usage = "",
+        .chain = minijtagserv_subcommand_handlers,
+    },
+    COMMAND_REGISTRATION_DONE
+};
+
 
 static struct jtag_interface miniinterface = {
 	.execute_queue = NULL,
@@ -1208,7 +1251,7 @@ static struct jtag_interface miniinterface = {
 struct adapter_driver minijtagserv_adapter_driver = {
 	.name = "minijtagserv",
 	.transports = jtag_only,
-	.commands = NULL,
+	.commands = minijtagserv_command_handlers,
 
 	.init = miniinit,
 	.quit = miniquit,
