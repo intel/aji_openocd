@@ -13,6 +13,7 @@ STARTUP_TCL_SRCS += %D%/startup.tcl
 noinst_LTLIBRARIES += %D%/libtarget.la
 %C%_libtarget_la_SOURCES = \
 	$(TARGET_CORE_SRC) \
+	$(AJI_DEBUG_SRC) \
 	$(ARM_DEBUG_SRC) \
 	$(ARMV4_5_SRC) \
 	$(ARMV6_SRC) \
@@ -43,6 +44,9 @@ TARGET_CORE_SRC = \
 	%D%/testee.c \
 	%D%/semihosting_common.c \
 	%D%/smp.c
+
+AJI_DEBUG_SRC = \
+	%D%/aji_vjtag.c 
 
 ARMV4_5_SRC = \
 	%D%/armv4_5.c \
@@ -163,6 +167,7 @@ ARC_SRC = \
 %C%_libtarget_la_SOURCES += \
 	%D%/algorithm.h \
 	%D%/arm.h \
+	%D%/aji_vjtag.h \
 	%D%/arm_dpm.h \
 	%D%/arm_jtag.h \
 	%D%/arm_adi_v5.h \
