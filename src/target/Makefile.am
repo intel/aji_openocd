@@ -32,7 +32,8 @@ noinst_LTLIBRARIES += %D%/libtarget.la
 	%D%/dsp5680xx.c \
 	%D%/hla_target.c \
 	$(ARMV8_SRC) \
-	$(MIPS64_SRC)
+	$(MIPS64_SRC) \
+	$(NIOS5_SRC)
 
 TARGET_CORE_SRC = \
 	%D%/algorithm.c \
@@ -164,6 +165,9 @@ ARC_SRC = \
         %D%/arc_jtag.c \
         %D%/arc_mem.c
 
+NIOS5_SRC = \
+	%D%/nios5.c
+
 %C%_libtarget_la_SOURCES += \
 	%D%/algorithm.h \
 	%D%/arm.h \
@@ -256,7 +260,8 @@ ARC_SRC = \
 	%D%/arc.h \
 	%D%/arc_cmd.h \
 	%D%/arc_jtag.h \
-	%D%/arc_mem.h
+	%D%/arc_mem.h \
+	%D%/nios5.h
 
 include %D%/openrisc/Makefile.am
 include %D%/riscv/Makefile.am
