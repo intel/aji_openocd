@@ -163,6 +163,7 @@ static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
 	/* Loop over the expected identification codes and test for a match */
 	for (unsigned ii = 0; ii < tap->expected_ids_cnt; ii++) {
 		uint32_t expected = tap->expected_ids[ii] & mask;
+
 		if (idcode == expected)
 			return true;
 
@@ -173,7 +174,8 @@ static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
 
 	/* If none of the expected ids matched, warn */
 	jtag_examine_chain_display(LOG_LVL_WARNING, "UNEXPECTED",
-		tap->dotted_name, tap->idcode);
+		tap->dotted_name, tap->idcode
+	);
 	for (unsigned ii = 0; ii < tap->expected_ids_cnt; ii++) {
 		char msg[32];
 
@@ -229,7 +231,7 @@ int jtag_examine_chain(void)
         
         if ((device.device_id & 1) == 0) {
             /* Zero for LSB indicates a device in bypass */
-            LOG_INFO("TAP %s does not have valid IDCODE (idcode=0x%l" PRIx32 ")",  tap->dotted_name, device.device_id);
+            LOG_DEBUG("TAP %s does not have valid IDCODE (idcode=0x%" PRIx32 ")",  tap->dotted_name, device.device_id);
             tap->hasidcode = false;
             tap->idcode = 0;
         }
@@ -749,25 +751,15 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
 	/* synchronously do the operation here */
 
 	/* loop over all enabled TAPs. */
-    DWORD tap_position = jtagservice.device_count-1; /* TAPs are in reverse order */
-    DWORD active_tap_position = jtagservice.device_count;
-	for (struct jtag_tap* tap=jtag_tap_next_enabled(NULL); tap != NULL; tap = jtag_tap_next_enabled(tap), --tap_position) {
-		/* search the input field list for fields for the current TAP */
-		if (tap == active) {
-		    tap->bypass = 1;
-            assert(active_tap_position == jtagservice.device_count); //Only one active tap permitted
-		    active_tap_position = tap_position;
-	    } else {
-	        tap->bypass = 0; 
-	    }
-	}
+    /* Right now, we can only do ARMVHPS or FE310-G002 */
+    if(active->idcode == 0 || jtagservice.in_use_device_id != active->idcode ) {
+        LOG_ERROR("IR - Expecting TAP with IDCODE 0x%08X to be the active tap, but got 0x%08X",
+            jtagservice.in_use_device_id,
+            active->idcode
+        );
+        return ERROR_FAIL;
+     }
 
-	if(active_tap_position != jtagservice.in_use_device_tap_position) {
-	    LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %lu, but got tap position %lu instead",
-          	      (unsigned long) jtagservice.in_use_device_tap_position,
-	              (unsigned long) active_tap_position
-	    );
-	}
 
 	AJI_ERROR  status = AJI_NO_ERROR;
 	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
@@ -917,34 +909,16 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
     }
 */    
 	/* synchronously do the operation here */
+	
+    /* Right now, we can only do ARMVHPS or FE310-G002 */
+    if(active->idcode == 0 || jtagservice.in_use_device_id != active->idcode ) {
+        LOG_ERROR("DR - Expecting TAP with IDCODE 0x%08X to be the active tap, but got 0x%08X",
+            jtagservice.in_use_device_id,
+            active->idcode
+        );
+        return ERROR_FAIL;
+     }
 
-	/* loop over all enabled TAPs. */
-    DWORD tap_position = jtagservice.device_count-1; /* TAPs are in reverse order */
-    DWORD active_tap_position = jtagservice.device_count;
-	for (struct jtag_tap *tap = jtag_tap_next_enabled(NULL); tap != NULL; tap = jtag_tap_next_enabled(tap), --tap_position) {
-		/* search the input field list for fields for the current TAP */
-		if (tap == active) {
-	        assert(tap->bypass); //interface_jtag_add_ir() should had set bypass status
-	        assert(active_tap_position == jtagservice.device_count); //expecting only one active tap
-	        active_tap_position = tap_position;
-	    } else {
-	        assert(tap->bypass == 0); //interface_jtag_add_ir() should had set bypass status
-	    }
-	}
-
-	if((DWORD) active_tap_position != jtagservice.in_use_device_tap_position) {
-	    LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %lu, but got tap position %lu instead",
-          	      (unsigned long) jtagservice.in_use_device_tap_position,
-	              (unsigned long) tap_position
-	    );
-	}
-
-    //right now we are assuming ARM IR Register, which is length 35, and consist of two parts   
-    //  fields[0] = a[2:0] = ACK, 3 bit
-    //  field[1] = a[34:3] = data, 32 bit
-    //assert(num_fields == 2);
-    //assert(fields[0].num_bits == 3);
-    //assert(fields[1].num_bits == 32);
 
     /* prepare the input/output fields for AJI */
     DWORD length_dr = 0;

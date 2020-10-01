@@ -33,7 +33,7 @@ enum DEVICE_TYPE {
     ARM = 0, ///! ARM device, with IR length = 4 bit
     RISCV = 1, ///! RISCV device, with IR length = 5 bit 
 };
-
+typedef enum DEVICE_TYPE DEVICE_TYPE;
 
 enum jtagservice_lock {
     NONE    = 0b000000,
