@@ -30,6 +30,9 @@ AJI_ERROR c_aji_open_device(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_OPEN_
 AJI_ERROR c_aji_open_device_a(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_OPEN_ID* open_id, const AJI_CLAIM2* claims, DWORD claim_n, const char* application_name);
 AJI_ERROR c_aji_close_device(AJI_OPEN_ID open_id);
 AJI_ERROR c_aji_open_entire_device_chain(AJI_CHAIN_ID chain_id, AJI_OPEN_ID* open_id, AJI_CHAIN_TYPE style, const char* application_name);
+AJI_ERROR c_aji_get_nodes(AJI_CHAIN_ID chain_id, DWORD tap_position, DWORD* idcodes, DWORD* idcode_n);
+AJI_ERROR c_aji_get_nodes_a(AJI_CHAIN_ID chain_id, DWORD tap_position, DWORD* idcodes, DWORD* idcode_n, DWORD* hub_info);
+AJI_ERROR c_aji_get_nodes_b(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_HIER_ID* hier_ids, DWORD* hier_id_n, AJI_HUB_INFO* hub_infos);
 
 AJI_ERROR c_aji_lock(AJI_OPEN_ID open_id, DWORD timeout, AJI_PACK_STYLE pack_style);
 AJI_ERROR c_aji_unlock_lock_chain(AJI_OPEN_ID unlock_id, AJI_CHAIN_ID lock_id);
@@ -37,7 +40,7 @@ AJI_ERROR c_aji_unlock(AJI_OPEN_ID open_id);
 AJI_ERROR c_aji_lock_chain(AJI_CHAIN_ID chain_id, DWORD timeout);
 AJI_ERROR c_aji_unlock_chain(AJI_CHAIN_ID chain_id);
 AJI_ERROR c_aji_unlock_chain_lock(AJI_CHAIN_ID unlock_id, AJI_OPEN_ID lock_id, AJI_PACK_STYLE pack_style);
-
+AJI_ERROR c_aji_flush(AJI_OPEN_ID openid);
 
 AJI_ERROR c_aji_test_logic_reset(AJI_OPEN_ID open_id);
 AJI_ERROR c_aji_delay(AJI_OPEN_ID open_id, DWORD timeout_microseconds);

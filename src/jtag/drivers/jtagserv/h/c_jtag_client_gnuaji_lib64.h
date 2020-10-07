@@ -38,6 +38,35 @@ AJI_API AJI_ERROR c_aji_read_device_chain(AJI_CHAIN_ID chain_id, DWORD * device_
 }
 
 inline
+AJI_API AJI_ERROR aji_get_nodes(
+    AJI_CHAIN_ID         chain_id,
+    DWORD                tap_position,
+    DWORD* idcodes,
+    DWORD* idcode_n) {
+    return _Z13aji_get_nodesP9AJI_CHAINjPjS1_(chain_id, tap_position, idcodes, idcode_n);
+}
+
+inline
+AJI_API AJI_ERROR  aji_get_nodes_a(
+    AJI_CHAIN_ID         chain_id,
+    DWORD                tap_position,
+    DWORD* idcodes,
+    DWORD* idcode_n,
+    DWORD* hub_info) {
+    return _Z13aji_get_nodesP9AJI_CHAINjPjS1_S1_(chain_id, tap_position, idcodes, idcode_n, hubinfo);
+}
+
+inline
+AJI_API AJI_ERROR aji_get_nodes_b(
+    AJI_CHAIN_ID chain_id,
+    DWORD                tap_position,
+    AJI_HIER_ID* hier_ids,
+    DWORD* hier_id_n,
+    AJI_HUB_INFO* hub_infos) {
+    return _Z13aji_get_nodesP9AJI_CHAINjP11AJI_HIER_IDPjP12AJI_HUB_INFO(chain_id, tap_position, hier_ids, hier_id_n, hub_infos)
+}
+
+inline
 AJI_API AJI_ERROR c_aji_lock(AJI_OPEN_ID open_id, DWORD timeout, AJI_PACK_STYLE pack_style) {
     return _Z8aji_lockP8AJI_OPENj14AJI_PACK_STYLE(open_id, timeout, pack_style);
 }
@@ -127,5 +156,10 @@ AJI_API AJI_ERROR c_aji_access_dr(AJI_OPEN_ID open_id, DWORD length_dr, DWORD fl
 inline
 AJI_API AJI_ERROR c_aji_access_dr_a(AJI_OPEN_ID open_id, DWORD length_dr, DWORD flags, DWORD write_offset, DWORD write_length, const BYTE * write_bits, DWORD read_offset, DWORD read_length, BYTE * read_bits, DWORD batch) {
     return _Z13aji_access_drP8AJI_OPENjjjjPKhjjPhj(open_id, length_dr, flags, write_offset, write_length, write_bits, read_offset, read_length, read_bits, batch);
+}
+
+inline
+AJI_API AJI_ERROR c_aji_flush(AJI_OPEN openid) {
+    return _Z9aji_flushP8AJI_OPEN(open_id);
 }
 #endif

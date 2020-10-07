@@ -10,8 +10,33 @@
  * For overloaded function that has to be converted to C names,
  * will add suffix '_a','_b', '_c' etc. Not using numeric suffix because
  * AJI might be using it already
+ *
+ * Functions here are mainly from jtag_client.dll library
  */
 
+/*
+ * On mingw64 command line:
+ * ##To find the find decorated names in a DLL
+ * $  /c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Professional/VC/Tools/MSVC/14.26.28801/bin/Hostx64/x64/dumpbin.exe -EXPORTS jtag_client.dll
+ * ...
+ *  ordinal hint RVA      name
+ *  1    0 0000BE10 ?aji_access_dr@@YA?AW4AJI_ERROR@@PEAVAJI_OPEN@@KKKKPEBEKKPEAE@Z
+ *  2    1 0000BF20 ?aji_access_dr@@YA?AW4AJI_ERROR@@PEAVAJI_OPEN@@KKKKPEBEKKPEAEK@Z
+ *  3    2 0000C030 ?aji_access_dr@@YA?AW4AJI_ERROR@@PEAVAJI_OPEN@@KKKKPEBEKKPEAEKPEAK@Z
+ * ...
+ *
+ * ## To undecorate a name, e.g. to find out how to undecorate/demangle 
+ * $ /c/Program\ Files\ \(x86\)/Microsoft\ Visual\ Studio/2019/Professional/VC/Tools/MSVC/14.26.28801/bin/Hostx64/x64/undname.exe \
+ *       '?aji_access_dr@@YA?AW4AJI_ERROR@@PEAVAJI_OPEN@@KKKKPEBEKKPEAEKPEAK@Z'
+ * Microsoft (R) C++ Name Undecorator
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+
+ * Undecoration of :- "?aji_access_dr@@YA?AW4AJI_ERROR@@PEAVAJI_OPEN@@KKKKPEBEKKPEAEKPEAK@Z" * is :
+ * - "enum AJI_ERROR __cdecl aji_access_dr(class AJI_OPEN * __ptr64,unsigned long,unsigned long,unsigned long,unsigned long, 
+ * unsigned char const * __ptr64,unsigned long,unsigned long,unsigned char * __ptr64,unsigned long,unsigned long * __ptr64)"
+ *
+ * $
+ */
 #include <windows.h>
 #include "c_aji.h"
 
@@ -97,6 +122,57 @@ AJI_ERROR c_aji_read_device_chain(AJI_CHAIN_ID chain_id, DWORD * device_count, A
         return AJI_FAILURE;
     }
     return (pfn)(chain_id, device_count, device_list, auto_scan);
+}
+
+
+#define FNAME_AJI_GET_NODES "?aji_get_nodes@@YA?AW4AJI_ERROR@@PEAVAJI_CHAIN@@KPEAK1@Z"
+AJI_ERROR AJI_API c_aji_get_nodes(
+    AJI_CHAIN_ID         chain_id,
+    DWORD                tap_position,
+    DWORD* idcodes,
+    DWORD* idcode_n) {
+    assert(c_jtag_client_lib != NULL);
+    typedef AJI_ERROR(*ProdFn)(AJI_CHAIN_ID, DWORD, DWORD*, DWORD*);
+    ProdFn pfn = (ProdFn)(void*)GetProcAddress(c_jtag_client_lib, FNAME_AJI_GET_NODES);
+    if (pfn == NULL) {
+        //        LOG_ERROR("Cannot find function '%s'", __FUNCTION__);
+        return AJI_FAILURE;
+    }
+    return (pfn)(chain_id, tap_position, idcodes, idcode_n);
+}
+
+#define FNAME_AJI_GET_NODES_A "?aji_get_nodes@@YA?AW4AJI_ERROR@@PEAVAJI_CHAIN@@KPEAK11@Z"
+AJI_ERROR AJI_API c_aji_get_nodes_a(
+    AJI_CHAIN_ID         chain_id,
+    DWORD                tap_position,
+    DWORD* idcodes,
+    DWORD* idcode_n,
+    DWORD* hub_info) {
+    assert(c_jtag_client_lib != NULL);
+    typedef AJI_ERROR(*ProdFn)(AJI_CHAIN_ID, DWORD, DWORD*, DWORD*, DWORD*);
+    ProdFn pfn = (ProdFn)(void*)GetProcAddress(c_jtag_client_lib, FNAME_AJI_GET_NODES_A);
+    if (pfn == NULL) {
+        //        LOG_ERROR("Cannot find function '%s'", __FUNCTION__);
+        return AJI_FAILURE;
+    }
+    return (pfn)(chain_id, tap_position, idcodes, idcode_n, hub_info);
+}
+
+#define FNAME_AJI_GET_NODES_B "?aji_get_nodes@@YA?AW4AJI_ERROR@@PEAVAJI_CHAIN@@KPEAUAJI_HIER_ID@@PEAKPEAUAJI_HUB_INFO@@@Z"
+AJI_ERROR AJI_API c_aji_get_nodes_b(
+    AJI_CHAIN_ID chain_id,
+    DWORD  tap_position,
+    AJI_HIER_ID* hier_ids,
+    DWORD* hier_id_n,
+    AJI_HUB_INFO* hub_infos) {
+    assert(c_jtag_client_lib != NULL);
+    typedef AJI_ERROR(*ProdFn)(AJI_CHAIN_ID, DWORD, AJI_HIER_ID*, DWORD*, AJI_HUB_INFO*);
+    ProdFn pfn = (ProdFn)(void*)GetProcAddress(c_jtag_client_lib, FNAME_AJI_GET_NODES_B);
+    if (pfn == NULL) {
+        //        LOG_ERROR("Cannot find function '%s'", __FUNCTION__);
+        return AJI_FAILURE;
+    }
+    return (pfn)(chain_id, tap_position, hier_ids, hier_id_n, hub_infos);
 }
 
 #define FNAME_AJI_LOCK "?aji_lock@@YA?AW4AJI_ERROR@@PEAVAJI_OPEN@@KW4AJI_PACK_STYLE@@@Z"
@@ -325,4 +401,17 @@ AJI_ERROR c_aji_access_dr_a(AJI_OPEN_ID open_id, DWORD length_dr, DWORD flags, D
         return AJI_FAILURE;
     }
     return (pfn)(open_id, length_dr, flags, write_offset, write_length, write_bits, read_offset, read_length, read_bits, batch);
+}
+
+
+#define FNAME_AJI_FLUSH "?aji_flush@@YA?AW4AJI_ERROR@@PEAVAJI_OPEN@@@Z"
+AJI_API AJI_ERROR c_aji_flush(AJI_OPEN_ID open_id) {
+    assert(c_jtag_client_lib != NULL);
+    typedef AJI_ERROR(*ProdFn)(AJI_OPEN_ID);
+    ProdFn pfn = (ProdFn)(void*)GetProcAddress(c_jtag_client_lib, FNAME_AJI_FLUSH);
+    if (pfn == NULL) {
+        //        LOG_ERROR("Cannot find function '%s'", __FUNCTION__);
+        return AJI_FAILURE;
+    }
+    return (pfn)(open_id);
 }

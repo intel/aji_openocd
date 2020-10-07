@@ -231,7 +231,7 @@ int jtag_examine_chain(void)
         
         if ((device.device_id & 1) == 0) {
             /* Zero for LSB indicates a device in bypass */
-            LOG_DEBUG("TAP %s does not have valid IDCODE (idcode=0x%" PRIx32 ")",  tap->dotted_name, device.device_id);
+            LOG_DEBUG("TAP %s does not have valid IDCODE (idcode=0x%08l" PRIx32 ")",  tap->dotted_name, (unsigned long) device.device_id);
             tap->hasidcode = false;
             tap->idcode = 0;
         }
@@ -753,9 +753,9 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
 	/* loop over all enabled TAPs. */
     /* Right now, we can only do ARMVHPS or FE310-G002 */
     if(active->idcode == 0 || jtagservice.in_use_device_id != active->idcode ) {
-        LOG_ERROR("IR - Expecting TAP with IDCODE 0x%08X to be the active tap, but got 0x%08X",
-            jtagservice.in_use_device_id,
-            active->idcode
+        LOG_ERROR("IR - Expecting TAP with IDCODE 0x%08lX to be the active tap, but got 0x%08lX",
+            (unsigned long) jtagservice.in_use_device_id,
+            (unsigned long) active->idcode
         );
         return ERROR_FAIL;
      }
@@ -912,9 +912,9 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 	
     /* Right now, we can only do ARMVHPS or FE310-G002 */
     if(active->idcode == 0 || jtagservice.in_use_device_id != active->idcode ) {
-        LOG_ERROR("DR - Expecting TAP with IDCODE 0x%08X to be the active tap, but got 0x%08X",
-            jtagservice.in_use_device_id,
-            active->idcode
+        LOG_ERROR("DR - Expecting TAP with IDCODE 0x%08lX to be the active tap, but got 0x%08lX",
+            (unsigned long) jtagservice.in_use_device_id,
+            (unsigned long) active->idcode
         );
         return ERROR_FAIL;
      }
