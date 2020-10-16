@@ -74,7 +74,7 @@ AJI_ERROR minijtagserv_parameters_free(minijtagserv_parameters *me) {
  * Access functions to lowlevel driver, agnostic of libftdi/libftdxx
  */
 static char *hexdump(const uint8_t *buf, const unsigned int size)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	unsigned int i;
 	char *str = calloc(size * 2 + 1, 1);
 
@@ -225,17 +225,14 @@ int jtag_examine_chain(void)
 			jtag_tap_init(tap);
 			tap->ir_length *= -1; // set to negative to indicate to jtag_validate_ircapture() that 
 		                          // user had not set this ir_length.
-
-			jtag_examine_chain_display(LOG_LVL_INFO, "tap/device found", tap->dotted_name, tap->idcode);
         } 
-        
+
         if ((device.device_id & 1) == 0) {
             /* Zero for LSB indicates a device in bypass */
             LOG_DEBUG("TAP %s does not have valid IDCODE (idcode=0x%08l" PRIx32 ")",  tap->dotted_name, (unsigned long) device.device_id);
             tap->hasidcode = false;
             tap->idcode = 0;
-        }
-        else {
+        }  else {
             /* Friendly devices support IDCODE */
             tap->idcode = device.device_id;
             tap->hasidcode = true;
@@ -246,6 +243,8 @@ int jtag_examine_chain(void)
 		if (!jtag_examine_chain_match_tap(tap))
 			retval = ERROR_JTAG_INIT_SOFT_FAIL;
     } //end for t
+
+    LOG_INFO("TODO - validate vjtag chain");
     return retval;
 }
 
@@ -682,7 +681,7 @@ static int miniquit(void)
 }
 
 int interface_jtag_execute_queue(void)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 
 	/* synchronously do the operation here */
 	static int reentry;
@@ -717,7 +716,7 @@ int interface_jtag_execute_queue(void)
 
 int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field *fields,
 		tap_state_t state)
-{   LOG_DEBUG("***> IN %s(%d): %s", __FILE__, __LINE__, __FUNCTION__);
+{   //LOG_DEBUG("***> IN %s(%d): %s", __FILE__, __LINE__, __FUNCTION__);
     /*
     {
         LOG_INFO("tap=0x%X, num_bits=%d state=(0x%d) %s:", active->idcode, fields->num_bits, state, tap_state_name(state));
@@ -751,17 +750,21 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
 	/* synchronously do the operation here */
 
 	/* loop over all enabled TAPs. */
-    /* Right now, we can only do ARMVHPS or FE310-G002 */
-    if(active->idcode == 0 || jtagservice.in_use_device_id != active->idcode ) {
+
+    /* Right now, we can only do ARMVHPS or FE310-G002 */ 
+    uint32_t idcode = active->idcode;
+    if (jtag_tap_on_all_vtaps_list(active)) {
+        idcode = ((struct vjtag_tap*)active)->parent->idcode;
+    }
+    if (idcode == 0 || jtagservice.in_use_device_id != idcode) {
         LOG_ERROR("IR - Expecting TAP with IDCODE 0x%08lX to be the active tap, but got 0x%08lX",
             (unsigned long) jtagservice.in_use_device_id,
-            (unsigned long) active->idcode
+            (unsigned long) idcode
         );
         return ERROR_FAIL;
-     }
-
-
-	AJI_ERROR  status = AJI_NO_ERROR;
+    }
+    
+    AJI_ERROR  status = AJI_NO_ERROR;
 	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
 
 	status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_NEVER);
@@ -864,7 +867,7 @@ int interface_jtag_add_plain_ir_scan(int num_bits, const uint8_t *out_bits,
 
     /* Only needed if we are going to permit SVF or XSVF use */
     LOG_ERROR("No plan to implement interface_jtag_add_plain_ir_scan");
-assert("Need to implement interface_jtag_add_plain_ir_scan");
+ assert(0);
     
 	return ERROR_FAIL;
 }
@@ -909,12 +912,16 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
     }
 */    
 	/* synchronously do the operation here */
-	
+
     /* Right now, we can only do ARMVHPS or FE310-G002 */
-    if(active->idcode == 0 || jtagservice.in_use_device_id != active->idcode ) {
+    uint32_t idcode = active->idcode;
+    if (jtag_tap_on_all_vtaps_list(active)) {
+        idcode = ((struct vjtag_tap*)active)->parent->idcode;
+    }
+    if(idcode == 0 || jtagservice.in_use_device_id != idcode) {
         LOG_ERROR("DR - Expecting TAP with IDCODE 0x%08lX to be the active tap, but got 0x%08lX",
             (unsigned long) jtagservice.in_use_device_id,
-            (unsigned long) active->idcode
+            (unsigned long) idcode
         );
         return ERROR_FAIL;
      }
@@ -1004,7 +1011,7 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
     } else {
         LOG_INFO("No DR read");
     }
-    */
+    */ 
     if(read_from_dr) {
         bit_count=0;
 	    for (int i = 0; i < num_fields; i++) {
@@ -1024,7 +1031,7 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
 	    } 
 	} else {
 	    LOG_INFO("FINAL: Not reading data from TAP");
-	} //end if(read_from_dr)
+	} //end if(read_from_dr) 
     tap_set_state(TAP_IRUPDATE);    
     
     if(TAP_IDLE != state) {
@@ -1095,7 +1102,7 @@ int interface_jtag_add_tlr()
 }
 
 int interface_jtag_add_reset(int req_trst, int req_srst)
-{   LOG_DEBUG("***> IN %s(%d): %s req_trst=%d, req_srst=%d\n", __FILE__, __LINE__, __FUNCTION__, req_trst, req_srst);
+{   //LOG_DEBUG("***> IN %s(%d): %s req_trst=%d, req_srst=%d\n", __FILE__, __LINE__, __FUNCTION__, req_trst, req_srst);
 	/* synchronously do the operation here */
 
     LOG_INFO("interface_jtag_add_reset not implemented because we do not need it");
@@ -1103,7 +1110,7 @@ int interface_jtag_add_reset(int req_trst, int req_srst)
 }
 
 int interface_jtag_add_runtest(int num_cycles, tap_state_t state)
-{   LOG_DEBUG("***> IN %s(%d): %s num_cycles=%d, end state = (%d) %s\n", __FILE__, __LINE__, __FUNCTION__, num_cycles, state, tap_state_name(state));
+{   //LOG_DEBUG("***> IN %s(%d): %s num_cycles=%d, end state = (%d) %s\n", __FILE__, __LINE__, __FUNCTION__, num_cycles, state, tap_state_name(state));
 
 	/* synchronously do the operation here */
 
