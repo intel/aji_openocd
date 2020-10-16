@@ -334,25 +334,21 @@ int jtagservice_query_main(void) {
                    continue;
                }
                
-               printf("            Number of Hierarcies(hier_id_n)=%lu,\n", (unsigned long) hier_id_n); //hier_id_n = 0 and status=AJI_NO_ERROR if no SLD_HUB
+               printf("            Number of SLD nodes (hier_id_n)=%lu,\n", (unsigned long) hier_id_n); //hier_id_n = 0 and status=AJI_NO_ERROR if no SLD_HUB
                for(DWORD k=0; k<hier_id_n; ++k) { //With ARRIA10, this loop is entered for the FPGA Tap, if it has SLD nodes.
                     AJI_HIER_ID hid = hier_ids[k];
-                    printf("            (B%lu) idcode=%08lX position_n=%lu position=",
+                    printf("            (B%lu) idcode=%08lX position_n=%lu position: ",
                              (unsigned long) k+1,
                              (unsigned long) hid.idcode,
                              (unsigned long) hid.position_n // position_n = n means n+1 fields in hid.position[] defined
                     );
-                    for(int m=0; m<hid.position_n+1; ++m) {
-                        printf("%d", hid.positions[m]);
+                    for(int m=0; m<=hid.position_n; ++m) {
+                        printf("%d ", hid.positions[m]);
                     } //end for m
-                    for(int m=hid.position_n+1; m<AJI_MAX_HIERARCHICAL_HUB_DEPTH; ++m) {
-                        printf("x");
-                    } //end for m (AJI_MAX_HIERARCHICAL_HUB_DEPTH);
-                    printf(" hub_infos:");
-printf("TODO");
-//                    for(int m=0; m<hid.position_n+1; ++m) {
-//                        printf("(H%d) bridge_idcode=%08lX, hub_id_code=%08lX", m, (hub_infos[m].bridge_idcode), (unsigned long) (hub_infos[m].hub_idcode));
-//                    } //end for m (bridge)
+                    printf(")  hub_infos: ");
+                    for(int m=0; m<=hid.position_n; ++m) {
+                        printf(" (Hub %d) bridge_idcode=%08lX, hub_id_code=%08lX", m, m == 0 ? 0 : (hub_infos[k].bridge_idcode[m]), (hub_infos[k].hub_idcode[m]));
+                    } //end for m (bridge)
                     printf("\n");
                } //end for k (heir_id_n)
                
