@@ -31,28 +31,6 @@
 
 #define IDCODE_SOCVHPS (0x4BA00477)
 
-
-static struct jtagservice_record jtagservice  = {
-    .hardware_count = 0,
-//    .hardware_list = NULL,
-//    .server_version_info_list = NULL,
-//    .in_use_hardware = NULL,
-    .in_use_hardware_index = 0,
-    .in_use_hardware_chain_pid = 0,
-    
-    .device_count = 0,
-//    .device_list = NULL,
-
-    .in_use_device_tap_position = 0,
-//    .in_use_device = NULL,
-    .in_use_device_id = 0,
-    .in_use_device_irlen = 0,
-    
-    .locked    = NONE,
-};
-
-
-
 /* Size of USB endpoint max packet size, ie. 64 bytes */
 #define MAX_PACKET_SIZE 64
 /*

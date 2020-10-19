@@ -195,7 +195,7 @@ int jtag_examine_chain(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     //AJI_ERROR status = AJI_NO_ERROR;
     int retval = ERROR_OK;
-    
+    jtagservice_query_main();
     struct jtag_tap *tap = jtag_tap_next_enabled(NULL);
     unsigned num_taps = jtagservice.device_count;
     unsigned autocount = 0;
@@ -426,7 +426,7 @@ static AJI_ERROR select_cable(void)
     }
 
     if (minijtagserv_config.requested_hardware == NULL) {
-        LOG_INFO("At present, only the first hardware cable will be used"
+        LOG_INFO("At present, The first hardware cable will be used"
             " [%lu cable(s) detected]",
             (unsigned long)jtagservice.hardware_count
         );

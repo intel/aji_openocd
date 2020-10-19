@@ -59,7 +59,8 @@ struct jtagservice_record {
     AJI_HARDWARE  *hardware_list;
     char         **server_version_info_list;
     
-    DWORD         in_use_hardware_index;
+    //DWORD         in_use_hardware_index; 
+    //< Current detection system does not allow this to be determined
     AJI_HARDWARE *in_use_hardware;
     DWORD         in_use_hardware_chain_pid;
 

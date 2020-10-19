@@ -182,7 +182,7 @@ AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout) {
     me->hardware_list = NULL,
     me->server_version_info_list = NULL,
     
-    me->in_use_hardware_index = 0;
+    //me->in_use_hardware_index = 0;
     me->in_use_hardware = NULL,
     me->in_use_hardware_chain_pid = 0;
 
