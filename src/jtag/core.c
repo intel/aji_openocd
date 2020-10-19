@@ -250,9 +250,16 @@ struct jtag_tap *jtag_tap_by_string_imp(struct jtag_tap* list, const char *s)
 	}
 
 	/* no tap found by name, so try to parse the name as a number */
+	/* s is not guaranteed to be an integer, particularly after
+	   the introduction of vjtag as it means s can represent a tap
+	   on another list. When this happens, parse_ullong(),
+	   which is called by parse_unit() will display an error message.
+	   To avoid this, s must be tested to contain a number.
+    */	   
+	   
 	char* p;
 	long int val = strtol(s, &p, 10);
-	if (p != s) {
+	if (p != s && val >= 0) {
 		unsigned n;
 		if (parse_uint(s, &n) != ERROR_OK)
 			return NULL;
@@ -263,7 +270,7 @@ struct jtag_tap *jtag_tap_by_string_imp(struct jtag_tap* list, const char *s)
 		 */
 		t = jtag_tap_by_position(n);
 		if (t)
-			LOG_WARNING("Specify TAP '%s' by name, not number %u",
+			LOG_WARNING("Specify TAP '%s' by name, not number %u, or number is less than zero",
 				t->dotted_name, n);
 	}
 	return t;

@@ -8,6 +8,10 @@ bin_PROGRAMS += %D%/openocd
 	%D%/hello.c %D%/hello.h \
 	%D%/openocd.c %D%/openocd.h
 
+%C%_libopenocd_la_CFLAGS = 
+
+%C%_openocd_CFLAGS =
+
 %C%_openocd_LDFLAGS = 
 
 %C%_openocd_LDLIBS = 
@@ -15,6 +19,12 @@ bin_PROGRAMS += %D%/openocd
 %C%_openocd_LDADD = %D%/libopenocd.la 
 
 %C%_openocd_LDADD += $(MINGWLDADD)
+
+# To enable the use of unnamed struct in gcc <=9.2.0
+# Not needed for C11 compliant compiler
+#   -  Using AM_FLAGS because too many compilations
+#      need this flag
+AM_CFLAGS += -fms-extensions
 
 if INTERNAL_JIMTCL
 %C%_openocd_LDADD += $(top_builddir)/jimtcl/libjim.a

@@ -1395,10 +1395,8 @@ int jtag_register_commands(struct command_context *cmd_ctx)
 static int jim_vjtag_create_cmd(Jim_GetOptInfo* goi)
 {	LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 	struct vjtag_tap* pTap;
-	int x;
 	int e;
 	Jim_Nvp* n;
-	char* cp;
 	const Jim_Nvp opts[] = {
 		{.name = "-chain-position",  .value = NTAP_OPT_CHAIN_POSITION },
 		{.name = "-expected-id",     .value = NTAP_OPT_EXPECTED_ID },
@@ -1433,7 +1431,6 @@ static int jim_vjtag_create_cmd(Jim_GetOptInfo* goi)
 		e = Jim_GetOpt_Nvp(goi, opts, &n);
 		if (e != JIM_OK) {
 			Jim_GetOpt_NvpUnknown(goi, opts, 0);
-			free(cp);
 			free(pTap);
 			return e;
 		}
@@ -1442,7 +1439,6 @@ static int jim_vjtag_create_cmd(Jim_GetOptInfo* goi)
 		case NTAP_OPT_EXPECTED_ID:
 			e = jim_newtap_expected_id(n, goi, (struct jtag_tap*)pTap);
 			if (JIM_OK != e) {
-				free(cp);
 				free(pTap);
 				return e;
 			}
@@ -1467,14 +1463,12 @@ static int jim_vjtag_create_cmd(Jim_GetOptInfo* goi)
 
 	if (NULL == parent) {
 		Jim_SetResultString(goi->interp, "-chain-position is invalid or not declared", -1);
-		free(cp);
 		free(pTap);
 		return JIM_ERR;
 	}
 
 	if (1 != pTap->expected_ids_cnt) {
 		Jim_SetResultFormatted(goi->interp, "Expected one -expect_id <idcode> but got %d", pTap->expected_ids_cnt);
-		free(cp);
 		free(pTap);
 		return JIM_ERR;
 	}
