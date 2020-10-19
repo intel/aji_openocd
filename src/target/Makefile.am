@@ -13,7 +13,6 @@ STARTUP_TCL_SRCS += %D%/startup.tcl
 noinst_LTLIBRARIES += %D%/libtarget.la
 %C%_libtarget_la_SOURCES = \
 	$(TARGET_CORE_SRC) \
-	$(AJI_DEBUG_SRC) \
 	$(ARM_DEBUG_SRC) \
 	$(ARMV4_5_SRC) \
 	$(ARMV6_SRC) \
@@ -32,8 +31,7 @@ noinst_LTLIBRARIES += %D%/libtarget.la
 	%D%/dsp5680xx.c \
 	%D%/hla_target.c \
 	$(ARMV8_SRC) \
-	$(MIPS64_SRC) \
-	$(NIOS5_SRC)
+	$(MIPS64_SRC)
 
 TARGET_CORE_SRC = \
 	%D%/algorithm.c \
@@ -45,9 +43,6 @@ TARGET_CORE_SRC = \
 	%D%/testee.c \
 	%D%/semihosting_common.c \
 	%D%/smp.c
-
-AJI_DEBUG_SRC = \
-	%D%/aji_vjtag.c 
 
 ARMV4_5_SRC = \
 	%D%/armv4_5.c \
@@ -165,13 +160,9 @@ ARC_SRC = \
         %D%/arc_jtag.c \
         %D%/arc_mem.c
 
-NIOS5_SRC = \
-	%D%/nios5.c
-
 %C%_libtarget_la_SOURCES += \
 	%D%/algorithm.h \
 	%D%/arm.h \
-	%D%/aji_vjtag.h \
 	%D%/arm_dpm.h \
 	%D%/arm_jtag.h \
 	%D%/arm_adi_v5.h \
@@ -260,8 +251,7 @@ NIOS5_SRC = \
 	%D%/arc.h \
 	%D%/arc_cmd.h \
 	%D%/arc_jtag.h \
-	%D%/arc_mem.h \
-	%D%/nios5.h
+	%D%/arc_mem.h
 
 include %D%/openrisc/Makefile.am
 include %D%/riscv/Makefile.am

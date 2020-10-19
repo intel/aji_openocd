@@ -666,6 +666,7 @@ struct vjtag_tap {
 	struct jtag_tap *parent; //< The physical jtag it is based on.
 }; //end vjtag_tap
 
+int vjtag_register_commands(struct command_context* cmd_ctx);
 void vjtag_tap_init(struct vjtag_tap* tap);
 void vjtag_tap_free(struct vjtag_tap* tap);
 

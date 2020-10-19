@@ -38,7 +38,6 @@
 #include <pld/pld.h>
 #include <target/arm_cti.h>
 #include <target/arm_adi_v5.h>
-#include <target/aji_vjtag.h>
 
 #include <server/server.h>
 #include <server/gdb_server.h>
@@ -251,7 +250,6 @@ struct command_context *setup_command_handler(Jim_Interp *interp)
 		&pld_register_commands,
 		&cti_register_commands,
 		&dap_register_commands,
-		&vjtag_register_commands,
 		NULL
 	};
 	for (unsigned i = 0; NULL != command_registrants[i]; i++) {

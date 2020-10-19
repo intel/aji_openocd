@@ -2045,12 +2045,12 @@ static int jtag_select(struct command_context *ctx)
 
 	if (retval != ERROR_OK)
 		return retval;
-/*
+
 	retval = vjtag_register_commands(ctx);
 
 	if (retval != ERROR_OK)
 		return retval;
-*/
+
 	retval = svf_register_commands(ctx);
 
 	if (retval != ERROR_OK)
