@@ -46,7 +46,8 @@ CAJI_MISC_FLAGS = -Wno-error=coverage-mismatch    -fPIC -fvisibility=hidden -ggd
 %C%_libocdcaji_la_SOURCES += \
     %D%/aji.h %D%/c_aji.h \
     %D%/jtag_client_gnuaji.h \
-    %D%/c_jtag_client_gnuaji.h
+    %D%/c_jtag_client_gnuaji.h \
+    %D%/c_jtag_client_gnuaji.c
 
 if IS_WIN32
 %C%_libocdcaji_la_SOURCES  += %D%/c_jtag_client_gnuaji_win64.h %D%/c_jtag_client_gnuaji_win64.c

@@ -13,6 +13,7 @@
  * AJI might be using it already
  */
 
+#include <winsock2.h>
 #include <windows.h>
 #include "c_aji.h"
 

@@ -6,4 +6,5 @@
 #include "c_jtag_client_gnuaji_lib64.h"
 #endif
 
+const char* c_aji_error_decode(AJI_ERROR code);
 #endif
