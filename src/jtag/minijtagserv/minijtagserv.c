@@ -195,7 +195,7 @@ int jtag_examine_chain(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     //AJI_ERROR status = AJI_NO_ERROR;
     int retval = ERROR_OK;
-    jtagservice_query_main();
+jtagservice_query_main();
     struct jtag_tap *tap = jtag_tap_next_enabled(NULL);
     unsigned num_taps = jtagservice.device_count;
     unsigned autocount = 0;
@@ -653,6 +653,7 @@ static int miniinit(void)
         return ERROR_JTAG_INIT_FAILED;
     }
 #endif
+
     status = select_cable();
     if (AJI_NO_ERROR != status) {
         LOG_ERROR("Cannot select JTAG Cable. Return status is %d", status);
@@ -677,6 +678,11 @@ static int miniquit(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
     minijtagserv_parameters_free(&minijtagserv_config);
+
+#if IS_WIN32
+    c_jtag_client_gnuaji_free();
+#endif
+
     return ERROR_OK;
 }
 
