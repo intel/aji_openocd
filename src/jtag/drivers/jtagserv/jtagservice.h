@@ -39,16 +39,16 @@ enum DEVICE_TYPE {
 typedef enum DEVICE_TYPE DEVICE_TYPE;
 #endif 
 
-enum jtagservice_lock {
-    NONE    = 0b000000,
-    CHAIN   = 0b000001,
-    DEVICE  = 0b000010,
-    
-    ALL     = 0b111111,
+typedef struct SLD_RECORD SLD_RECORD;
+struct SLD_RECORD {
+    DWORD idcode;
+    DWORD node_position;
 };
 
 typedef struct jtagservice_record jtagservice_record;
 struct jtagservice_record {
+    char *appIdentifier;
+
     //data members
     //() Cable
     /* Not sure AJI_HARDWARE can survive function boundarie
@@ -63,6 +63,7 @@ struct jtagservice_record {
     //< Current detection system does not allow this to be determined
     AJI_HARDWARE *in_use_hardware;
     DWORD         in_use_hardware_chain_pid;
+    AJI_CHAIN_ID  in_use_hardware_chain_id;
 
     //() Tap device
     DWORD        device_count;
@@ -75,23 +76,26 @@ struct jtagservice_record {
     DWORD       in_use_device_id; 
     BYTE        in_use_device_irlen;
 
-    //state tracking
-    enum jtagservice_lock locked;
+    //SLD / Virtual JTAG
+    DWORD  *hier_id_n; //< How many SLD node per TAP device.
+                       //< size = device_count since one number
+                       //< per TAP (device), in the same order 
+                       //< as device_list
+    AJI_HIER_ID **hier_ids; //< hier_ids[TAP][SLD] where TAP =
+                            //< [0, device_count), in the same  
+                            //< order as device_list,
+                            //< and SLD = [0, hier_id_n[TAP])
+    AJI_HUB_INFO** hub_infos; //< hub_infos[TAP][HUB] where 
+                      //< TAP = [0, device_count), in the same  
+                      //< order as device_list, and hub =
+                      //< [0, AJI_MAX_HIERARCHICAL_HUB_DEPTH)
 
-    CLAIM_RECORD *claims; ///! List of AJI_CLAIM, by DEVICE_TYPE
     DWORD claims_count;
+    CLAIM_RECORD *claims; ///! List of AJI_CLAIM, by DEVICE_TYPE
 };
  
-
-_Bool jtagservice_is_locked(jtagservice_record *me, enum jtagservice_lock lock);
-AJI_ERROR jtagservice_lock(jtagservice_record *me, enum jtagservice_lock, DWORD timeout);
-AJI_ERROR jtagservice_unlock(jtagservice_record *me, enum jtagservice_lock, DWORD timeout);
-
 AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout);
 AJI_ERROR jtagservice_free(jtagservice_record *me, DWORD timeout);
-
-
-
 
 int jtagservice_query_main(void);
 #endif //JTAGSERVICE_H_INCLUDED

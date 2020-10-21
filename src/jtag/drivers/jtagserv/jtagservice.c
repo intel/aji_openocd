@@ -1,5 +1,6 @@
 #include "jtagservice.h"
 
+#include <time.h>
 #include "log.h"
 #include "h/c_jtag_client_gnuaji.h"
 
@@ -63,59 +64,6 @@ AJI_ERROR jtagservice_print_hardware_name(
     return AJI_NO_ERROR;
 }
 
-_Bool jtagservice_is_locked(jtagservice_record *me, enum jtagservice_lock lock) 
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-    return me->locked & lock;
-}
-
-AJI_ERROR jtagservice_lock(jtagservice_record *me, enum jtagservice_lock lock, DWORD timeout) 
-{   LOG_DEBUG("***> IN %s(%d): %s %d\n", __FILE__, __LINE__, __FUNCTION__, me->locked);
-  
-    if(NONE == lock) {
-        return AJI_NO_ERROR;
-    }
-    
-    if(!me->in_use_hardware_chain_pid) {
-        return AJI_FAILURE;
-    }
-    
-    AJI_ERROR status = AJI_NO_ERROR;
-    AJI_HARDWARE hw;
-    status = c_aji_find_hardware(me->in_use_hardware_chain_pid, &hw, timeout);
-    if( status != AJI_NO_ERROR) {
-        return status;
-    }
-    if(!jtagservice_is_locked(me, CHAIN)) {
-        status = c_aji_lock_chain(hw.chain_id, timeout);
-    } //end if(jtagservice_is_locked(CHAIN))
-    
-    if( AJI_NO_ERROR == status ) {
-            me->locked = CHAIN;
-    }
-    if( lock & CHAIN ) {
-        return status;
-    }
-    
-    return status;
-} //end lock
-
-
-AJI_ERROR jtagservice_unlock(jtagservice_record *me, enum jtagservice_lock lock, DWORD timeout) 
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
- 
-    AJI_ERROR status = AJI_NO_ERROR;
-    if((CHAIN & lock) && jtagservice_is_locked(me, CHAIN)) {
-        LOG_DEBUG("***> IN %s(%d): %s aji_unlock_chain via Persistent ID\n", __FILE__, __LINE__, __FUNCTION__);
-
-        AJI_HARDWARE hw;
-        status = c_aji_find_hardware(me->in_use_hardware_chain_pid, &hw, timeout);
-        if(AJI_NO_ERROR == status){
-            status = c_aji_unlock_chain(hw.chain_id);        
-        }        
-        me->locked &= ~CHAIN;
-    }    //end if(jtagservice_is_locked(CHAIN)
-    return status;
-}
 /**
  * Create the claim records. One for each device_type
  * @param records On input, an array of size records_n. 
@@ -176,6 +124,15 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
 }
 
 AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout) {
+    me->appIdentifier = calloc(28, sizeof(char));
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    sprintf(me->appIdentifier, "OpenOCD.%4d%2d%2d%2d%2d%2d", 
+        tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, 
+        tm.tm_hour, tm.tm_min, tm.tm_sec
+    );
+    LOG_INFO("Application name is %s", me->appIdentifier);
+
     AJI_ERROR status = AJI_NO_ERROR;
 
     me->hardware_count = 0;
@@ -185,6 +142,7 @@ AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout) {
     //me->in_use_hardware_index = 0;
     me->in_use_hardware = NULL,
     me->in_use_hardware_chain_pid = 0;
+    me->in_use_hardware_chain_id = NULL;
 
     me->device_count = 0;
     me->device_list = NULL,
@@ -195,8 +153,6 @@ AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout) {
     me->in_use_device = NULL,
     me->in_use_device_id = 0;
     me->in_use_device_irlen = 0;
-
-    me->locked = NONE;
 
     me->claims_count = 10; 
     me->claims = calloc(10, sizeof(CLAIM_RECORD));
@@ -211,7 +167,7 @@ AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout) {
 AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout) 
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     
-    jtagservice_unlock(me, ALL, timeout);
+    c_aji_unlock_chain(me->in_use_hardware_chain_id); //TODO: Make all lock/unlock self-contained then remove this
 
     if (me->claims_count) {
         for (DWORD i = 0; i < me->claims_count; ++i) {
@@ -224,6 +180,17 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
     }
 
     //TODO: Free the variables    
+    if (me->hier_id_n) {
+        for (DWORD i = 0; i < me->device_count; ++i) {
+            free(me->hier_ids[i]);
+            free(me->hub_infos[i]);
+        }
+        free(me->hier_ids);
+        free(me->hub_infos);
+
+        me->hier_ids = NULL;
+        me->hub_infos = NULL;
+    }
 
     if (me->device_count != 0) {
         free(me->device_list);
@@ -245,6 +212,10 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
         me->server_version_info_list = NULL;
     }
 
+    if (me->appIdentifier) {
+        free(me->appIdentifier);
+        me->appIdentifier = NULL;
+    }
     return AJI_NO_ERROR;
 }
 
@@ -364,8 +335,8 @@ int jtagservice_query_main(void) {
 
                 int claim_size = 2;
                 AJI_CLAIM claims[] = { //setup for HPS
-                      { AJI_CLAIM_IR_SHARED, device.device_id == 0x4BA00477 ? 0b1111 : 0b1111111111 }, //NO NEED for BYPASS instruction actually
                       { AJI_CLAIM_IR_SHARED, device.device_id == 0x4BA00477 ? 0b1110 : 0b0000000110 },
+                      { AJI_CLAIM_IR_SHARED, device.device_id == 0x4BA00477 ? 0b1111 : 0b1111111111 }, //NO NEED for BYPASS instruction actually
                 };
 
                 char appname[] = "MyApp";

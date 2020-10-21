@@ -979,16 +979,18 @@ static AJI_ERROR jtagserv_select_tap(void)
 {   LOG_DEBUG("***> IN %s(%d): %s %d\n", __FILE__, __LINE__, __FUNCTION__, jtagservice.in_use_hardware_chain_pid);
     AJI_ERROR status = AJI_NO_ERROR;
 
-    status = jtagservice_lock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
-    if (AJI_NO_ERROR != status) { 
-        return status;
-    }
-
     AJI_HARDWARE hw;
     status = c_aji_find_hardware(jtagservice.in_use_hardware_chain_pid, &hw, JTAGSERVICE_TIMEOUT_MS);
     if(AJI_NO_ERROR != status){
-            status = c_aji_unlock_chain(hw.chain_id);        
+        status = c_aji_unlock_chain(hw.chain_id);      
+		return status;
     }
+
+	status = status = c_aji_lock_chain(hw.chain_id, JTAGSERVICE_TIMEOUT_MS);
+	if (AJI_NO_ERROR != status) {
+		return status;
+	}
+
     status = c_aji_read_device_chain(
         hw.chain_id, 
         &(jtagservice.device_count), 
@@ -1010,13 +1012,13 @@ static AJI_ERROR jtagserv_select_tap(void)
         LOG_ERROR("Failed to query server for TAP information. "
                   " Return Status is %i\n", status
         );
-        jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
+		c_aji_unlock_chain(hw.chain_id);
         return status;
     }
 
     if(0 == jtagservice.device_count) {
         LOG_ERROR("JTAG server reports that it has no TAP attached to the cable");
-        jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
+		c_aji_unlock_chain(hw.chain_id);
         return AJI_NO_DEVICES;
     }
     LOG_INFO("At present, will not honour OpenOCD target selection and"
@@ -1042,7 +1044,7 @@ static AJI_ERROR jtagserv_select_tap(void)
     
     if(0 == jtagservice.in_use_device_id) {
         LOG_ERROR("No SOCVHPS device found.");
-        jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
+		c_aji_unlock_chain(hw.chain_id);
         return AJI_NO_DEVICES;
     }
     
@@ -1058,11 +1060,11 @@ static AJI_ERROR jtagserv_select_tap(void)
     );
     if( AJI_NO_ERROR != status) {
         LOG_ERROR("Cannot open device SOCVHPS.");
-        jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
+		c_aji_unlock_chain(hw.chain_id);
         return status;
     }
     LOG_INFO("Successfully open TAP device. status = %d", status);
-    jtagservice_unlock(&jtagservice, CHAIN, JTAGSERVICE_TIMEOUT_MS);
+	c_aji_unlock_chain(hw.chain_id);
     return status;
 }
 
