@@ -123,6 +123,45 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
     return status;
 }
 
+AJI_ERROR jtagservice_device_index_by_idcode(
+    const DWORD idcode,
+    const AJI_DEVICE *tap_list, const DWORD tap_count, 
+    DWORD* tap_index) {
+
+    DWORD index = 0;
+    for (; index < tap_count; ++index) {
+        if (tap_list[index].device_id == idcode) {
+            break;
+        }
+    }
+    
+    if (index == tap_count) {
+        return AJI_FAILURE;
+    }
+    *tap_index = index;
+    return AJI_NO_ERROR;
+}
+
+AJI_ERROR jtagservice_hier_id_index_by_idcode(
+    const DWORD idcode,
+    const AJI_HIER_ID *hier_id_list, const DWORD hier_id_count,
+    DWORD* hier_index) {
+    DWORD index = 0;
+    for (; index < hier_id_count; ++index) {
+        LOG_DEBUG("SLD Node ID matching - Attempting to match %lX. Try %lu with %lX",
+            idcode, index, hier_id_list[index].idcode);
+        if (hier_id_list[index].idcode == idcode) {
+            break;
+        }
+    }
+
+    if (index == hier_id_count) {
+        return AJI_FAILURE;
+    }
+    *hier_index = index;
+    return AJI_NO_ERROR;
+}
+
 AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout) {
     me->appIdentifier = calloc(28, sizeof(char));
     time_t t = time(NULL);
@@ -358,7 +397,7 @@ int jtagservice_query_main(void) {
                 }
                 */
                 QWORD ir_idcode = device.device_id == 0x4BA00477 ? 0b1110 : 0b0000000110; // claims[0].value;
-                printf("            (C2-2) Read IDCODE : Set IR (0x%llX)...\n", ir_idcode); fflush(stdout);
+                printf("            (C2-2) Read IDCODE : Set IR (0x%llX)... (only works for Arria10 and ARMVHPS)\n", ir_idcode); fflush(stdout);
                 DWORD captured_ir = 0xFFFF;      
                 status = c_aji_access_ir(open_id, ir_idcode,  &captured_ir, 0);
                             //if I am in TEST_LOGIC_RESET, I am suppose to get AJI_BAD_TAP STATE but I am not, and I get 0b1 on captured_ir

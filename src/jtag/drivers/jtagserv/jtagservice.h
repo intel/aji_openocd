@@ -5,6 +5,7 @@
 #include <windows.h>
 #endif
 
+#include "h/aji.h"
 #include "h/c_aji.h"
 
 
@@ -98,7 +99,20 @@ AJI_ERROR jtagservice_init(jtagservice_record *me, DWORD timeout);
 AJI_ERROR jtagservice_free(jtagservice_record *me, DWORD timeout);
 
 int jtagservice_query_main(void);
-void jtagservice_sld_node_printf(const AJI_HIER_ID* hier_id, const AJI_HUB_INFO* hub_info);
 void jtagservice_display_sld_nodes(const jtagservice_record me);
+
+
+void jtagservice_sld_node_printf(
+    const AJI_HIER_ID* hier_id, 
+    const AJI_HUB_INFO* hub_info);
+AJI_ERROR jtagservice_device_index_by_idcode(
+    const DWORD idcode,
+    const AJI_DEVICE* tap_list, const DWORD tap_count,
+    DWORD* tap_index);
+AJI_ERROR jtagservice_hier_id_index_by_idcode(
+    const DWORD idcode,
+    const AJI_HIER_ID *vtap_list, const DWORD vtap_count,
+    DWORD* vtap_index);
+
 #endif //JTAGSERVICE_H_INCLUDED
 

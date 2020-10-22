@@ -136,8 +136,7 @@ int arm11_run_instr_data_to_core_noack_inner(struct jtag_tap *tap, uint32_t opco
 /* copied from src/jtag/core.c */
 static void jtag_examine_chain_display(enum log_levels level, const char *msg,
 	const char *name, uint32_t idcode)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-	log_printf_lf(level, __FILE__, __LINE__, __func__,
+{	log_printf_lf(level, __FILE__, __LINE__, __func__,
 		"JTAG tap: %s %16.16s: 0x%08x "
 		"(mfg: 0x%3.3x (%s), part: 0x%4.4x, ver: 0x%1.1x)",
 		name, msg,
@@ -184,6 +183,57 @@ static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
 			tap->dotted_name, tap->expected_ids[ii]);
 	}
 	return false;
+}
+
+/**
+ * Match vtap to the list of discovered virtual JTAG/SLD nodes.
+ * 
+ * \param vtap 
+ * \return true if found, false otherwise
+ */
+static bool vjtag_examine_chain_match_tap(struct vjtag_tap* vtap) {
+    AJI_ERROR status = AJI_NO_ERROR;
+
+    DWORD tap_index = -1;
+    status = jtagservice_device_index_by_idcode(
+        vtap->parent->idcode,
+        jtagservice.device_list, 
+        jtagservice.device_count,
+        &tap_index
+    );
+    if (AJI_NO_ERROR != status) {
+        jtag_examine_chain_display(
+            LOG_LVL_ERROR, "UNEXPECTED",
+            vtap->parent->dotted_name, vtap->parent->idcode
+        );
+        return false;
+    }
+
+    jtag_examine_chain_display(
+        LOG_LVL_INFO, "Parent Tap found:",
+        vtap->parent->dotted_name, vtap->parent->idcode
+    );
+
+    DWORD node_index = -1;
+    status = jtagservice_hier_id_index_by_idcode(
+        vtap->idcode,
+        jtagservice.hier_ids[tap_index],
+        jtagservice.hier_id_n[tap_index],
+        &node_index
+    );
+
+    if (AJI_NO_ERROR != status) {
+        LOG_ERROR("Cannot find virtual tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
+            vtap->dotted_name, (unsigned long) vtap->expected_ids[0],
+            status, c_aji_error_decode(status)
+        );
+        return false;
+    }
+    LOG_INFO("Virtual Tap/SLD node %06lX found at tap position %lu vtap position %lu",
+        (unsigned long) vtap->expected_ids[0], (unsigned long) tap_index, (unsigned long) node_index
+    );
+
+    return true;
 }
 
 /**
@@ -244,7 +294,23 @@ int jtag_examine_chain(void)
 			retval = ERROR_JTAG_INIT_SOFT_FAIL;
     } //end for t
 
-    LOG_INFO("TODO - validate vjtag chain");
+    if (AJI_NO_ERROR != retval && ERROR_JTAG_INIT_SOFT_FAIL != AJI_NO_ERROR) {
+        return retval;
+    }
+
+    for (struct vjtag_tap *vtap = vjtag_all_taps();
+        vtap != NULL;
+        vtap = (struct vjtag_tap*) vtap->next_tap) {
+        vtap->idcode = vtap->expected_ids[0];
+        vtap->hasidcode = true;
+
+        if (!vjtag_examine_chain_match_tap(vtap)) {
+            vtap->hasidcode = false;
+            vtap->idcode = 0;
+            retval = ERROR_JTAG_INIT_SOFT_FAIL;
+            continue;
+        }
+    }
     return retval;
 }
 
@@ -351,6 +417,10 @@ void jtag_add_callback4(jtag_callback_t f, jtag_callback_data_t data0,
 
 /**
  * Find the hardware cable from the jtag server
+ * @return AJI_NO_ERROR if everything OK
+ *         AJI_NO_MEMORY if run out of memory
+ *         AJI_BAD_HARDWARE if cannot find hardware cable
+ *         AJI_TIMEOUT if time out occured.
  * @pos Set jtagservice chain detail if return successful.
  */
 static AJI_ERROR select_cable(void)
@@ -387,6 +457,13 @@ static AJI_ERROR select_cable(void)
                 JTAGSERVICE_TIMEOUT_MS
             );
         }
+
+        if (AJI_NO_ERROR != status) {
+            LOG_ERROR("Cannot find cable '%s'. Return status is %d (%s)",
+                minijtagserv_config.requested_hardware,
+                status, c_aji_error_decode(status)
+            );
+        }
     }
     else {
         LOG_INFO("No cable specified, so searching for cables");
@@ -416,7 +493,8 @@ static AJI_ERROR select_cable(void)
     }
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failed to query server for hardware cable information. "
-                  " Return Status is %i\n", status
+                  " Return Status is %i (%s)\n", 
+                  status, c_aji_error_decode(status)
         );
         return status;
     }
@@ -446,7 +524,6 @@ static AJI_ERROR select_cable(void)
         LOG_ERROR("No hardware present because hw_name is NULL");
         return AJI_FAILURE;
     }
-
     jtagservice.in_use_hardware = &(jtagservice.hardware_list[0]);
     jtagservice.in_use_hardware_chain_pid = (jtagservice.in_use_hardware)->persistent_id;
     jtagservice.in_use_hardware_chain_id = (jtagservice.in_use_hardware)->chain_id;
@@ -576,9 +653,18 @@ static AJI_ERROR select_tap(void)
             sld_discovery_failed = true;
             continue;
         }
-        LOG_INFO("Successful with getting nodes for TAP position %ld.",
-            tap_position
+        LOG_INFO("TAP position %ld has %lu SLD nodes",
+            tap_position, (unsigned long)jtagservice.hier_id_n[tap_position]
         );
+        if (jtagservice.hier_id_n[tap_position]) {
+            for (DWORD n = 0; n <= jtagservice.hier_id_n[tap_position]; ++n) {
+                LOG_INFO("    node %2lu idcode=%08lX position_n=%lu",
+                    n,
+                    (unsigned long) (jtagservice.hier_ids[tap_position][n].idcode),
+                    (unsigned long) (jtagservice.hier_ids[tap_position][n].position_n)
+                    );
+            }
+        }
     } //end for tap_position (SLD discovery)
     if (sld_discovery_failed) {
         LOG_WARNING("Have failures in SLD discovery. See previous log entries. Continuing ...");
@@ -725,6 +811,7 @@ static int miniinit(void)
         return ERROR_JTAG_INIT_FAILED;
     }
 #endif
+jtagservice_query_main();
 
     status = select_cable();
     if (AJI_NO_ERROR != status) {
@@ -838,14 +925,17 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
     if (jtag_tap_on_all_vtaps_list(active)) {
         idcode = ((struct vjtag_tap*)active)->parent->idcode;
     }
-    if (idcode == 0 || jtagservice.in_use_device_id != idcode) {
-        LOG_ERROR("IR - Expecting TAP with IDCODE 0x%08lX to be the active tap, but got 0x%08lX",
-            (unsigned long) jtagservice.in_use_device_id,
-            (unsigned long) idcode
-        );
-        return ERROR_FAIL;
+    static bool NotYetWarned = false;
+    if (NotYetWarned) {
+        if (idcode == 0 || jtagservice.in_use_device_id != idcode) {
+            LOG_WARNING("IR - Expecting TAP with IDCODE 0x%08lX to be the active tap, but got 0x%08lX, but never mind, code currently will use as 0x%08lX active tap.",
+                (unsigned long)jtagservice.in_use_device_id,
+                (unsigned long)idcode,
+                (unsigned long)jtagservice.in_use_device_id
+            );
+        }
     }
-    
+
     AJI_ERROR  status = AJI_NO_ERROR;
 	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
 
@@ -885,7 +975,7 @@ assert(0);
     for (int i = 0 ; i <  (fields->num_bits+7)/8 ; i++) {
         instruction |= fields->out_value[i] << (i * 8);
     }
-//printf("instruction = %lu\n", (unsigned long) instruction);
+
     DWORD capture = 0;
     status = c_aji_access_ir(open_id, instruction, fields->in_value? &capture : NULL, 0);
 
@@ -1006,14 +1096,16 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
     if (jtag_tap_on_all_vtaps_list(active)) {
         idcode = ((struct vjtag_tap*)active)->parent->idcode;
     }
-    if(idcode == 0 || jtagservice.in_use_device_id != idcode) {
-        LOG_ERROR("DR - Expecting TAP with IDCODE 0x%08lX to be the active tap, but got 0x%08lX",
-            (unsigned long) jtagservice.in_use_device_id,
-            (unsigned long) idcode
-        );
-        return ERROR_FAIL;
-     }
-
+    static bool NotYetWarned = false;
+    if (NotYetWarned) {
+        if (idcode == 0 || jtagservice.in_use_device_id != idcode) {
+            LOG_WARNING("DR - Expecting TAP with IDCODE 0x%08lX to be the active tap, but got 0x%08lX, but never mind, code currently will use as 0x%08lX active tap.",
+                (unsigned long)jtagservice.in_use_device_id,
+                (unsigned long)idcode,
+                (unsigned long)jtagservice.in_use_device_id
+            );
+        }
+    }
 
     /* prepare the input/output fields for AJI */
     DWORD length_dr = 0;
