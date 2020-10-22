@@ -618,7 +618,7 @@ static AJI_ERROR select_tap(void)
     for (DWORD tap_position = 0; tap_position < jtagservice.device_count; ++tap_position) {
         jtagservice.hub_infos[tap_position] = (AJI_HUB_INFO*)calloc(AJI_MAX_HIERARCHICAL_HUB_DEPTH, sizeof(AJI_HUB_INFO));
         if (NULL == jtagservice.hub_infos[tap_position]) {
-            LOG_ERROR("Ran out of memory for jtagservice's tap  %ld's hub_info", tap_position);
+            LOG_ERROR("Ran out of memory for jtagservice's tap  %lu's hub_info", (unsigned long) tap_position);
             return AJI_NO_MEMORY;
         }
         jtagservice.hier_id_n[tap_position] = 10; //@TODO Find a good compromise for number of SLD so I don't have to call c_aji_get_nodes_b() twice.
@@ -634,7 +634,7 @@ static AJI_ERROR select_tap(void)
             free(jtagservice.hier_ids[tap_position]);
             jtagservice.hier_ids[tap_position] = (AJI_HIER_ID*)calloc(jtagservice.hier_id_n[tap_position], sizeof(AJI_HIER_ID));
             if (NULL == jtagservice.hub_infos[tap_position]) {
-                LOG_ERROR("Ran out of memory for jtagservice's tap  %ld's hier_ids", tap_position);
+                LOG_ERROR("Ran out of memory for jtagservice's tap  %lu's hier_ids", (unsigned long) tap_position);
                 return AJI_NO_MEMORY;
             }
 
@@ -648,18 +648,18 @@ static AJI_ERROR select_tap(void)
         } // end if (AJI_TOO_MANY_DEVICES)
 
         if (AJI_NO_ERROR != status) {
-            LOG_ERROR("Problem with getting nodes for TAP position %ld. Returned %d (%s)", 
-                tap_position, status, c_aji_error_decode(status));
+            LOG_ERROR("Problem with getting nodes for TAP position %lu. Returned %d (%s)", 
+                (unsigned long) tap_position, status, c_aji_error_decode(status));
             sld_discovery_failed = true;
             continue;
         }
-        LOG_INFO("TAP position %ld has %lu SLD nodes",
-            tap_position, (unsigned long)jtagservice.hier_id_n[tap_position]
+        LOG_INFO("TAP position %lu has %lu SLD nodes",
+            (unsigned long) tap_position, (unsigned long)jtagservice.hier_id_n[tap_position]
         );
         if (jtagservice.hier_id_n[tap_position]) {
             for (DWORD n = 0; n <= jtagservice.hier_id_n[tap_position]; ++n) {
                 LOG_INFO("    node %2lu idcode=%08lX position_n=%lu",
-                    n,
+                    (unsigned long) n,
                     (unsigned long) (jtagservice.hier_ids[tap_position][n].idcode),
                     (unsigned long) (jtagservice.hier_ids[tap_position][n].position_n)
                     );

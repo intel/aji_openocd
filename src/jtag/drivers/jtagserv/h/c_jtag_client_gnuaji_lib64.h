@@ -1,6 +1,9 @@
 #ifndef OPENOCD_C_JTAG_CLIENT_GNUAJI_LIB64_H
 #define OPENOCD_C_JTAG_CLIENT_GNUAJI_LIB64_H
 
+#include "aji.h"
+#include "c_aji.h"
+
 /**
  * C AJI functions
  * It wraps mangled C++ name in jtag_client_gnu_aji.h with non-manged

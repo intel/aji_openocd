@@ -149,7 +149,7 @@ AJI_ERROR jtagservice_hier_id_index_by_idcode(
     DWORD index = 0;
     for (; index < hier_id_count; ++index) {
         LOG_DEBUG("SLD Node ID matching - Attempting to match %lX. Try %lu with %lX",
-            idcode, index, hier_id_list[index].idcode);
+            (unsigned long) idcode, (unsigned long)  index, (unsigned long) hier_id_list[index].idcode);
         if (hier_id_list[index].idcode == idcode) {
             break;
         }
