@@ -305,19 +305,8 @@ int jtagservice_query_main(void) {
                
                 printf("            Number of SLD nodes (hier_id_n)=%lu,\n", (unsigned long) hier_id_n); //hier_id_n = 0 and status=AJI_NO_ERROR if no SLD_HUB
                 for(DWORD k=0; k<hier_id_n; ++k) { //With ARRIA10, this loop is entered for the FPGA Tap, if it has SLD nodes.
-                    AJI_HIER_ID hid = hier_ids[k];
-                    printf("            (B%lu) idcode=%08lX position_n=%lu position: ",
-                             (unsigned long) k+1,
-                             (unsigned long) hid.idcode,
-                             (unsigned long) hid.position_n // position_n = n means n+1 fields in hid.position[] defined
-                    );
-                    for(int m=0; m<=hid.position_n; ++m) {
-                        printf("%d ", hid.positions[m]);
-                    } //end for m
-                    printf(")  hub_infos: ");
-                    for(int m=0; m<=hid.position_n; ++m) {
-                        printf(" (Hub %d) bridge_idcode=%08lX, hub_id_code=%08lX", m, m == 0 ? 0 : (hub_infos[k].bridge_idcode[m]), (hub_infos[k].hub_idcode[m]));
-                    } //end for m (bridge)
+                    printf("            (B%lu) ", k);
+                    jtagservice_sld_node_printf(&(hier_ids[k]), &(hub_infos[k]));
                     printf("\n");
                 } //end for k (heir_id_n)
 
@@ -431,4 +420,55 @@ int jtagservice_query_main(void) {
  
     printf("Completed\n");
 	return 0;
+}
+
+/**
+ * Print SLD Node information
+ * 
+ * \param hier_id The SLD node information
+ * \param hub_info Supplimentary hub information.
+ *        if you do not want it displayed
+ */
+void jtagservice_sld_node_printf(const AJI_HIER_ID* hier_id, const AJI_HUB_INFO* hub_infos) {
+    printf(" idcode=%08lX position_n=%lu position: ( ",
+        (unsigned long) hier_id->idcode,
+        (unsigned long) hier_id->position_n
+    );
+    if (hub_infos) {
+        for (int m = 0; m <= hier_id->position_n; ++m) {
+            printf("%d ", hier_id->positions[m]);
+        } //end for m
+        printf(")  hub_infos: ");
+        for (int m = 0; m <= hier_id->position_n; ++m) {
+            printf(" (Hub %d) bridge_idcode=%08lX, hub_id_code=%08lX", 
+                m, 
+                m == 0 ? 0 : (hub_infos->bridge_idcode[m]), 
+                (hub_infos->hub_idcode[m])
+            );
+        } //end for m (bridge)
+    }
+}
+
+void jtagservice_display_sld_nodes(const jtagservice_record me) {
+    DWORD taps = me.device_count;
+    for (DWORD t = 0; t < taps; ++t) {
+        DWORD num_nodes = me.hier_id_n[t];
+        if (0 == num_nodes) {
+            printf("Tap %ld (0x%l" PRIX32 "): No SLD node\n", 
+                t, me.device_list->device_id
+            );
+            continue;
+        }
+
+        printf("Tap %lu (0x%l" PRIX32 "): have %lu SLD node(s)\n", 
+            t, me.device_list->device_id, num_nodes
+        );
+
+        for (DWORD n = 0; n < num_nodes; ++n) {
+            printf("  node %ld:", n);
+            jtagservice_sld_node_printf(&(me.hier_ids[t][n]), &(me.hub_infos[t][n]));
+            printf("\n");
+        }
+
+    } //end for(t in taps)
 }

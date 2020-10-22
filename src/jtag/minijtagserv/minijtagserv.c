@@ -518,13 +518,78 @@ static AJI_ERROR select_tap(void)
              IDCODE_SOCVHPS,
              IDCODE_FE310_G002
     );
-    LOG_INFO("Will serach through %lx TAP devices", (unsigned long) jtagservice.device_count);
+    LOG_INFO("Will Search through %lx TAP devices", (unsigned long) jtagservice.device_count);
+
+    //SLD discovery
+    bool sld_discovery_failed = false;
+    jtagservice.hier_id_n = (DWORD*) calloc(jtagservice.device_count, sizeof(DWORD));
+    jtagservice.hier_ids = (AJI_HIER_ID**) calloc(jtagservice.device_count, sizeof(AJI_HIER_ID*));
+    jtagservice.hub_infos = (AJI_HUB_INFO**) calloc(jtagservice.device_count, sizeof(AJI_HUB_INFO*));
+    if (NULL == jtagservice.hier_id_n) {
+        LOG_ERROR("Ran out of memory for jtagservice's hier_id_n list");
+        return AJI_NO_MEMORY;
+    }
+    if (NULL == jtagservice.hier_ids) {
+        LOG_ERROR("Ran out of memory for jtagservice's hier_ids list");
+        return AJI_NO_MEMORY;
+    }
+    if (NULL == jtagservice.hub_infos) {
+        LOG_ERROR("Ran out of memory for jtagservice's hub_infos list");
+        return AJI_NO_MEMORY;
+    }
+
+    for (DWORD tap_position = 0; tap_position < jtagservice.device_count; ++tap_position) {
+        jtagservice.hub_infos[tap_position] = (AJI_HUB_INFO*)calloc(AJI_MAX_HIERARCHICAL_HUB_DEPTH, sizeof(AJI_HUB_INFO));
+        if (NULL == jtagservice.hub_infos[tap_position]) {
+            LOG_ERROR("Ran out of memory for jtagservice's tap  %ld's hub_info", tap_position);
+            return AJI_NO_MEMORY;
+        }
+        jtagservice.hier_id_n[tap_position] = 10; //@TODO Find a good compromise for number of SLD so I don't have to call c_aji_get_nodes_b() twice.
+        jtagservice.hier_ids[tap_position] = (AJI_HIER_ID*)calloc(jtagservice.hier_id_n[tap_position], sizeof(AJI_HIER_ID));
+        status = c_aji_get_nodes_b(
+            hw.chain_id, //could be jtagservice.in_use_hardware_chain_id,
+            tap_position,
+            jtagservice.hier_ids[tap_position],
+            &(jtagservice.hier_id_n[tap_position]),
+            jtagservice.hub_infos[tap_position]
+        );
+        if (AJI_TOO_MANY_DEVICES == status) {
+            free(jtagservice.hier_ids[tap_position]);
+            jtagservice.hier_ids[tap_position] = (AJI_HIER_ID*)calloc(jtagservice.hier_id_n[tap_position], sizeof(AJI_HIER_ID));
+            if (NULL == jtagservice.hub_infos[tap_position]) {
+                LOG_ERROR("Ran out of memory for jtagservice's tap  %ld's hier_ids", tap_position);
+                return AJI_NO_MEMORY;
+            }
+
+            status = c_aji_get_nodes_b(
+                hw.chain_id, //could be jtagservice.in_use_hardware_chain_id,
+                tap_position,
+                jtagservice.hier_ids[tap_position],
+                &(jtagservice.hier_id_n[tap_position]),
+                jtagservice.hub_infos[tap_position]
+            );
+        } // end if (AJI_TOO_MANY_DEVICES)
+
+        if (AJI_NO_ERROR != status) {
+            LOG_ERROR("Problem with getting nodes for TAP position %ld. Returned %d (%s)", 
+                tap_position, status, c_aji_error_decode(status));
+            sld_discovery_failed = true;
+            continue;
+        }
+        LOG_INFO("Successful with getting nodes for TAP position %ld.",
+            tap_position
+        );
+    } //end for tap_position (SLD discovery)
+    if (sld_discovery_failed) {
+        LOG_WARNING("Have failures in SLD discovery. See previous log entries. Continuing ...");
+    }
+jtagservice_display_sld_nodes(jtagservice);
 
     for(DWORD tap_position=0; tap_position<jtagservice.device_count; ++tap_position) {
         AJI_DEVICE device = jtagservice.device_list[tap_position];
         LOG_INFO("Detected device (tap_position=%lu) device_id=%08lx," 
                   " instruction_length=%d, features=%lu, device_name=%s", 
-                    (unsigned long) tap_position+1, 
+                    (unsigned long) tap_position, 
                     (unsigned long) device.device_id, 
                     device.instruction_length, 
                     (unsigned long) device.features, 

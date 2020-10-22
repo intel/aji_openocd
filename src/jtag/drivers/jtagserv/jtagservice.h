@@ -94,9 +94,11 @@ struct jtagservice_record {
     CLAIM_RECORD *claims; ///! List of AJI_CLAIM, by DEVICE_TYPE
 };
  
-AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout);
+AJI_ERROR jtagservice_init(jtagservice_record *me, DWORD timeout);
 AJI_ERROR jtagservice_free(jtagservice_record *me, DWORD timeout);
 
 int jtagservice_query_main(void);
+void jtagservice_sld_node_printf(const AJI_HIER_ID* hier_id, const AJI_HUB_INFO* hub_info);
+void jtagservice_display_sld_nodes(const jtagservice_record me);
 #endif //JTAGSERVICE_H_INCLUDED
 
