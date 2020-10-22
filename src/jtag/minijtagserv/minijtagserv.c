@@ -583,7 +583,6 @@ static AJI_ERROR select_tap(void)
     if (sld_discovery_failed) {
         LOG_WARNING("Have failures in SLD discovery. See previous log entries. Continuing ...");
     }
-jtagservice_display_sld_nodes(jtagservice);
 
     for(DWORD tap_position=0; tap_position<jtagservice.device_count; ++tap_position) {
         AJI_DEVICE device = jtagservice.device_list[tap_position];
@@ -726,7 +725,6 @@ static int miniinit(void)
         return ERROR_JTAG_INIT_FAILED;
     }
 #endif
-jtagservice_query_main();
 
     status = select_cable();
     if (AJI_NO_ERROR != status) {
