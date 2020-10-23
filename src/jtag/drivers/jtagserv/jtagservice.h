@@ -82,12 +82,15 @@ struct jtagservice_record {
     DWORD       in_use_device_id; 
     BYTE        in_use_device_irlen;
 
+    DWORD claims_count;
+    CLAIM_RECORD *claims; ///! List of AJI_CLAIM, by DEVICE_TYPE
+
     //SLD / Virtual JTAG
-    DWORD  *hier_id_n; //< How many SLD node per TAP device.
+    DWORD* hier_id_n; //< How many SLD node per TAP device.
                        //< size = device_count since one number
                        //< per TAP (device), in the same order 
                        //< as device_list
-    AJI_HIER_ID **hier_ids; //< hier_ids[TAP][SLD] where TAP =
+    AJI_HIER_ID** hier_ids; //< hier_ids[TAP][SLD] where TAP =
                             //< [0, device_count), in the same  
                             //< order as device_list,
                             //< and SLD = [0, hier_id_n[TAP])
@@ -96,8 +99,12 @@ struct jtagservice_record {
                       //< order as device_list, and hub =
                       //< [0, AJI_MAX_HIERARCHICAL_HUB_DEPTH)
 
-    DWORD claims_count;
-    CLAIM_RECORD *claims; ///! List of AJI_CLAIM, by DEVICE_TYPE
+    DEVICE_TYPE** hier_ids_device_type; //< 
+                        //< hier_ids_device_type[TAP][SLD] 
+                        //< where TAP = [0, device_count),   
+                        //< in the same order as device_list,
+                        //< and SLD = [0, hier_id_n[TAP])
+
 };
  
 AJI_ERROR jtagservice_init(jtagservice_record *me, DWORD timeout);

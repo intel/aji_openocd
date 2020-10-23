@@ -602,6 +602,7 @@ static AJI_ERROR select_tap(void)
     jtagservice.hier_id_n = (DWORD*) calloc(jtagservice.device_count, sizeof(DWORD));
     jtagservice.hier_ids = (AJI_HIER_ID**) calloc(jtagservice.device_count, sizeof(AJI_HIER_ID*));
     jtagservice.hub_infos = (AJI_HUB_INFO**) calloc(jtagservice.device_count, sizeof(AJI_HUB_INFO*));
+    jtagservice.hier_ids_device_type = (DEVICE_TYPE**) calloc(jtagservice.device_count, sizeof(DEVICE_TYPE*));
     if (NULL == jtagservice.hier_id_n) {
         LOG_ERROR("Ran out of memory for jtagservice's hier_id_n list");
         return AJI_NO_MEMORY;
@@ -612,6 +613,10 @@ static AJI_ERROR select_tap(void)
     }
     if (NULL == jtagservice.hub_infos) {
         LOG_ERROR("Ran out of memory for jtagservice's hub_infos list");
+        return AJI_NO_MEMORY;
+    }
+    if (NULL == jtagservice.hier_ids) {
+        LOG_ERROR("Ran out of memory for jtagservice's hier_ids_claims list");
         return AJI_NO_MEMORY;
     }
 
@@ -653,6 +658,15 @@ static AJI_ERROR select_tap(void)
             sld_discovery_failed = true;
             continue;
         }
+
+        jtagservice.hier_ids_device_type[tap_position] = \
+            (DEVICE_TYPE*)calloc(jtagservice.hier_id_n[tap_position], sizeof(DEVICE_TYPE));
+        if (NULL == jtagservice.hub_infos[tap_position]) {
+            LOG_ERROR("Ran out of memory for jtagservice's tap  %lu's hier_ids_claims",
+                (unsigned long)tap_position);
+            return AJI_NO_MEMORY;
+        }
+
         LOG_INFO("TAP position %lu has %lu SLD nodes",
             (unsigned long) tap_position, (unsigned long)jtagservice.hier_id_n[tap_position]
         );
@@ -663,8 +677,10 @@ static AJI_ERROR select_tap(void)
                     (unsigned long) (jtagservice.hier_ids[tap_position][n].idcode),
                     (unsigned long) (jtagservice.hier_ids[tap_position][n].position_n)
                     );
-            }
-        }
+                jtagservice.hier_ids_device_type[tap_position][n] = VJTAG; //@TODO Might have to ... 
+                                     //... replace with  node specific claims
+            } //end for(n in jtagservice.hier_id_n[tap_position])
+        } //end if (jtagservice.hier_id_n[tap_position])
     } //end for tap_position (SLD discovery)
     if (sld_discovery_failed) {
         LOG_WARNING("Have failures in SLD discovery. See previous log entries. Continuing ...");

@@ -223,6 +223,14 @@ AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout) {
     }
     status = jtagservice_create_claim_records(me->claims, &me->claims_count); 
 
+    if (status != AJI_NO_ERROR) {
+        return status;
+    }
+
+    me->hier_id_n = 0;
+    me->hier_ids = NULL;
+    me->hub_infos = NULL;
+    me->hier_ids_device_type = NULL;
     return status;
 }
 
@@ -246,12 +254,16 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
         for (DWORD i = 0; i < me->device_count; ++i) {
             free(me->hier_ids[i]);
             free(me->hub_infos[i]);
+
+            free(me->hier_ids_device_type[i]);
         }
         free(me->hier_ids);
         free(me->hub_infos);
+        free(me->hier_ids_device_type);
 
         me->hier_ids = NULL;
         me->hub_infos = NULL;
+        me->hier_ids_device_type = NULL;
     }
 
     if (me->device_count != 0) {
