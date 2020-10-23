@@ -657,7 +657,7 @@ static AJI_ERROR select_tap(void)
             (unsigned long) tap_position, (unsigned long)jtagservice.hier_id_n[tap_position]
         );
         if (jtagservice.hier_id_n[tap_position]) {
-            for (DWORD n = 0; n <= jtagservice.hier_id_n[tap_position]; ++n) {
+            for (DWORD n = 0; n < jtagservice.hier_id_n[tap_position]; ++n) {
                 LOG_INFO("    node %2lu idcode=%08lX position_n=%lu",
                     (unsigned long) n,
                     (unsigned long) (jtagservice.hier_ids[tap_position][n].idcode),
