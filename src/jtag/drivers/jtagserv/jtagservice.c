@@ -77,6 +77,13 @@ AJI_ERROR jtagservice_print_hardware_name(
  * @note Memory allocated here freed as part of @jtagservice_free()
  */
 AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * records_n) {
+    if (UNKNOWN < *records_n) {
+        DWORD csize = 0;
+        AJI_CLAIM* claims = calloc(csize, sizeof(AJI_CLAIM)); //It's empty, NULL perhaps?
+        if (claims == NULL) {
+            return AJI_NO_MEMORY;
+        }
+    }
     if (ARM < *records_n) {
         DWORD csize = 4;
         AJI_CLAIM *claims = calloc(csize, sizeof(AJI_CLAIM));
@@ -113,6 +120,22 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
 
         records[RISCV].claims_n = csize;
         records[RISCV].claims = claims;
+    }
+
+    if (VJTAG < *records_n) {
+        DWORD csize = 2;
+        AJI_CLAIM* claims = calloc(csize, sizeof(AJI_CLAIM));
+        if (claims == NULL) {
+            return AJI_NO_MEMORY;
+        }
+
+        claims[1].type = AJI_CLAIM_IR_SHARED_OVERLAY;
+        claims[1].value = IR_VJTAG_USER1;
+        claims[2].type = AJI_CLAIM_IR_SHARED_OVERLAID;
+        claims[2].value = IR_VJTAG_USER0;
+
+        records[VJTAG].claims_n = csize;
+        records[VJTAG].claims = claims;
     }
 
     AJI_ERROR status = AJI_NO_ERROR;
@@ -193,8 +216,8 @@ AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout) {
     me->in_use_device_id = 0;
     me->in_use_device_irlen = 0;
 
-    me->claims_count = 10; 
-    me->claims = calloc(10, sizeof(CLAIM_RECORD));
+    me->claims_count = DEVICE_TYPE_COUNT; 
+    me->claims = calloc(me->claims_count, sizeof(CLAIM_RECORD));
     if (NULL == me->claims) {
         return AJI_NO_MEMORY;
     }
@@ -350,11 +373,16 @@ int jtagservice_query_main(void) {
                 } //end for k (heir_id_n)
 
 
-                int claim_size = 2;
-                AJI_CLAIM claims[] = { //setup for HPS
+                int claim_size = 2; 
+                
+                AJI_CLAIM claims[] = {
                       { AJI_CLAIM_IR_SHARED, device.device_id == 0x4BA00477 ? 0b1110 : 0b0000000110 },
                       { AJI_CLAIM_IR_SHARED, device.device_id == 0x4BA00477 ? 0b1111 : 0b1111111111 }, //NO NEED for BYPASS instruction actually
                 };
+                /*AJI_CLAIM2 claims[] = { 
+                      { AJI_CLAIM_IR_SHARED, 0, device.device_id == 0x4BA00477 ? 0b1110 : 0b0000000110 },
+                      { AJI_CLAIM_IR_SHARED, 0, device.device_id == 0x4BA00477 ? 0b1111 : 0b1111111111 }, //NO NEED for BYPASS instruction actually
+                }; */
 
                 char appname[] = "MyApp";
                 printf("            (C1-1) Open Device %lX ...\n", (unsigned long) device.device_id); fflush(stdout);

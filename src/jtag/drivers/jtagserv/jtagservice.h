@@ -23,16 +23,21 @@
 #define IR_RISCV_DMI           0x11  // dr_len=<address_length>+34
 #define IR_RISCV_BYPASS        0x1f  // dr_len=1
 
+#define IR_VJTAG_USER0     0xC; // dr_len=<not important>
+#define IR_VJTAG_USER1     0xE; // dr_len=<not important>
+
 typedef struct CLAIM_RECORD CLAIM_RECORD;
 struct CLAIM_RECORD {
-     DWORD claims_n;    ///! number of claims
+    DWORD claims_n;    ///! number of claims
     AJI_CLAIM* claims; ///! IR claims
 };
 
-#define DEVICE_TYPE_COUNT 2
+#define DEVICE_TYPE_COUNT 4
 enum DEVICE_TYPE {
-    ARM = 0, ///! ARM device, with IR length = 4 bit
-    RISCV = 1, ///! RISCV device, with IR length = 5 bit 
+    UNKNOWN = 0, ///! UNKNWON DEVICE
+    ARM = 1, ///! ARM device, with IR length = 4 bit
+    RISCV = 2, ///! RISCV device, with IR length = 5 bit 
+    VJTAG = 3, ///! vJTAG/SLD 
 };
 
 // Windows does not like typedef enum
