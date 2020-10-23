@@ -349,17 +349,6 @@ int jtagservice_query_main(void) {
                     printf("\n");
                 } //end for k (heir_id_n)
 
-                /* Try to relock the chain. This is to counter a problem in the for(tap_position) where 
-                  if there is an error, the chain will be unlocked and when looping through the
-                  next tap_position AJI will complain that the chain is not locked. If it is locked already,
-                  as it should be during normal operation, just ignore the AJI_LOCKED message, since the effect
-                  is the chain is locked, which is what we want
-                */
-                status = c_aji_lock_chain(chain_id, timeout);
-                if (AJI_NO_ERROR != status && AJI_LOCKED != status) {
-                    printf("       Problem attempting chain relocking. Returned %d (%s)\n", status, c_aji_error_decode(status));
-                    continue;
-                }
 
                 int claim_size = 2;
                 AJI_CLAIM claims[] = { //setup for HPS
@@ -391,7 +380,7 @@ int jtagservice_query_main(void) {
                 status = c_aji_test_logic_reset(open_id);  
                 if(AJI_NO_ERROR  != status) {
                    printf("       Cannot set TAP state to RUN_TEST_IDLE. Returned %d\n", status);
-                   c_aji_unlock(open_id);
+                   c_aji_unlock_lock_chain(open_id, chain_id);
                    c_aji_close_device(open_id);
                    continue;
                 }
@@ -403,7 +392,7 @@ int jtagservice_query_main(void) {
                             //if I am in TEST_LOGIC_RESET, I am suppose to get AJI_BAD_TAP STATE but I am not, and I get 0b1 on captured_ir
                 if(AJI_NO_ERROR  != status) {
                      printf("       Cannot send IDCODE instruction. Returned %d (%s) \n", status, c_aji_error_decode(status));
-                     c_aji_unlock(open_id);
+                     c_aji_unlock_lock_chain(open_id, chain_id);
                      c_aji_close_device(open_id);
                      continue;
                 }
@@ -423,7 +412,7 @@ int jtagservice_query_main(void) {
                 status = c_aji_access_dr( open_id, length_dr, flags, write_offset, write_length, write_bits,  read_offset, read_length, read_bits  );
                 if(AJI_NO_ERROR  != status) {
                    printf("       Cannot receive IDCODE output. Returned %d (%s)\n", status, c_aji_error_decode(status));
-                   c_aji_unlock(open_id);
+                   c_aji_unlock_lock_chain(open_id, chain_id);
                    c_aji_close_device(open_id);
                    continue;
                 }
@@ -437,7 +426,7 @@ int jtagservice_query_main(void) {
                 c_aji_flush(open_id);
                    
                 printf("            (C1-4) Unlock Device ...\n"); fflush(stdout);
-                c_aji_unlock(open_id);
+                c_aji_unlock_lock_chain(open_id, chain_id);
                     
                 printf("            (C1-5) Close Device ...\n"); fflush(stdout);
                 c_aji_close_device(open_id);
