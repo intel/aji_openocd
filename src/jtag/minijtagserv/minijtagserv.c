@@ -530,6 +530,22 @@ static AJI_ERROR select_cable(void)
     return status;
 }
 
+static AJI_ERROR unselect_tap(void);
+static AJI_ERROR unselect_cable(void) {
+    AJI_ERROR retval = AJI_NO_ERROR;
+    AJI_ERROR status = AJI_NO_ERROR;
+
+    status = unselect_tap();
+    if (status) {
+        retval = status;
+    }
+
+    status = jtagservice_free_cable(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
+    if (status) {
+        retval = status;
+    }
+    return retval;
+}
 
 /**
  * Select the TAP device to use
@@ -752,6 +768,12 @@ static AJI_ERROR select_tap(void)
     return status;
 }
 
+static AJI_ERROR unselect_tap(void) {
+    AJI_ERROR status = AJI_NO_ERROR;
+    status = jtagservice_free_tap(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
+    return status;
+}
+
 AJI_ERROR reacquire_open_id(void) 
 {  LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     int max_try = 5;
@@ -759,6 +781,7 @@ AJI_ERROR reacquire_open_id(void)
     AJI_ERROR status = AJI_NO_ERROR;
     
     for(int try=0; try<max_try; ++try) {
+        unselect_cable();
         if(try) {
             LOG_INFO("Sleep %d sec before reattempting cable acquisition", sleep_duration);
             sleep(sleep_duration);
@@ -780,6 +803,7 @@ AJI_ERROR reacquire_open_id(void)
     }
 
     for(int try=0; try<max_try; ++try) {
+        unselect_tap();
         if(try) {
             LOG_INFO("Sleep %d sec before reattempting tap selection", sleep_duration);
             sleep(sleep_duration);
