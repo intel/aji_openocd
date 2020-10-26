@@ -93,8 +93,12 @@ struct jtagservice_record {
                       //< TAP = [0, device_count), in the same  
                       //< order as device_list, and hub =
                       //< [0, AJI_MAX_HIERARCHICAL_HUB_DEPTH)
-
-    DEVICE_TYPE** hier_ids_device_type; //< 
+    AJI_OPEN_ID**  hier_id_open_id_list; //< 
+                            //<hier_ids[TAP][SLD] where TAP =
+                            //< [0, device_count), in the same  
+                            //< order as device_list,
+                            //< and SLD = [0, hier_id_n[TAP])
+    DEVICE_TYPE** hier_id_device_type_list; //< 
                         //< hier_ids_device_type[TAP][SLD] 
                         //< where TAP = [0, device_count),   
                         //< in the same order as device_list,

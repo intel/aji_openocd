@@ -193,7 +193,7 @@ AJI_ERROR jtagservice_update_active_tap_record(jtagservice_record* me, const DWO
     me->in_use_device_irlen = device.instruction_length;
 
     me->is_sld = is_sld;
-    if (is_sld) {
+    if (me->is_sld) {
         me->in_use_hier_id_node_position = node_index;
         me->in_use_hier_id = &(me->hier_ids[tap_index][node_index]);
         me->in_use_hier_id_idcode = me->hier_ids[tap_index][node_index].idcode;
@@ -206,7 +206,10 @@ AJI_ERROR jtagservice_update_active_tap_record(jtagservice_record* me, const DWO
     return AJI_NO_ERROR;
 }
 
-AJI_ERROR jtagservice_activate_tap(jtagservice_record* me, const DWORD tap_index) {
+AJI_ERROR jtagservice_activate_tap (
+    jtagservice_record* me, 
+    const DWORD tap_index
+) {
     if (!me->device_open_id_list[tap_index]) {
         LOG_ERROR("Unknown OPEN ID for tap #%lu idcode=0x%08lX", 
             tap_index, (unsigned long)me->device_list[tap_index].device_id
@@ -234,8 +237,28 @@ AJI_ERROR jtagservice_activate_virtual_tap(
     const DWORD tap_index, 
     const DWORD node_index
 ) {
-    LOG_INFO("Need to code %s in %s line %d", __FUNCTION__, __FILE__, __LINE__);
-    return AJI_NO_ERROR;
+    if (!me->hier_id_open_id_list[tap_index][node_index]) {
+        LOG_WARNING("Unknown OPEN ID for SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%08lX",
+            (unsigned long) node_index, (unsigned long) me->hier_ids[tap_index][node_index].idcode,
+            (unsigned long) tap_index, (unsigned long) me->device_list[tap_index].device_id
+        );
+        //@TODO: Find open id instead.
+        //return AJI_FAILURE;
+    }
+
+    if (!me->hier_id_device_type_list[tap_index][node_index]) {
+        LOG_WARNING("Unknown device type for  SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%lu",
+            (unsigned long) node_index, (unsigned long) me->hier_ids[tap_index][node_index].idcode,
+            (unsigned long) tap_index, (unsigned long) me->device_list[tap_index].device_id
+        );
+        //@TODO: Do a type lookup instead.
+        //return AJI_FAILURE;
+    }
+    LOG_INFO("Need to complete %s in %s line %d", __FUNCTION__, __FILE__, __LINE__);
+    AJI_ERROR status = AJI_NO_ERROR;
+    //status = jtagservice_update_active_tap_record(me, tap_index, true, node_index); //TODO reactivate
+
+    return status;
 }
 
 AJI_ERROR jtagservice_init(jtagservice_record* me, const DWORD timeout) {
@@ -268,7 +291,8 @@ AJI_ERROR jtagservice_init_tap(jtagservice_record* me, DWORD timeout) {
     me->hier_id_n = 0;
     me->hier_ids = NULL;
     me->hub_infos = NULL;
-    me->hier_ids_device_type = NULL;
+    me->hier_id_open_id_list = NULL;
+    me->hier_id_device_type_list = NULL;
 
 
     me->in_use_device_tap_position = -1;
@@ -355,15 +379,18 @@ AJI_ERROR  jtagservice_free_tap(jtagservice_record* me, const DWORD timeout)
             free(me->hier_ids[i]);
             free(me->hub_infos[i]);
 
-            free(me->hier_ids_device_type[i]);
+            free(me->hier_id_open_id_list[i]);
+            free(me->hier_id_device_type_list[i]);
         }
         free(me->hier_ids);
         free(me->hub_infos);
-        free(me->hier_ids_device_type);
+        free(me->hier_id_open_id_list);
+        free(me->hier_id_device_type_list);
 
         me->hier_ids = NULL;
         me->hub_infos = NULL;
-        me->hier_ids_device_type = NULL;
+        me->hier_id_open_id_list = NULL;
+        me->hier_id_device_type_list = NULL;
 
         me->hier_id_n = 0;
     }

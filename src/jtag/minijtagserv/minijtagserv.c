@@ -627,7 +627,8 @@ static AJI_ERROR select_tap(void)
     jtagservice.hier_id_n = (DWORD*) calloc(jtagservice.device_count, sizeof(DWORD));
     jtagservice.hier_ids = (AJI_HIER_ID**) calloc(jtagservice.device_count, sizeof(AJI_HIER_ID*));
     jtagservice.hub_infos = (AJI_HUB_INFO**) calloc(jtagservice.device_count, sizeof(AJI_HUB_INFO*));
-    jtagservice.hier_ids_device_type = (DEVICE_TYPE**) calloc(jtagservice.device_count, sizeof(DEVICE_TYPE*));
+    jtagservice.hier_id_open_id_list = (AJI_OPEN_ID**)calloc(jtagservice.device_count, sizeof(AJI_OPEN_ID*));
+    jtagservice.hier_id_device_type_list = (DEVICE_TYPE**) calloc(jtagservice.device_count, sizeof(DEVICE_TYPE*));
     if (NULL == jtagservice.hier_id_n) {
         LOG_ERROR("Ran out of memory for jtagservice's hier_id_n list");
         return AJI_NO_MEMORY;
@@ -640,8 +641,12 @@ static AJI_ERROR select_tap(void)
         LOG_ERROR("Ran out of memory for jtagservice's hub_infos list");
         return AJI_NO_MEMORY;
     }
-    if (NULL == jtagservice.hier_ids) {
-        LOG_ERROR("Ran out of memory for jtagservice's hier_ids_claims list");
+    if (NULL == jtagservice.hier_id_open_id_list) {
+        LOG_ERROR("Ran out of memory for jtagservice's hier_id_open_id_list");
+        return AJI_NO_MEMORY;
+    }
+    if (NULL == jtagservice.hier_id_device_type_list) {
+        LOG_ERROR("Ran out of memory for jtagservice's hier_id_device_type_list");
         return AJI_NO_MEMORY;
     }
 
@@ -684,7 +689,9 @@ static AJI_ERROR select_tap(void)
             continue;
         }
 
-        jtagservice.hier_ids_device_type[tap_position] = \
+        jtagservice.hier_id_open_id_list[tap_position] = \
+            (AJI_OPEN_ID*)calloc(jtagservice.hier_id_n[tap_position], sizeof(AJI_OPEN_ID));
+        jtagservice.hier_id_device_type_list[tap_position] = \
             (DEVICE_TYPE*)calloc(jtagservice.hier_id_n[tap_position], sizeof(DEVICE_TYPE));
         if (NULL == jtagservice.hub_infos[tap_position]) {
             LOG_ERROR("Ran out of memory for jtagservice's tap  %lu's hier_ids_claims",
@@ -704,7 +711,7 @@ static AJI_ERROR select_tap(void)
                     (unsigned long) (jtagservice.hier_ids[tap_position][n].idcode),
                     (unsigned long) (jtagservice.hier_ids[tap_position][n].position_n)
                     );
-                jtagservice.hier_ids_device_type[tap_position][n] = VJTAG; //@TODO Might have to ... 
+                jtagservice.hier_id_device_type_list[tap_position][n] = VJTAG; //@TODO Might have to ... 
                                      //... replace with  node specific claims
             } //end for(n in jtagservice.hier_id_n[tap_position])
         } //end if (jtagservice.hier_id_n[tap_position])
@@ -713,7 +720,8 @@ static AJI_ERROR select_tap(void)
         LOG_WARNING("Have failures in SLD discovery. See previous log entries. Continuing ...");
     }
 
-    DWORD arm_riscv_index = -1;
+    DWORD arm_riscv_index = 0;
+    bool  found_arm_riscv = false;
     for(DWORD tap_position=0; tap_position<jtagservice.device_count; ++tap_position) {
         AJI_DEVICE device = jtagservice.device_list[tap_position];
         LOG_INFO("Detected device (tap_position=%lu) device_id=%08lx," 
@@ -727,16 +735,18 @@ static AJI_ERROR select_tap(void)
         if (IDCODE_FE310_G002 == device.device_id) {
             jtagservice.device_type_list[tap_position] = RISCV; 
             arm_riscv_index = tap_position;
+            found_arm_riscv = true;
             LOG_INFO("Found SiFive device at tap_position %lu", (unsigned long)arm_riscv_index);
         }
         if( IDCODE_SOCVHPS == device.device_id ) {
             jtagservice.device_type_list[tap_position] = ARM;
             arm_riscv_index = tap_position;
+            found_arm_riscv = true;
             LOG_INFO("Found SOCVHPS device at tap_position %lu.", (unsigned long)arm_riscv_index);
         }
     } //end for tap_position
 
-    if(arm_riscv_index < 0) {
+    if(!found_arm_riscv) {
         LOG_ERROR("No SOCVHPS or FE310-G002 device found.");
         c_aji_unlock_chain(hw.chain_id);
         return AJI_FAILURE;
