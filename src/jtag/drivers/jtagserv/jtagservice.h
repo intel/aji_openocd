@@ -108,7 +108,14 @@ struct jtagservice_record {
 };
  
 AJI_ERROR jtagservice_init(jtagservice_record *me, const DWORD timeout);
+AJI_ERROR jtagservice_init_common(jtagservice_record* me, const DWORD timeout);
+AJI_ERROR jtagservice_init_cable(jtagservice_record* me, const DWORD timeout);
+AJI_ERROR jtagservice_init_tap(jtagservice_record* me, const DWORD timeout);
+
 AJI_ERROR jtagservice_free(jtagservice_record *me, const DWORD timeout);
+AJI_ERROR jtagservice_free_common(jtagservice_record* me, const DWORD timeout);
+AJI_ERROR jtagservice_free_cable(jtagservice_record* me, const DWORD timeout);
+AJI_ERROR jtagservice_free_tap(jtagservice_record* me, const DWORD timeout);
 
 int jtagservice_query_main(void);
 void jtagservice_display_sld_nodes(const jtagservice_record me);

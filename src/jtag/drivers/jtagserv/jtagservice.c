@@ -5,14 +5,6 @@
 #include "h/c_jtag_client_gnuaji.h"
 
 
-AJI_ERROR  jtagservice_init_common(jtagservice_record* me, const DWORD timeout);
-AJI_ERROR  jtagservice_init_cable(jtagservice_record* me, const DWORD timeout);
-AJI_ERROR  jtagservice_init_tap(jtagservice_record* me, const DWORD timeout);
-AJI_ERROR  jtagservice_free_tap(jtagservice_record* me, const DWORD timeout);
-AJI_ERROR  jtagservice_free_cable(jtagservice_record* me, const DWORD timeout);
-AJI_ERROR  jtagservice_free_common(jtagservice_record* me, const DWORD timeout);
-
-
 /**
  * Print hardware name suitable for @see aji_find_hardware(hw_name, ...) use.
  *
@@ -193,55 +185,84 @@ AJI_ERROR jtagservice_hier_id_index_by_idcode(
     return AJI_NO_ERROR;
 }
 
-AJI_ERROR jtagservice_init(jtagservice_record* me, DWORD timeout) {
-    me->appIdentifier = calloc(28, sizeof(char));
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    sprintf(me->appIdentifier, "OpenOCD.%4d%2d%2d%2d%2d%2d", 
-        tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, 
-        tm.tm_hour, tm.tm_min, tm.tm_sec
-    );
-    LOG_INFO("Application name is %s", me->appIdentifier);
-
+AJI_ERROR jtagservice_init(jtagservice_record* me, const DWORD timeout) {
     AJI_ERROR status = AJI_NO_ERROR;
 
-    me->hardware_count = 0;
-    me->hardware_list = NULL,
-    me->server_version_info_list = NULL,
-    
-    //me->in_use_hardware_index = 0;
-    me->in_use_hardware = NULL,
-    me->in_use_hardware_chain_pid = 0;
-    me->in_use_hardware_chain_id = NULL;
+    status = jtagservice_init_common(me, timeout);
+    if (status) {
+        return status;
+    }
 
+    status = jtagservice_init_cable(me, timeout);
+    if (status) {
+        return status;
+    }
+
+    status = jtagservice_init_tap(me, timeout);
+    if (status) {
+        return status;
+    }
+
+    return AJI_NO_ERROR;
+}
+
+AJI_ERROR jtagservice_init_tap(jtagservice_record* me, DWORD timeout) {
     me->device_count = 0;
-    me->device_list = NULL,
-    me->device_open_id_list = NULL,
-    me->device_type_list = NULL,
+    me->device_list = NULL;
+    me->device_open_id_list = NULL;
+    me->device_type_list = NULL;
 
     me->in_use_device_tap_position = 0;
-    me->in_use_device = NULL,
+    me->in_use_device = NULL;
     me->in_use_device_id = 0;
     me->in_use_device_irlen = 0;
 
-    me->claims_count = DEVICE_TYPE_COUNT; 
-    me->claims = calloc(me->claims_count, sizeof(CLAIM_RECORD));
-    if (NULL == me->claims) {
-        return AJI_NO_MEMORY;
-    }
-    status = jtagservice_create_claim_records(me->claims, &me->claims_count); 
-
-    if (status != AJI_NO_ERROR) {
-        return status;
-    }
 
     me->hier_id_n = 0;
     me->hier_ids = NULL;
     me->hub_infos = NULL;
     me->hier_ids_device_type = NULL;
-    return status;
+
+    return AJI_NO_ERROR;
 }
 
+AJI_ERROR jtagservice_init_cable(jtagservice_record* me, DWORD timeout) {
+    me->hardware_count = 0;
+    me->hardware_list = NULL;
+    me->server_version_info_list = NULL;
+
+    //me->in_use_hardware_index = 0;
+    me->in_use_hardware = NULL;
+    me->in_use_hardware_chain_pid = 0;
+    me->in_use_hardware_chain_id = NULL;
+
+    return AJI_NO_ERROR;
+}
+
+AJI_ERROR jtagservice_init_common(jtagservice_record* me, DWORD timeout) {
+    me->appIdentifier = calloc(28, sizeof(char));
+    if (NULL == me->appIdentifier) {
+        return AJI_NO_MEMORY;
+    }
+
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    sprintf(me->appIdentifier, "OpenOCD.%4d%2d%2d%2d%2d%2d",
+        tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+        tm.tm_hour, tm.tm_min, tm.tm_sec
+    );
+    LOG_INFO("Application name is %s", me->appIdentifier);
+
+    me->claims_count = DEVICE_TYPE_COUNT;
+    me->claims = calloc(me->claims_count, sizeof(CLAIM_RECORD));
+    if (NULL == me->claims) {
+        return AJI_NO_MEMORY;
+    }
+    AJI_ERROR status = jtagservice_create_claim_records(
+        me->claims, &me->claims_count
+    );
+    return status;
+}
 AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout) 
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     
@@ -300,6 +321,8 @@ AJI_ERROR  jtagservice_free_tap(jtagservice_record* me, const DWORD timeout)
 
         me->device_count = 0;
     }
+
+    return AJI_NO_ERROR;
 }
 
 AJI_ERROR  jtagservice_free_cable(jtagservice_record* me, const DWORD timeout)
