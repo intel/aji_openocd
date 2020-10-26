@@ -5,6 +5,14 @@
 #include "h/c_jtag_client_gnuaji.h"
 
 
+AJI_ERROR  jtagservice_init_common(jtagservice_record* me, const DWORD timeout);
+AJI_ERROR  jtagservice_init_cable(jtagservice_record* me, const DWORD timeout);
+AJI_ERROR  jtagservice_init_tap(jtagservice_record* me, const DWORD timeout);
+AJI_ERROR  jtagservice_free_tap(jtagservice_record* me, const DWORD timeout);
+AJI_ERROR  jtagservice_free_cable(jtagservice_record* me, const DWORD timeout);
+AJI_ERROR  jtagservice_free_common(jtagservice_record* me, const DWORD timeout);
+
+
 /**
  * Print hardware name suitable for @see aji_find_hardware(hw_name, ...) use.
  *
@@ -239,17 +247,30 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
     
     c_aji_unlock_chain(me->in_use_hardware_chain_id); //TODO: Make all lock/unlock self-contained then remove this
 
-    if (me->claims_count) {
-        for (DWORD i = 0; i < me->claims_count; ++i) {
-            if (0 != me->claims[i].claims_n) {
-                free(me->claims[i].claims);
-                me->claims[i].claims = NULL;
-                me->claims[i].claims_n = 0;
-            }
-        }
+    AJI_ERROR retval = AJI_NO_ERROR;
+    AJI_ERROR status = AJI_NO_ERROR;
+
+    status = jtagservice_free_tap(me, timeout);
+    if (status) {
+        retval = status;
     }
 
-    //TODO: Free the variables    
+    status = jtagservice_free_cable(me, timeout);
+    if (status) {
+        retval = status;
+    }
+
+    status = jtagservice_free_common(me, timeout);
+    if (status) {
+        retval = status;
+    }
+    return status;
+}
+
+
+//TODO: Free the variables    
+AJI_ERROR  jtagservice_free_tap(jtagservice_record* me, const DWORD timeout)
+{
     if (me->hier_id_n) {
         for (DWORD i = 0; i < me->device_count; ++i) {
             free(me->hier_ids[i]);
@@ -264,6 +285,8 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
         me->hier_ids = NULL;
         me->hub_infos = NULL;
         me->hier_ids_device_type = NULL;
+
+        me->hier_id_n = 0;
     }
 
     if (me->device_count != 0) {
@@ -271,29 +294,58 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
         free(me->device_open_id_list);
         free(me->device_type_list);
 
-        me->device_count = 0;
         me->device_list = NULL;
         me->device_open_id_list = NULL;
         me->device_type_list = NULL;
-    }
 
+        me->device_count = 0;
+    }
+}
+
+AJI_ERROR  jtagservice_free_cable(jtagservice_record* me, const DWORD timeout)
+{
     if (me->hardware_count != 0) {
         free(me->hardware_list);
         free(me->server_version_info_list);
 
-        me->hardware_count = 0;
         me->hardware_list = NULL;
         me->server_version_info_list = NULL;
+
+        //me->in_use_hardware_index = 0;
+        me->in_use_hardware = NULL;
+        me->in_use_hardware_chain_pid = 0;
+        me->in_use_hardware_chain_id = NULL;
+
+        me->hardware_count = 0;
+    }
+    return AJI_NO_ERROR;
+}
+
+AJI_ERROR  jtagservice_free_common(jtagservice_record* me, const DWORD timeout)
+{
+    LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+
+    c_aji_unlock_chain(me->in_use_hardware_chain_id); //TODO: Make all lock/unlock self-contained then remove this
+
+    if (me->claims_count) {
+        for (DWORD i = 0; i < me->claims_count; ++i) {
+            if (0 != me->claims[i].claims_n) {
+                free(me->claims[i].claims);
+                me->claims[i].claims = NULL;
+                me->claims[i].claims_n = 0;
+            }
+        }
+
+        me->claims_count = 0;
     }
 
     if (me->appIdentifier) {
         free(me->appIdentifier);
         me->appIdentifier = NULL;
     }
+
     return AJI_NO_ERROR;
 }
-
-
 
 
 int jtagservice_query_main(void) {

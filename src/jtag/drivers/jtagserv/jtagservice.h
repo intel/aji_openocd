@@ -107,8 +107,8 @@ struct jtagservice_record {
 
 };
  
-AJI_ERROR jtagservice_init(jtagservice_record *me, DWORD timeout);
-AJI_ERROR jtagservice_free(jtagservice_record *me, DWORD timeout);
+AJI_ERROR jtagservice_init(jtagservice_record *me, const DWORD timeout);
+AJI_ERROR jtagservice_free(jtagservice_record *me, const DWORD timeout);
 
 int jtagservice_query_main(void);
 void jtagservice_display_sld_nodes(const jtagservice_record me);
