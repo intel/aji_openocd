@@ -233,6 +233,15 @@ static bool vjtag_examine_chain_match_tap(struct vjtag_tap* vtap) {
         (unsigned long) vtap->expected_ids[0], (unsigned long) tap_index, (unsigned long) node_index
     );
 
+    status = jtagservice_activate_virtual_tap(&jtagservice, tap_index, node_index);
+    if (AJI_NO_ERROR != status) {
+        LOG_ERROR("Cannot activate virtual tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
+            vtap->dotted_name, (unsigned long)vtap->expected_ids[0],
+            status, c_aji_error_decode(status)
+        );
+        return false;
+    }
+
     return true;
 }
 
@@ -704,6 +713,7 @@ static AJI_ERROR select_tap(void)
         LOG_WARNING("Have failures in SLD discovery. See previous log entries. Continuing ...");
     }
 
+    DWORD arm_riscv_index = -1;
     for(DWORD tap_position=0; tap_position<jtagservice.device_count; ++tap_position) {
         AJI_DEVICE device = jtagservice.device_list[tap_position];
         LOG_INFO("Detected device (tap_position=%lu) device_id=%08lx," 
@@ -715,56 +725,50 @@ static AJI_ERROR select_tap(void)
                     device.device_name
         );
         if (IDCODE_FE310_G002 == device.device_id) {
-            jtagservice.in_use_device = &(jtagservice.device_list[tap_position]); //DO NOT use &device as device is local variable
-            jtagservice.in_use_device_id = device.device_id;
-            jtagservice.in_use_device_tap_position = tap_position;
-            jtagservice.in_use_device_irlen = device.instruction_length;
-            jtagservice.device_type_list[tap_position] = RISCV;
-            LOG_INFO("Found SiFive device at tap_position %lu", (unsigned long) tap_position);
+            jtagservice.device_type_list[tap_position] = RISCV; 
+            arm_riscv_index = tap_position;
+            LOG_INFO("Found SiFive device at tap_position %lu", (unsigned long)arm_riscv_index);
         }
         if( IDCODE_SOCVHPS == device.device_id ) {
-            jtagservice.in_use_device = &(jtagservice.device_list[tap_position]); //DO NOT use &device as device is local variable
-            jtagservice.in_use_device_id = device.device_id;
-            jtagservice.in_use_device_tap_position = tap_position;
-            jtagservice.in_use_device_irlen = device.instruction_length;
             jtagservice.device_type_list[tap_position] = ARM;
-            LOG_INFO("Found SOCVHPS device at tap_position %lu.", (unsigned long) tap_position);
+            arm_riscv_index = tap_position;
+            LOG_INFO("Found SOCVHPS device at tap_position %lu.", (unsigned long)arm_riscv_index);
         }
-
-
     } //end for tap_position
 
-    if(0 == jtagservice.in_use_device_id) {
+    if(arm_riscv_index < 0) {
         LOG_ERROR("No SOCVHPS or FE310-G002 device found.");
         c_aji_unlock_chain(hw.chain_id);
         return AJI_FAILURE;
     }
 
-    char idcode[9];
-    sprintf(idcode, "%08lX", jtagservice.in_use_device_id);
 
     CLAIM_RECORD claims =
-        jtagservice.claims[jtagservice.device_type_list[jtagservice.in_use_device_tap_position]];
+        jtagservice.claims[jtagservice.device_type_list[arm_riscv_index]];
 
     // Only allowed to open one device at a time.
     // If you don't, then anytime after  c_aji_test_logic_reset() call, 
     //  you can get fatal error
     //  "*** glibc detected *** src/openocd: double free or corruption (fasttop): 0x00000000027bc7a0 ***"        
     status = c_aji_open_device(
-        jtagservice.in_use_hardware->chain_id,
-        jtagservice.in_use_device_tap_position,
-        &(jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position]),
-        claims.claims, claims.claims_n, idcode
+        hw.chain_id,
+        arm_riscv_index,
+        &(jtagservice.device_open_id_list[arm_riscv_index]),
+        claims.claims, claims.claims_n, jtagservice.appIdentifier
     );
 
-    if( AJI_NO_ERROR != status) {
-            LOG_ERROR("Cannot open device number %lu (IDCODE=%s)",
-                      (unsigned long) jtagservice.in_use_device_tap_position, 
-                      idcode
+    if(AJI_NO_ERROR != status) {
+            LOG_ERROR("Cannot open device number %lu (IDCODE=%lX)",
+                      (unsigned long) arm_riscv_index,
+                      (unsigned long) jtagservice.device_list[arm_riscv_index].device_id
             );
     }
-
     status = c_aji_unlock_chain(hw.chain_id);
+    if (AJI_NO_ERROR != status) {
+        LOG_WARNING("Cannot unlock JTAG Chain ");
+    }
+
+    jtagservice_activate_tap(&jtagservice, arm_riscv_index);
     return status;
 }
 

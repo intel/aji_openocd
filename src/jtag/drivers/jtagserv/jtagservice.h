@@ -77,11 +77,6 @@ struct jtagservice_record {
     AJI_OPEN_ID *device_open_id_list;
     DEVICE_TYPE *device_type_list;
     
-    DWORD       in_use_device_tap_position;
-    AJI_DEVICE *in_use_device;
-    DWORD       in_use_device_id; 
-    BYTE        in_use_device_irlen;
-
     DWORD claims_count;
     CLAIM_RECORD *claims; ///! List of AJI_CLAIM, by DEVICE_TYPE
 
@@ -105,6 +100,20 @@ struct jtagservice_record {
                         //< in the same order as device_list,
                         //< and SLD = [0, hier_id_n[TAP])
 
+    //Active Tap
+    DWORD       in_use_device_tap_position;
+    AJI_DEVICE* in_use_device;
+    DWORD       in_use_device_id;
+    BYTE        in_use_device_irlen;
+
+    //SLD Node
+    //Additional information needed if
+    //  SLD node was selected
+    bool         is_sld; 
+    DWORD        in_use_hier_id_node_position;
+    AJI_HIER_ID* in_use_hier_id;
+    DWORD        in_use_hier_id_idcode;
+
 };
  
 AJI_ERROR jtagservice_init(jtagservice_record *me, const DWORD timeout);
@@ -116,6 +125,9 @@ AJI_ERROR jtagservice_free(jtagservice_record *me, const DWORD timeout);
 AJI_ERROR jtagservice_free_common(jtagservice_record* me, const DWORD timeout);
 AJI_ERROR jtagservice_free_cable(jtagservice_record* me, const DWORD timeout);
 AJI_ERROR jtagservice_free_tap(jtagservice_record* me, const DWORD timeout);
+
+AJI_ERROR jtagservice_activate_tap(jtagservice_record* me, const DWORD tap_index);
+AJI_ERROR jtagservice_activate_virtual_tap(jtagservice_record* me, DWORD const tap_index, const DWORD node_index);
 
 int jtagservice_query_main(void);
 void jtagservice_display_sld_nodes(const jtagservice_record me);
