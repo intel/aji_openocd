@@ -291,7 +291,8 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
 
 //TODO: Free the variables    
 AJI_ERROR  jtagservice_free_tap(jtagservice_record* me, const DWORD timeout)
-{
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+
     if (me->hier_id_n) {
         for (DWORD i = 0; i < me->device_count; ++i) {
             free(me->hier_ids[i]);
@@ -326,7 +327,10 @@ AJI_ERROR  jtagservice_free_tap(jtagservice_record* me, const DWORD timeout)
 }
 
 AJI_ERROR  jtagservice_free_cable(jtagservice_record* me, const DWORD timeout)
-{
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+
+    c_aji_unlock_chain(me->in_use_hardware_chain_id); //TODO: Make all lock/unlock self-contained then remove this
+
     if (me->hardware_count != 0) {
         free(me->hardware_list);
         free(me->server_version_info_list);
@@ -345,10 +349,7 @@ AJI_ERROR  jtagservice_free_cable(jtagservice_record* me, const DWORD timeout)
 }
 
 AJI_ERROR  jtagservice_free_common(jtagservice_record* me, const DWORD timeout)
-{
-    LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-
-    c_aji_unlock_chain(me->in_use_hardware_chain_id); //TODO: Make all lock/unlock self-contained then remove this
+{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 
     if (me->claims_count) {
         for (DWORD i = 0; i < me->claims_count; ++i) {
