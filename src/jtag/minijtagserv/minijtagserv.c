@@ -667,8 +667,10 @@ static AJI_ERROR select_tap(void)
             return AJI_NO_MEMORY;
         }
 
-        LOG_INFO("TAP position %lu has %lu SLD nodes",
-            (unsigned long) tap_position, (unsigned long)jtagservice.hier_id_n[tap_position]
+        LOG_INFO("TAP position %lu (%lX) has %lu SLD nodes",
+            (unsigned long) tap_position, 
+            (unsigned long) jtagservice.device_list[tap_position].device_id,
+            (unsigned long) jtagservice.hier_id_n[tap_position]
         );
         if (jtagservice.hier_id_n[tap_position]) {
             for (DWORD n = 0; n < jtagservice.hier_id_n[tap_position]; ++n) {
