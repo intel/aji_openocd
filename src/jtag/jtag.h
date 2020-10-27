@@ -155,6 +155,10 @@ struct jtag_tap {
 	struct jtag_tap *next_tap;
 	/* private pointer to support none-jtag specific functions */
 	void *priv;
+
+#ifdef BUILD_MINIJTAGSERV
+	char* hardware;
+#endif
 };
 
 void jtag_tap_init(struct jtag_tap *tap);

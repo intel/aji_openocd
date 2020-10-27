@@ -206,8 +206,13 @@ AJI_ERROR jtagservice_update_active_tap_record(jtagservice_record* me, const DWO
     return AJI_NO_ERROR;
 }
 
+/**
+ * Activate  Tap
+ * \param hardware_index Not yet use, set to zero.
+ */
 AJI_ERROR jtagservice_activate_tap (
     jtagservice_record* me, 
+    const DWORD hardware_index,
     const DWORD tap_index
 ) {
     if (!me->device_open_id_list[tap_index]) {
@@ -231,9 +236,13 @@ AJI_ERROR jtagservice_activate_tap (
 
     return status;
 }
-
+/**
+ * Activate Virtual Tap
+ * \param hardware_index Not yet use, set to zero.
+ */
 AJI_ERROR jtagservice_activate_virtual_tap(
     jtagservice_record* me, 
+    const DWORD hardware_index,
     const DWORD tap_index, 
     const DWORD node_index
 ) {

@@ -1533,6 +1533,10 @@ void jtag_tap_init_only(struct jtag_tap* tap)
 
 	/* register the reset callback for the TAP */
 	jtag_register_event_callback(&jtag_reset_callback, tap);
+
+#ifdef BUILD_MINIJTAGSERV
+	tap->hardware = NULL;
+#endif
 }
 /**
  * Initilaize JTAG Tap.
@@ -1553,6 +1557,12 @@ void jtag_tap_init(struct jtag_tap* tap)
 
 void jtag_tap_free(struct jtag_tap *tap)
 {
+#ifdef BUILD_MINIJTAGSERV
+	if (tap->hardware) {
+		free(tap->hardware);
+	}
+#endif
+
 	jtag_unregister_event_callback(&jtag_reset_callback, tap);
 
 	struct jtag_tap_event_action *jteap = tap->event_action;

@@ -130,8 +130,8 @@ AJI_ERROR jtagservice_free_common(jtagservice_record* me, const DWORD timeout);
 AJI_ERROR jtagservice_free_cable(jtagservice_record* me, const DWORD timeout);
 AJI_ERROR jtagservice_free_tap(jtagservice_record* me, const DWORD timeout);
 
-AJI_ERROR jtagservice_activate_tap(jtagservice_record* me, const DWORD tap_index);
-AJI_ERROR jtagservice_activate_virtual_tap(jtagservice_record* me, DWORD const tap_index, const DWORD node_index);
+AJI_ERROR jtagservice_activate_tap(jtagservice_record* me, const DWORD hardware_index, const DWORD tap_index);
+AJI_ERROR jtagservice_activate_virtual_tap(jtagservice_record* me, const DWORD hardware_index, DWORD const tap_index, const DWORD node_index);
 
 int jtagservice_query_main(void);
 void jtagservice_display_sld_nodes(const jtagservice_record me);
