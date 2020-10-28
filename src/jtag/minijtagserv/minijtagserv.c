@@ -306,7 +306,7 @@ int jtag_examine_chain(void)
 			retval = ERROR_JTAG_INIT_SOFT_FAIL;
     } //end for t
 
-    if (AJI_NO_ERROR != retval && ERROR_JTAG_INIT_SOFT_FAIL != AJI_NO_ERROR) {
+    if (AJI_NO_ERROR != retval && ERROR_JTAG_INIT_SOFT_FAIL != retval) {
         return retval;
     }
 
