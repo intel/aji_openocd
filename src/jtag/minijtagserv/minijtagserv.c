@@ -235,16 +235,6 @@ static bool vjtag_examine_chain_match_tap(struct vjtag_tap* vtap) {
     LOG_INFO("Virtual Tap/SLD node %06lX found at tap position %lu vtap position %lu",
         (unsigned long) vtap->expected_ids[0], (unsigned long) tap_index, (unsigned long) node_index
     );
-
-    status = jtagservice_activate_virtual_tap(&jtagservice, 0, tap_index, node_index);
-    if (AJI_NO_ERROR != status) {
-        LOG_ERROR("Cannot activate virtual tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
-            vtap->dotted_name, (unsigned long)vtap->expected_ids[0],
-            status, c_aji_error_decode(status)
-        );
-        return false;
-    }
-
     return true;
 }
 
@@ -565,7 +555,7 @@ static AJI_ERROR unselect_cable(void) {
  * @pos jtagservice will be populated with the selected tap
  */
 static AJI_ERROR select_tap(void)
-{   LOG_DEBUG("***> IN %s(%d): %s %lu\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long) jtagservice.in_use_hardware_chain_pid);
+{   LOG_DEBUG("***> IN %s(%d): %s in_use_hardware_chain_pid=%lu\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long) jtagservice.in_use_hardware_chain_pid);
     AJI_ERROR status = AJI_NO_ERROR;
 
     AJI_HARDWARE hw;
@@ -769,7 +759,7 @@ static AJI_ERROR select_tap(void)
         &(jtagservice.device_open_id_list[arm_riscv_index]),
         claims.claims, claims.claims_n, jtagservice.appIdentifier
     );
-
+    
     if(AJI_NO_ERROR != status) {
             LOG_ERROR("Cannot open device number %lu (IDCODE=%lX)",
                       (unsigned long) arm_riscv_index,
@@ -782,6 +772,7 @@ static AJI_ERROR select_tap(void)
     }
 
     jtagservice_activate_tap(&jtagservice, 0,  arm_riscv_index);
+LOG_DEBUG("***> END %s(%d): %s in_use_device_tap_position=%lu is_sld=%s in_use_hier_id_node_position=%lu \n", __FILE__, __LINE__, __FUNCTION__, (unsigned long) jtagservice.in_use_device_tap_position, jtagservice.is_sld? "Yes" : "No", (unsigned long) jtagservice.in_use_hier_id_node_position);
     return status;
 }
 
@@ -792,7 +783,8 @@ static AJI_ERROR unselect_tap(void) {
 }
 
 AJI_ERROR reacquire_open_id(void) 
-{  LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{  LOG_DEBUG("***> IN %s(%d): %s in_use_device_tap_position=%lu is_sld=%s in_use_hier_id_node_position=%lu \n", __FILE__, __LINE__, __FUNCTION__, (unsigned long)jtagservice.in_use_device_tap_position, jtagservice.is_sld? "Yes" : "No", (unsigned long)jtagservice.in_use_hier_id_node_position);
+jtagservice.in_use_device_tap_position = 1, jtagservice.is_sld = false;
     int max_try = 5;
     int sleep_duration = 5; //seconds
     AJI_ERROR status = AJI_NO_ERROR;
@@ -994,6 +986,26 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
             );
         }
     }
+
+/*
+Test activate virtual tap here
+status = jtagservice_activate_virtual_tap(&jtagservice, 0, 0, 1);
+if (AJI_NO_ERROR != status) {
+    LOG_ERROR("Cannot activate virtual tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
+        vtap->dotted_name, (unsigned long)vtap->expected_ids[0],
+        status, c_aji_error_decode(status)
+    );
+    return false;
+}
+status = jtagservice_activate_tap(&jtagservice, 0, 1);
+if (AJI_NO_ERROR != status) {
+    LOG_ERROR("Cannot reactivate physical tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
+        vtap->dotted_name, (unsigned long)vtap->expected_ids[0],
+        status, c_aji_error_decode(status)
+    );
+    return false;
+}
+*/
 
     AJI_ERROR  status = AJI_NO_ERROR;
 	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
