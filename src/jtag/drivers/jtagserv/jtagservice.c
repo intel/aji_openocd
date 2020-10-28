@@ -217,7 +217,8 @@ AJI_ERROR jtagservice_activate_tap (
 ) {
     if (!me->device_open_id_list[tap_index]) {
         LOG_ERROR("Unknown OPEN ID for tap #%lu idcode=0x%08lX", 
-            tap_index, (unsigned long)me->device_list[tap_index].device_id
+            (unsigned long) tap_index, 
+            (unsigned long) me->device_list[tap_index].device_id
         );
         //@TODO: Find open id instead.
         return AJI_FAILURE;
@@ -225,7 +226,8 @@ AJI_ERROR jtagservice_activate_tap (
 
     if (!me->device_type_list[tap_index]) {
         LOG_ERROR("Unknown device type tap #%lu idcode=0x%lu",
-            tap_index, (unsigned long)me->device_list[tap_index].device_id
+            (unsigned long) tap_index, 
+            (unsigned long) me->device_list[tap_index].device_id
         );
         //@TODO: Do a type lookup instead.
         return AJI_FAILURE;
