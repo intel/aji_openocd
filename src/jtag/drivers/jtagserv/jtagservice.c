@@ -208,7 +208,7 @@ AJI_ERROR jtagservice_update_active_tap_record(jtagservice_record* me, const DWO
 
 /**
  * Activate  Tap
- * \param hardware_index Not yet use, set to zero.
+ * \param hardware_index Not yet in use, set to zero.
  */
 AJI_ERROR jtagservice_activate_tap (
     jtagservice_record* me, 
@@ -240,7 +240,7 @@ AJI_ERROR jtagservice_activate_tap (
 }
 /**
  * Activate Virtual Tap
- * \param hardware_index Not yet use, set to zero.
+ * \param hardware_index Not yet in use, set to zero.
  */
 AJI_ERROR jtagservice_activate_virtual_tap(
     jtagservice_record* me, 
@@ -267,7 +267,7 @@ AJI_ERROR jtagservice_activate_virtual_tap(
     }
     LOG_INFO("Need to complete %s in %s line %d", __FUNCTION__, __FILE__, __LINE__);
     AJI_ERROR status = AJI_NO_ERROR;
-    //status = jtagservice_update_active_tap_record(me, tap_index, true, node_index); //TODO reactivate
+    status = jtagservice_update_active_tap_record(me, tap_index, true, node_index); //TODO reactivate
 
     return status;
 }
