@@ -295,10 +295,10 @@ AJI_ERROR jtagservice_activate_virtual_tap(
     }
 
     if (!me->hier_id_open_id_list[tap_index][node_index]) {
-        LOG_WARNING("Unknown OPEN ID for SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%08lX",
-            (unsigned long) node_index, (unsigned long) me->hier_ids[tap_index][node_index].idcode,
-            (unsigned long) tap_index, (unsigned long) me->device_list[tap_index].device_id
-        );
+LOG_DEBUG("Getting OPEN ID for SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%08lX",
+    (unsigned long) node_index, (unsigned long) me->hier_ids[tap_index][node_index].idcode,
+    (unsigned long) tap_index, (unsigned long) me->device_list[tap_index].device_id
+);
 
         status = c_aji_lock_chain(me->in_use_hardware_chain_id,
                                   JTAGSERVICE_TIMEOUT_MS
@@ -340,8 +340,6 @@ AJI_ERROR jtagservice_activate_virtual_tap(
     if (AJI_NO_ERROR != status) { 
         return status;
     }
-
-    LOG_INFO("Need to complete %s in %s line %d", __FUNCTION__, __FILE__, __LINE__);
 
     status = jtagservice_update_active_tap_record(me, (unsigned long) tap_index, true, node_index);
     return status;

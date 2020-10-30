@@ -970,48 +970,58 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
 	/* synchronously do the operation here */
 
 	/* loop over all enabled TAPs. */
-
-    /* Right now, we can only do ARMVHPS or FE310-G002 */ 
-    uint32_t idcode = active->idcode;
-    if (jtag_tap_on_all_vtaps_list(active)) {
-        idcode = ((struct vjtag_tap*)active)->parent->idcode;
-    }
-    static bool NotYetWarned = false;
-    if (NotYetWarned) {
-        if (idcode == 0 || jtagservice.in_use_device_id != idcode) {
-            LOG_WARNING("IR - Expecting TAP with IDCODE 0x%08lX to be the active tap, but got 0x%08lX, but never mind, code currently will use as 0x%08lX active tap.",
-                (unsigned long)jtagservice.in_use_device_id,
-                (unsigned long)idcode,
-                (unsigned long)jtagservice.in_use_device_id
-            );
-        }
-    }
-
+	
     AJI_ERROR  status = AJI_NO_ERROR;
+    DWORD arm_or_ricsv_index = jtagservice.in_use_device_tap_position;
 
-/*
-//Test activate virtual tap here
-//NOTE: Only works for default SOF of arria10
-status = jtagservice_activate_virtual_tap(&jtagservice, 0, 0, 0);
-if (AJI_NO_ERROR != status) {
-    LOG_ERROR("Cannot activate virtual tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
-        active->dotted_name, (unsigned long)active->expected_ids[0],
-        status, c_aji_error_decode(status)
-    );
+    if (jtag_tap_on_all_vtaps_list(active)) {
+        uint32_t tap_index=0;
+        jtagservice_device_index_by_idcode(
+            ((struct vjtag_tap*)active)->parent->idcode,
+            jtagservice.device_list,   
+            jtagservice.device_count, 
+            &tap_index
+        ); //Not checking return status because it should pass
+
+        uint32_t sld_index=0;
+        jtagservice_hier_id_index_by_idcode(
+            active->idcode,
+            jtagservice.hier_ids[tap_index],
+            jtagservice.hier_id_n[tap_index],
+            &sld_index); //Not checking return status because it should pass
+            
+        if     (jtagservice.is_sld == false
+            || jtagservice.in_use_device_tap_position != tap_index 
+            || jtagservice.in_use_hier_id_node_position != sld_index
+            ) {
+            status = jtagservice_activate_virtual_tap(&jtagservice, 0, tap_index, sld_index);
+            if (AJI_NO_ERROR != status) {
+                LOG_ERROR("Cannot activate virtual tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
+                            active->dotted_name, (unsigned long)active->expected_ids[0],
+                            status, c_aji_error_decode(status)
+                );
 assert(0); //deliberately assert() to be able to see where the error is, if it occurs
-    return ERROR_FAIL;
-}  
-//NOTE: Only works for arria10
-    status = jtagservice_activate_jtag_tap(&jtagservice, 0, 1);
-    if (AJI_NO_ERROR != status) {
-        LOG_ERROR("Cannot reactivate physical tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
-            active->dotted_name, (unsigned long)active->expected_ids[0],
-            status, c_aji_error_decode(status)
-        );
+                return ERROR_FAIL;
+            }            
+        } //end if jtagservice.is_sld
+    } //end if if(jtag_tap_on_all_vtaps_list(active))
+
+    //FORCE BACK TO RISCV/SOCVHPS
+    if     (jtagservice.is_sld == true
+            || jtagservice.in_use_device_tap_position != arm_or_ricsv_index 
+    ) {
+        status = jtagservice_activate_jtag_tap(&jtagservice, 0, arm_or_ricsv_index);
+    
+        if (AJI_NO_ERROR != status) {
+            LOG_ERROR("Cannot reactivate physical tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
+                    active->dotted_name, (unsigned long)active->expected_ids[0],
+                    status, c_aji_error_decode(status)
+            );
 assert(0); //deliberately assert() to be able to see where the error is, if it occurs
-        return ERROR_FAIL;
-    }
-*/
+            return ERROR_FAIL;
+        }
+    } //end if(jtagservice.is_sld == true)        
+
 
 	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
 
