@@ -79,14 +79,14 @@ AJI_ERROR jtagservice_print_hardware_name(
 AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * records_n) {
     if (UNKNOWN < *records_n) {
         DWORD csize = 0;
-        AJI_CLAIM* claims = calloc(csize, sizeof(AJI_CLAIM)); //It's empty, NULL perhaps?
+        AJI_CLAIM2 *claims = calloc(csize, sizeof(AJI_CLAIM2)); //It's empty, NULL perhaps?
         if (claims == NULL) {
             return AJI_NO_MEMORY;
         }
     }
     if (ARM < *records_n) {
         DWORD csize = 4;
-        AJI_CLAIM *claims = calloc(csize, sizeof(AJI_CLAIM));
+        AJI_CLAIM2 *claims = calloc(csize, sizeof(AJI_CLAIM2));
         if (claims == NULL) {
             return AJI_NO_MEMORY;
         }
@@ -106,7 +106,7 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
 
     if (RISCV < *records_n) {
         DWORD csize = 3;
-        AJI_CLAIM* claims = calloc(csize, sizeof(AJI_CLAIM));
+        AJI_CLAIM2* claims = calloc(csize, sizeof(AJI_CLAIM2));
         if (claims == NULL) {
             return AJI_NO_MEMORY;
         }
@@ -123,16 +123,20 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
     }
 
     if (VJTAG < *records_n) {
-        DWORD csize = 2;
-        AJI_CLAIM* claims = calloc(csize, sizeof(AJI_CLAIM));
+        DWORD csize = 4;
+        AJI_CLAIM2* claims = calloc(csize, sizeof(AJI_CLAIM2));
         if (claims == NULL) {
             return AJI_NO_MEMORY;
         }
 
-        claims[1].type = AJI_CLAIM_IR_SHARED_OVERLAY;
-        claims[1].value = IR_VJTAG_USER1;
-        claims[2].type = AJI_CLAIM_IR_SHARED_OVERLAID;
-        claims[2].value = IR_VJTAG_USER0;
+        claims[0].type = AJI_CLAIM_IR_SHARED_OVERLAY;
+        claims[0].value = IR_VJTAG_USER1;
+        claims[1].type = AJI_CLAIM_IR_SHARED_OVERLAID;
+        claims[1].value = IR_VJTAG_USER0;
+        claims[2].type = AJI_CLAIM_OVERLAY_SHARED;
+        claims[2].value = 0b0000000001;
+        claims[3].type = AJI_CLAIM_OVERLAY_SHARED;
+        claims[3].value = 0b0000100000;
 
         records[VJTAG].claims_n = csize;
         records[VJTAG].claims = claims;
@@ -210,20 +214,12 @@ AJI_ERROR jtagservice_update_active_tap_record(jtagservice_record* me, const DWO
  * Activate  Tap
  * \param hardware_index Not yet in use, set to zero.
  */
-AJI_ERROR jtagservice_activate_tap (
+AJI_ERROR jtagservice_activate_jtag_tap (
     jtagservice_record* me, 
     const DWORD hardware_index,
     const DWORD tap_index
 ) {
-    if (!me->device_open_id_list[tap_index]) {
-        LOG_ERROR("Unknown OPEN ID for tap #%lu idcode=0x%08lX", 
-            (unsigned long) tap_index, 
-            (unsigned long) me->device_list[tap_index].device_id
-        );
-        //@TODO: Find open id instead.
-        return AJI_FAILURE;
-    }
-
+    AJI_ERROR status = AJI_NO_ERROR;
     if (!me->device_type_list[tap_index]) {
         LOG_ERROR("Unknown device type tap #%lu idcode=0x%lu",
             (unsigned long) tap_index, 
@@ -233,11 +229,51 @@ AJI_ERROR jtagservice_activate_tap (
         return AJI_FAILURE;
     }
 
-    AJI_ERROR status = AJI_NO_ERROR;
-    status = jtagservice_update_active_tap_record(me, tap_index, false, -1);
+    if (!me->device_open_id_list[tap_index]) {
+        LOG_ERROR("Unknown OPEN ID for tap #%lu idcode=0x%08lX", 
+            (unsigned long) tap_index, 
+            (unsigned long) me->device_list[tap_index].device_id
+        );
 
+        status = c_aji_lock_chain(me->in_use_hardware_chain_id, 
+                                  JTAGSERVICE_TIMEOUT_MS
+        );
+        if(AJI_NO_ERROR !=  status ) { 
+             LOG_ERROR("Cannot lock chain. Returned %d (%s)\n", 
+                  status, c_aji_error_decode(status)
+             );
+             return status;
+        }
+        status = c_aji_open_device_a(
+            me->in_use_hardware_chain_id,
+            tap_index,
+            &(me->device_open_id_list[tap_index]),
+            (const AJI_CLAIM2*) (me->claims[me->device_type_list[tap_index]].claims), 
+            me->claims[me->device_type_list[tap_index]].claims_n, 
+            me->appIdentifier
+        );
+        if(AJI_NO_ERROR !=  status ) { 
+             LOG_ERROR("Problem openning tap %lu (0x%08lX). Returned %d (%s)\n", 
+                  (unsigned long) tap_index, 
+                  (unsigned long) me->device_list[tap_index].device_id, 
+                  status, 
+                  c_aji_error_decode(status)
+             );
+             return status;
+        }
+        status = c_aji_unlock_chain(me->in_use_hardware_chain_id);
+        if(AJI_NO_ERROR !=  status ) { 
+             LOG_ERROR("Cannot unlock chain. Returned %d (%s)\n", 
+                  status, c_aji_error_decode(status)
+             );
+             return status;
+        }
+    } //end if (!me->device_open_id_list[tap_index]) 
+    
+    status = jtagservice_update_active_tap_record(me, (unsigned long) tap_index, false, -1);
     return status;
 }
+
 /**
  * Activate Virtual Tap
  * \param hardware_index Not yet in use, set to zero.
@@ -248,16 +284,8 @@ AJI_ERROR jtagservice_activate_virtual_tap(
     const DWORD tap_index, 
     const DWORD node_index
 ) {
-    if (!me->hier_id_open_id_list[tap_index][node_index]) {
-        LOG_WARNING("Unknown OPEN ID for SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%08lX",
-            (unsigned long) node_index, (unsigned long) me->hier_ids[tap_index][node_index].idcode,
-            (unsigned long) tap_index, (unsigned long) me->device_list[tap_index].device_id
-        );
-        //@TODO: Find open id instead.
-        //return AJI_FAILURE;
-    }
-
-    if (!me->hier_id_device_type_list[tap_index][node_index]) {
+    AJI_ERROR status = AJI_NO_ERROR;
+    if (!me->hier_id_type_list[tap_index][node_index]) {
         LOG_WARNING("Unknown device type for  SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%lu",
             (unsigned long) node_index, (unsigned long) me->hier_ids[tap_index][node_index].idcode,
             (unsigned long) tap_index, (unsigned long) me->device_list[tap_index].device_id
@@ -265,10 +293,57 @@ AJI_ERROR jtagservice_activate_virtual_tap(
         //@TODO: Do a type lookup instead.
         //return AJI_FAILURE;
     }
-    LOG_INFO("Need to complete %s in %s line %d", __FUNCTION__, __FILE__, __LINE__);
-    AJI_ERROR status = AJI_NO_ERROR;
-    status = jtagservice_update_active_tap_record(me, tap_index, true, node_index); //TODO reactivate
 
+    if (!me->hier_id_open_id_list[tap_index][node_index]) {
+        LOG_WARNING("Unknown OPEN ID for SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%08lX",
+            (unsigned long) node_index, (unsigned long) me->hier_ids[tap_index][node_index].idcode,
+            (unsigned long) tap_index, (unsigned long) me->device_list[tap_index].device_id
+        );
+
+        status = c_aji_lock_chain(me->in_use_hardware_chain_id,
+                                  JTAGSERVICE_TIMEOUT_MS
+        );
+        if(AJI_NO_ERROR !=  status ) { 
+             LOG_ERROR("Cannot lock chain. Returned %d (%s)\n", 
+                  status, c_aji_error_decode(status)
+             );
+             return status;
+        }
+        status = aji_open_node_b(
+                    me->in_use_hardware_chain_id, 
+                    tap_index, 
+                    &(me->hier_ids[tap_index][node_index]), 
+                    &(me->hier_id_open_id_list[tap_index][node_index]),
+                    (const AJI_CLAIM2*) (me->claims[me->hier_id_type_list[tap_index][node_index]].claims), 
+                    me->claims[me->hier_id_type_list[tap_index][node_index]].claims_n, 
+                    me->appIdentifier
+        );
+        if(AJI_NO_ERROR !=  status ) { 
+             LOG_ERROR("Problem openning node %lu (0x%08lX) for tap position %lu. Returned %d (%s)\n", 
+                  (unsigned long) node_index, 
+                  (unsigned long) me->hier_ids[tap_index][node_index].idcode, 
+                  (unsigned long) tap_index, 
+                  status, 
+                  c_aji_error_decode(status)
+             );
+             return status;
+        }
+        status = c_aji_unlock_chain(me->in_use_hardware_chain_id);
+        if(AJI_NO_ERROR !=  status ) { 
+             LOG_ERROR("Cannot unlock chain. Returned %d (%s)\n", 
+                  status, c_aji_error_decode(status)
+             );
+             return status;
+        }
+    } //end if(!me->hier_id_open_id_list[tap_index][node_index]) 
+
+    if (AJI_NO_ERROR != status) { 
+        return status;
+    }
+
+    LOG_INFO("Need to complete %s in %s line %d", __FUNCTION__, __FILE__, __LINE__);
+
+    status = jtagservice_update_active_tap_record(me, (unsigned long) tap_index, true, node_index);
     return status;
 }
 
@@ -303,7 +378,7 @@ AJI_ERROR jtagservice_init_tap(jtagservice_record* me, DWORD timeout) {
     me->hier_ids = NULL;
     me->hub_infos = NULL;
     me->hier_id_open_id_list = NULL;
-    me->hier_id_device_type_list = NULL;
+    me->hier_id_type_list = NULL;
 
 
     me->in_use_device_tap_position = -1;
@@ -391,17 +466,17 @@ AJI_ERROR  jtagservice_free_tap(jtagservice_record* me, const DWORD timeout)
             free(me->hub_infos[i]);
 
             free(me->hier_id_open_id_list[i]);
-            free(me->hier_id_device_type_list[i]);
+            free(me->hier_id_type_list[i]);
         }
         free(me->hier_ids);
         free(me->hub_infos);
         free(me->hier_id_open_id_list);
-        free(me->hier_id_device_type_list);
+        free(me->hier_id_type_list);
 
         me->hier_ids = NULL;
         me->hub_infos = NULL;
         me->hier_id_open_id_list = NULL;
-        me->hier_id_device_type_list = NULL;
+        me->hier_id_type_list = NULL;
 
         me->hier_id_n = 0;
     }
@@ -568,20 +643,20 @@ int jtagservice_query_main(void) {
 
                 int claim_size = 2; 
                 
-                AJI_CLAIM claims[] = {
+                /* AJI_CLAIM claims[] = {
                       { AJI_CLAIM_IR_SHARED, device.device_id == 0x4BA00477 ? 0b1110 : 0b0000000110 },
                       { AJI_CLAIM_IR_SHARED, device.device_id == 0x4BA00477 ? 0b1111 : 0b1111111111 }, //NO NEED for BYPASS instruction actually
-                };
-                /*AJI_CLAIM2 claims[] = { 
+                }; */
+                AJI_CLAIM2 claims[] = { 
                       { AJI_CLAIM_IR_SHARED, 0, device.device_id == 0x4BA00477 ? 0b1110 : 0b0000000110 },
                       { AJI_CLAIM_IR_SHARED, 0, device.device_id == 0x4BA00477 ? 0b1111 : 0b1111111111 }, //NO NEED for BYPASS instruction actually
-                }; */
+                }; 
 
                 char appname[] = "MyApp";
                 printf("            (C1-1) Open Device %lX ...\n", (unsigned long) device.device_id); fflush(stdout);
                 AJI_OPEN_ID open_id = NULL;   
                     
-                status = c_aji_open_device(chain_id, tap_position, &open_id, claims, claim_size, appname);
+                status = c_aji_open_device_a(chain_id, tap_position, &open_id, claims, claim_size, appname);
                 if(AJI_NO_ERROR  != status) {
                     printf("            Cannot open device. Returned %d (%s). This is not an error if the device is not SOCVHPS or FPGA Tap\n", status, c_aji_error_decode(status));
                     continue;

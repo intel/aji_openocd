@@ -621,7 +621,7 @@ static AJI_ERROR select_tap(void)
     jtagservice.hier_ids = (AJI_HIER_ID**) calloc(jtagservice.device_count, sizeof(AJI_HIER_ID*));
     jtagservice.hub_infos = (AJI_HUB_INFO**) calloc(jtagservice.device_count, sizeof(AJI_HUB_INFO*));
     jtagservice.hier_id_open_id_list = (AJI_OPEN_ID**)calloc(jtagservice.device_count, sizeof(AJI_OPEN_ID*));
-    jtagservice.hier_id_device_type_list = (DEVICE_TYPE**) calloc(jtagservice.device_count, sizeof(DEVICE_TYPE*));
+    jtagservice.hier_id_type_list = (DEVICE_TYPE**) calloc(jtagservice.device_count, sizeof(DEVICE_TYPE*));
     if (NULL == jtagservice.hier_id_n) {
         LOG_ERROR("Ran out of memory for jtagservice's hier_id_n list");
         return AJI_NO_MEMORY;
@@ -638,8 +638,8 @@ static AJI_ERROR select_tap(void)
         LOG_ERROR("Ran out of memory for jtagservice's hier_id_open_id_list");
         return AJI_NO_MEMORY;
     }
-    if (NULL == jtagservice.hier_id_device_type_list) {
-        LOG_ERROR("Ran out of memory for jtagservice's hier_id_device_type_list");
+    if (NULL == jtagservice.hier_id_type_list) {
+        LOG_ERROR("Ran out of memory for jtagservice's hier_id_type_list");
         return AJI_NO_MEMORY;
     }
 
@@ -684,7 +684,7 @@ static AJI_ERROR select_tap(void)
 
         jtagservice.hier_id_open_id_list[tap_position] = \
             (AJI_OPEN_ID*)calloc(jtagservice.hier_id_n[tap_position], sizeof(AJI_OPEN_ID));
-        jtagservice.hier_id_device_type_list[tap_position] = \
+        jtagservice.hier_id_type_list[tap_position] = \
             (DEVICE_TYPE*)calloc(jtagservice.hier_id_n[tap_position], sizeof(DEVICE_TYPE));
         if (NULL == jtagservice.hub_infos[tap_position]) {
             LOG_ERROR("Ran out of memory for jtagservice's tap  %lu's hier_ids_claims",
@@ -704,7 +704,7 @@ static AJI_ERROR select_tap(void)
                     (unsigned long) (jtagservice.hier_ids[tap_position][n].idcode),
                     (unsigned long) (jtagservice.hier_ids[tap_position][n].position_n)
                     );
-                jtagservice.hier_id_device_type_list[tap_position][n] = VJTAG; //@TODO Might have to ... 
+                jtagservice.hier_id_type_list[tap_position][n] = VJTAG; //@TODO Might have to ... 
                                      //... replace with  node specific claims
             } //end for(n in jtagservice.hier_id_n[tap_position])
         } //end if (jtagservice.hier_id_n[tap_position])
@@ -753,7 +753,7 @@ static AJI_ERROR select_tap(void)
     // If you don't, then anytime after  c_aji_test_logic_reset() call, 
     //  you can get fatal error
     //  "*** glibc detected *** src/openocd: double free or corruption (fasttop): 0x00000000027bc7a0 ***"        
-    status = c_aji_open_device(
+    status = c_aji_open_device_a(
         hw.chain_id,
         arm_riscv_index,
         &(jtagservice.device_open_id_list[arm_riscv_index]),
@@ -771,7 +771,7 @@ static AJI_ERROR select_tap(void)
         LOG_WARNING("Cannot unlock JTAG Chain ");
     }
 
-    jtagservice_activate_tap(&jtagservice, 0,  arm_riscv_index);
+    jtagservice_activate_jtag_tap(&jtagservice, 0,  arm_riscv_index);
 LOG_DEBUG("***> END %s(%d): %s in_use_device_tap_position=%lu is_sld=%s in_use_hier_id_node_position=%lu \n", __FILE__, __LINE__, __FUNCTION__, (unsigned long) jtagservice.in_use_device_tap_position, jtagservice.is_sld? "Yes" : "No", (unsigned long) jtagservice.in_use_hier_id_node_position);
     return status;
 }
@@ -991,7 +991,8 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
 
 /*
 //Test activate virtual tap here
-status = jtagservice_activate_virtual_tap(&jtagservice, 0, 0, 1);
+//NOTE: Only works for default SOF of arria10
+status = jtagservice_activate_virtual_tap(&jtagservice, 0, 0, 0);
 if (AJI_NO_ERROR != status) {
     LOG_ERROR("Cannot activate virtual tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
         active->dotted_name, (unsigned long)active->expected_ids[0],
@@ -999,9 +1000,9 @@ if (AJI_NO_ERROR != status) {
     );
 assert(0); //deliberately assert() to be able to see where the error is, if it occurs
     return ERROR_FAIL;
-}  */ 
+}  
 //NOTE: Only works for arria10
-    status = jtagservice_activate_tap(&jtagservice, 0, 1);
+    status = jtagservice_activate_jtag_tap(&jtagservice, 0, 1);
     if (AJI_NO_ERROR != status) {
         LOG_ERROR("Cannot reactivate physical tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
             active->dotted_name, (unsigned long)active->expected_ids[0],
@@ -1010,7 +1011,7 @@ assert(0); //deliberately assert() to be able to see where the error is, if it o
 assert(0); //deliberately assert() to be able to see where the error is, if it occurs
         return ERROR_FAIL;
     }
-
+*/
 
 	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
 

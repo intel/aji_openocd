@@ -29,7 +29,7 @@
 typedef struct CLAIM_RECORD CLAIM_RECORD;
 struct CLAIM_RECORD {
     DWORD claims_n;    ///! number of claims
-    AJI_CLAIM* claims; ///! IR claims
+    AJI_CLAIM2* claims; ///! IR claims
 };
 
 #define DEVICE_TYPE_COUNT 4
@@ -55,6 +55,9 @@ typedef struct jtagservice_record jtagservice_record;
 struct jtagservice_record {
     char *appIdentifier;
 
+    DWORD claims_count;
+    CLAIM_RECORD *claims; ///! List of AJI_CLAIM2, by DEVICE_TYPE
+
     //data members
     //() Cable
     /* Not sure AJI_HARDWARE can survive function boundarie
@@ -77,8 +80,6 @@ struct jtagservice_record {
     AJI_OPEN_ID *device_open_id_list;
     DEVICE_TYPE *device_type_list;
     
-    DWORD claims_count;
-    CLAIM_RECORD *claims; ///! List of AJI_CLAIM, by DEVICE_TYPE
 
     //SLD / Virtual JTAG
     DWORD* hier_id_n; //< How many SLD node per TAP device.
@@ -98,7 +99,7 @@ struct jtagservice_record {
                             //< [0, device_count), in the same  
                             //< order as device_list,
                             //< and SLD = [0, hier_id_n[TAP])
-    DEVICE_TYPE** hier_id_device_type_list; //< 
+    DEVICE_TYPE** hier_id_type_list; //< 
                         //< hier_ids_device_type[TAP][SLD] 
                         //< where TAP = [0, device_count),   
                         //< in the same order as device_list,
@@ -130,7 +131,7 @@ AJI_ERROR jtagservice_free_common(jtagservice_record* me, const DWORD timeout);
 AJI_ERROR jtagservice_free_cable(jtagservice_record* me, const DWORD timeout);
 AJI_ERROR jtagservice_free_tap(jtagservice_record* me, const DWORD timeout);
 
-AJI_ERROR jtagservice_activate_tap(jtagservice_record* me, const DWORD hardware_index, const DWORD tap_index);
+AJI_ERROR jtagservice_activate_jtag_tap(jtagservice_record* me, const DWORD hardware_index, const DWORD tap_index);
 AJI_ERROR jtagservice_activate_virtual_tap(jtagservice_record* me, const DWORD hardware_index, DWORD const tap_index, const DWORD node_index);
 
 int jtagservice_query_main(void);
