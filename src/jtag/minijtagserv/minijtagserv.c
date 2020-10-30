@@ -987,27 +987,31 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
         }
     }
 
+    AJI_ERROR  status = AJI_NO_ERROR;
+
 /*
-Test activate virtual tap here
+//Test activate virtual tap here
 status = jtagservice_activate_virtual_tap(&jtagservice, 0, 0, 1);
 if (AJI_NO_ERROR != status) {
     LOG_ERROR("Cannot activate virtual tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
-        vtap->dotted_name, (unsigned long)vtap->expected_ids[0],
+        active->dotted_name, (unsigned long)active->expected_ids[0],
         status, c_aji_error_decode(status)
     );
-    return false;
-}
-status = jtagservice_activate_tap(&jtagservice, 0, 1);
-if (AJI_NO_ERROR != status) {
-    LOG_ERROR("Cannot reactivate physical tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
-        vtap->dotted_name, (unsigned long)vtap->expected_ids[0],
-        status, c_aji_error_decode(status)
-    );
-    return false;
-}
-*/
+assert(0); //deliberately assert() to be able to see where the error is, if it occurs
+    return ERROR_FAIL;
+}  */ 
+//NOTE: Only works for arria10
+    status = jtagservice_activate_tap(&jtagservice, 0, 1);
+    if (AJI_NO_ERROR != status) {
+        LOG_ERROR("Cannot reactivate physical tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
+            active->dotted_name, (unsigned long)active->expected_ids[0],
+            status, c_aji_error_decode(status)
+        );
+assert(0); //deliberately assert() to be able to see where the error is, if it occurs
+        return ERROR_FAIL;
+    }
 
-    AJI_ERROR  status = AJI_NO_ERROR;
+
 	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
 
 	status = c_aji_lock(open_id, JTAGSERVICE_TIMEOUT_MS, AJI_PACK_NEVER);
@@ -1022,7 +1026,7 @@ if (AJI_NO_ERROR != status) {
         LOG_ERROR("Failure to lock before accessing IR register. Return Status is %d (%s)\n", 
             status, c_aji_error_decode(status)
         );
-assert(0);
+assert(0); //deliberately assert() to be able to see where the error is, if it occurs
         return ERROR_FAIL;
     }
   
@@ -1055,7 +1059,7 @@ assert(0);
             status, c_aji_error_decode(status)
         );
 	    c_aji_unlock(open_id);
-assert(0);   
+assert(0);   //deliberately assert() to be able to see where the error is, if it occurs
         return ERROR_FAIL;
     }
     /*
@@ -1085,7 +1089,7 @@ assert(0);
         
     if(TAP_IDLE != state) {
         LOG_WARNING("IR SCAN not yet handle transition to state other than TAP_IDLE(%d). Requested state is %s(%d)", TAP_IDLE, tap_state_name(state), state);
-assert(0);
+assert(0); //deliberately assert() to be able to see where the error is, if it occurs
     }
     
     status = c_aji_run_test_idle(open_id, 2);
@@ -1233,7 +1237,7 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
         );
         free(read_bits);
         free(write_bits);
-assert(0);
+assert(0); //deliberately assert() to be able to see where the error is, if it occurs
         return ERROR_FAIL;
     }
 
@@ -1295,7 +1299,7 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
         LOG_WARNING("DR SCAN not yet handle transition to state other than TAP_IDLE(%d). Requested state is %s(%d)", 
             TAP_IDLE, tap_state_name(state), state
         );
-assert(0);
+assert(0); //deliberately assert() to be able to see where the error is, if it occurs
     }
     
     status = c_aji_run_test_idle(open_id, 2);
