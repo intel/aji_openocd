@@ -270,7 +270,7 @@ AJI_ERROR jtagservice_activate_jtag_tap (
         }
     } //end if (!me->device_open_id_list[tap_index]) 
     
-    status = jtagservice_update_active_tap_record(me, (unsigned long) tap_index, false, -1);
+    status = jtagservice_update_active_tap_record(me, (unsigned long) tap_index, false, 0);
     return status;
 }
 
@@ -309,7 +309,7 @@ LOG_DEBUG("Getting OPEN ID for SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%08lX"
              );
              return status;
         }
-        status = aji_open_node_b(
+        status = c_aji_open_node_b(
                     me->in_use_hardware_chain_id, 
                     tap_index, 
                     &(me->hier_ids[tap_index][node_index]), 
@@ -413,7 +413,7 @@ AJI_ERROR jtagservice_init_common(jtagservice_record* me, DWORD timeout) {
 
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
-    sprintf(me->appIdentifier, "OpenOCD.%4d%2d%2d%2d%2d%2d",
+    sprintf(me->appIdentifier, "OpenOCD.%4d%02d%02d%02d%02d%02d",
         tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
         tm.tm_hour, tm.tm_min, tm.tm_sec
     );

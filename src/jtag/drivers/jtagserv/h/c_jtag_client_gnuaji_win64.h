@@ -27,13 +27,17 @@ AJI_ERROR c_aji_get_hardware2(DWORD* hardware_count, AJI_HARDWARE* hardware_list
 AJI_ERROR c_aji_find_hardware(DWORD persistent_id, AJI_HARDWARE* hardware, DWORD timeout);
 AJI_ERROR c_aji_find_hardware_a(const char* hw_name, AJI_HARDWARE* hardware, DWORD timeout);
 AJI_ERROR c_aji_read_device_chain(AJI_CHAIN_ID chain_id, DWORD* device_count, AJI_DEVICE* device_list, _Bool auto_scan);
+AJI_ERROR c_aji_get_nodes(AJI_CHAIN_ID chain_id, DWORD tap_position, DWORD* idcodes, DWORD* idcode_n);
+AJI_ERROR c_aji_get_nodes_a(AJI_CHAIN_ID chain_id, DWORD tap_position, DWORD* idcodes, DWORD* idcode_n, DWORD* hub_info);
+AJI_ERROR c_aji_get_nodes_b(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_HIER_ID* hier_ids, DWORD* hier_id_n, AJI_HUB_INFO* hub_infos);
 AJI_ERROR c_aji_open_device(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_OPEN_ID* open_id, const AJI_CLAIM* claims, DWORD claim_n, const char* application_name);
 AJI_ERROR c_aji_open_device_a(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_OPEN_ID* open_id, const AJI_CLAIM2* claims, DWORD claim_n, const char* application_name);
 AJI_ERROR c_aji_close_device(AJI_OPEN_ID open_id);
 AJI_ERROR c_aji_open_entire_device_chain(AJI_CHAIN_ID chain_id, AJI_OPEN_ID* open_id, AJI_CHAIN_TYPE style, const char* application_name);
-AJI_ERROR c_aji_get_nodes(AJI_CHAIN_ID chain_id, DWORD tap_position, DWORD* idcodes, DWORD* idcode_n);
-AJI_ERROR c_aji_get_nodes_a(AJI_CHAIN_ID chain_id, DWORD tap_position, DWORD* idcodes, DWORD* idcode_n, DWORD* hub_info);
-AJI_ERROR c_aji_get_nodes_b(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_HIER_ID* hier_ids, DWORD* hier_id_n, AJI_HUB_INFO* hub_infos);
+AJI_ERROR c_aji_open_node(AJI_CHAIN_ID chain_id, DWORD tap_position, DWORD idcode, AJI_OPEN_ID* node_id, const AJI_CLAIM* claims, DWORD claim_n, const char* application_name);
+AJI_ERROR c_aji_open_node_a(AJI_CHAIN_ID chain_id, DWORD tap_position, DWORD node_position, DWORD idcode, AJI_OPEN_ID* node_id, const AJI_CLAIM* claims, DWORD claim_n, const char* application_name);
+AJI_ERROR c_aji_open_node_b(AJI_CHAIN_ID chain_id, DWORD tap_position, const AJI_HIER_ID* hier_id, AJI_OPEN_ID* node_id, const AJI_CLAIM2* claims, DWORD claim_n, const char* application_name);
+
 
 AJI_ERROR c_aji_lock(AJI_OPEN_ID open_id, DWORD timeout, AJI_PACK_STYLE pack_style);
 AJI_ERROR c_aji_unlock_lock_chain(AJI_OPEN_ID unlock_id, AJI_CHAIN_ID lock_id);

@@ -596,7 +596,8 @@ static AJI_ERROR select_tap(void)
 
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failed to query server for TAP information. "
-                  " Return Status is %i\n", status
+                  " Return Status is %i (%s)\n", 
+                  status, c_aji_error_decode(status)
         );
         c_aji_unlock_chain(hw.chain_id);
         return status;
@@ -746,6 +747,7 @@ static AJI_ERROR select_tap(void)
     }
 
 
+    
     CLAIM_RECORD claims =
         jtagservice.claims[jtagservice.device_type_list[arm_riscv_index]];
 
@@ -770,7 +772,7 @@ static AJI_ERROR select_tap(void)
     if (AJI_NO_ERROR != status) {
         LOG_WARNING("Cannot unlock JTAG Chain ");
     }
-
+    
     jtagservice_activate_jtag_tap(&jtagservice, 0,  arm_riscv_index);
 LOG_DEBUG("***> END %s(%d): %s in_use_device_tap_position=%lu is_sld=%s in_use_hier_id_node_position=%lu \n", __FILE__, __LINE__, __FUNCTION__, (unsigned long) jtagservice.in_use_device_tap_position, jtagservice.is_sld? "Yes" : "No", (unsigned long) jtagservice.in_use_hier_id_node_position);
     return status;
@@ -975,7 +977,7 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
     DWORD arm_or_ricsv_index = jtagservice.in_use_device_tap_position;
 
     if (jtag_tap_on_all_vtaps_list(active)) {
-        uint32_t tap_index=0;
+        DWORD tap_index=0;
         jtagservice_device_index_by_idcode(
             ((struct vjtag_tap*)active)->parent->idcode,
             jtagservice.device_list,   
@@ -983,7 +985,7 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
             &tap_index
         ); //Not checking return status because it should pass
 
-        uint32_t sld_index=0;
+        DWORD sld_index=0;
         jtagservice_hier_id_index_by_idcode(
             active->idcode,
             jtagservice.hier_ids[tap_index],
