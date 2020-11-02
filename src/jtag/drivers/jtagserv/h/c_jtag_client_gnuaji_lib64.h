@@ -151,7 +151,7 @@ AJI_ERROR _Z13aji_open_nodeP9AJI_CHAINjjPP8AJI_OPENPK9AJI_CLAIMjPKc (
                                                DWORD                claim_n,
                                                const char         * application_name);
                                                inline
-AJI_ERROR AJI_API aji_open_node               (AJI_CHAIN_ID         chain_id,
+AJI_ERROR AJI_API c_aji_open_node             (AJI_CHAIN_ID         chain_id,
                                                DWORD                tap_position,
                                                DWORD                idcode,
                                                AJI_OPEN_ID        * node_id,
@@ -176,7 +176,7 @@ AJI_ERROR _Z13aji_open_nodeP9AJI_CHAINjjjPP8AJI_OPENPK9AJI_CLAIMjPKc (
                                                DWORD                claim_n,
                                                const char         * application_name);
 inline
-AJI_ERROR AJI_API aji_open_node_a             (AJI_CHAIN_ID         chain_id,
+AJI_ERROR AJI_API c_aji_open_node_a           (AJI_CHAIN_ID         chain_id,
                                                DWORD                tap_position,
                                                DWORD                node_position,
                                                DWORD                idcode,
@@ -201,7 +201,7 @@ AJI_ERROR _Z13aji_open_nodeP9AJI_CHAINjPK11AJI_HIER_IDPP8AJI_OPENPK10AJI_CLAIM2j
                                                DWORD                claim_n,
                                                const char         * application_name);
 inline
-AJI_ERROR AJI_API aji_open_node_b             (AJI_CHAIN_ID         chain_id,
+AJI_ERROR AJI_API c_aji_open_node_b           (AJI_CHAIN_ID         chain_id,
                                                DWORD                tap_position,
                                                const AJI_HIER_ID  * hier_id,
                                                AJI_OPEN_ID        * node_id,
