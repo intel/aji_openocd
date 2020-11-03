@@ -79,14 +79,22 @@ AJI_ERROR jtagservice_print_hardware_name(
 AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * records_n) {
     if (UNKNOWN < *records_n) {
         DWORD csize = 0;
+#if PORT == WINDOWS
+        AJI_CLAIM* claims = calloc(csize, sizeof(AJI_CLAIM)); //It's empty, NULL perhaps?
+#else
         AJI_CLAIM2 *claims = calloc(csize, sizeof(AJI_CLAIM2)); //It's empty, NULL perhaps?
+#endif
         if (claims == NULL) {
             return AJI_NO_MEMORY;
         }
     }
     if (ARM < *records_n) {
         DWORD csize = 4;
-        AJI_CLAIM2 *claims = calloc(csize, sizeof(AJI_CLAIM2));
+#if PORT == WINDOWS
+        AJI_CLAIM* claims = calloc(csize, sizeof(AJI_CLAIM));
+#else
+        AJI_CLAIM2* claims = calloc(csize, sizeof(AJI_CLAIM2));
+#endif
         if (claims == NULL) {
             return AJI_NO_MEMORY;
         }
@@ -106,7 +114,11 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
 
     if (RISCV < *records_n) {
         DWORD csize = 3;
-        AJI_CLAIM2* claims = calloc(csize, sizeof(AJI_CLAIM2));
+#if PORT == WINDOWS
+        AJI_CLAIM* claims = calloc(csize, sizeof(AJI_CLAIM)); //It's empty, NULL perhaps?
+#else
+        AJI_CLAIM2* claims = calloc(csize, sizeof(AJI_CLAIM2)); //It's empty, NULL perhaps?
+#endif
         if (claims == NULL) {
             return AJI_NO_MEMORY;
         }
@@ -124,7 +136,11 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
 
     if (VJTAG < *records_n) {
         DWORD csize = 4;
-        AJI_CLAIM2* claims = calloc(csize, sizeof(AJI_CLAIM2));
+#if PORT == WINDOWS
+        AJI_CLAIM* claims = calloc(csize, sizeof(AJI_CLAIM)); //It's empty, NULL perhaps?
+#else
+        AJI_CLAIM2* claims = calloc(csize, sizeof(AJI_CLAIM2)); //It's empty, NULL perhaps?
+#endif
         if (claims == NULL) {
             return AJI_NO_MEMORY;
         }
@@ -244,6 +260,16 @@ AJI_ERROR jtagservice_activate_jtag_tap (
              );
              return status;
         }
+#if PORT == WINDOWS
+        status = c_aji_open_device(
+            me->in_use_hardware_chain_id,
+            tap_index,
+            &(me->device_open_id_list[tap_index]),
+            (const AJI_CLAIM*)(me->claims[me->device_type_list[tap_index]].claims),
+            me->claims[me->device_type_list[tap_index]].claims_n,
+            me->appIdentifier
+        );
+#else
         status = c_aji_open_device_a(
             me->in_use_hardware_chain_id,
             tap_index,
@@ -252,6 +278,7 @@ AJI_ERROR jtagservice_activate_jtag_tap (
             me->claims[me->device_type_list[tap_index]].claims_n, 
             me->appIdentifier
         );
+#endif
         if(AJI_NO_ERROR !=  status ) { 
              LOG_ERROR("Problem openning tap %lu (0x%08lX). Returned %d (%s)\n", 
                   (unsigned long) tap_index, 
@@ -309,6 +336,19 @@ LOG_DEBUG("Getting OPEN ID for SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%08lX"
              );
              return status;
         }
+
+#if PORT == WINDOWS
+        status =  c_aji_open_node_a(
+                    me->in_use_hardware_chain_id,
+                    tap_index, 
+                    node_index,
+                    me->hier_ids[tap_index][node_index].idcode, 
+                    &(me->hier_id_open_id_list[tap_index][node_index]),
+                    (const AJI_CLAIM*)(me->claims[me->hier_id_type_list[tap_index][node_index]].claims),
+                    me->claims[me->hier_id_type_list[tap_index][node_index]].claims_n,
+                    me->appIdentifier
+        );
+#else
         status = c_aji_open_node_b(
                     me->in_use_hardware_chain_id, 
                     tap_index, 
@@ -318,6 +358,7 @@ LOG_DEBUG("Getting OPEN ID for SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%08lX"
                     me->claims[me->hier_id_type_list[tap_index][node_index]].claims_n, 
                     me->appIdentifier
         );
+#endif
         if(AJI_NO_ERROR !=  status ) { 
              LOG_ERROR("Problem openning node %lu (0x%08lX) for tap position %lu. Returned %d (%s)\n", 
                   (unsigned long) node_index, 
@@ -641,20 +682,26 @@ int jtagservice_query_main(void) {
 
                 int claim_size = 2; 
                 
-                /* AJI_CLAIM claims[] = {
+#if PORT == WINDOWS
+                AJI_CLAIM claims[] = {
                       { AJI_CLAIM_IR_SHARED, device.device_id == 0x4BA00477 ? 0b1110 : 0b0000000110 },
                       { AJI_CLAIM_IR_SHARED, device.device_id == 0x4BA00477 ? 0b1111 : 0b1111111111 }, //NO NEED for BYPASS instruction actually
-                }; */
+                };
+#else
                 AJI_CLAIM2 claims[] = { 
                       { AJI_CLAIM_IR_SHARED, 0, device.device_id == 0x4BA00477 ? 0b1110 : 0b0000000110 },
                       { AJI_CLAIM_IR_SHARED, 0, device.device_id == 0x4BA00477 ? 0b1111 : 0b1111111111 }, //NO NEED for BYPASS instruction actually
                 }; 
-
+#endif
                 char appname[] = "MyApp";
                 printf("            (C1-1) Open Device %lX ...\n", (unsigned long) device.device_id); fflush(stdout);
                 AJI_OPEN_ID open_id = NULL;   
                     
+#if PORT == WINDOWS
+                status = c_aji_open_device(chain_id, tap_position, &open_id, claims, claim_size, appname);
+#else
                 status = c_aji_open_device_a(chain_id, tap_position, &open_id, claims, claim_size, appname);
+#endif
                 if(AJI_NO_ERROR  != status) {
                     printf("            Cannot open device. Returned %d (%s). This is not an error if the device is not SOCVHPS or FPGA Tap\n", status, c_aji_error_decode(status));
                     continue;

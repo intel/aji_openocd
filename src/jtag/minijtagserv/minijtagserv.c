@@ -754,14 +754,22 @@ static AJI_ERROR select_tap(void)
     // Only allowed to open one device at a time.
     // If you don't, then anytime after  c_aji_test_logic_reset() call, 
     //  you can get fatal error
-    //  "*** glibc detected *** src/openocd: double free or corruption (fasttop): 0x00000000027bc7a0 ***"        
+    //  "*** glibc detected *** src/openocd: double free or corruption (fasttop): 0x00000000027bc7a0 ***"
+#if PORT == WINDOWS
+    status = c_aji_open_device(
+        hw.chain_id,
+        arm_riscv_index,
+        &(jtagservice.device_open_id_list[arm_riscv_index]),
+        claims.claims, claims.claims_n, jtagservice.appIdentifier
+    );
+#else
     status = c_aji_open_device_a(
         hw.chain_id,
         arm_riscv_index,
         &(jtagservice.device_open_id_list[arm_riscv_index]),
         claims.claims, claims.claims_n, jtagservice.appIdentifier
     );
-    
+#endif
     if(AJI_NO_ERROR != status) {
             LOG_ERROR("Cannot open device number %lu (IDCODE=%lX)",
                       (unsigned long) arm_riscv_index,
