@@ -247,6 +247,18 @@ AJI_ERROR c_aji_unlock_chain_lock(AJI_CHAIN_ID unlock_id, AJI_OPEN_ID lock_id, A
     return (pfn)(unlock_id, lock_id, pack_style);
 }
 
+#define FNAME_AJI_FLUSH "?aji_flush@@YA?AW4AJI_ERROR@@PEAVAJI_OPEN@@@Z"
+AJI_API AJI_ERROR c_aji_flush(AJI_OPEN_ID open_id) {
+    assert(c_jtag_client_lib != NULL);
+    typedef AJI_ERROR(*ProdFn)(AJI_OPEN_ID);
+    ProdFn pfn = (ProdFn)(void*)GetProcAddress(c_jtag_client_lib, FNAME_AJI_FLUSH);
+    if (pfn == NULL) {
+        //        LOG_ERROR("Cannot find function '%s'", __FUNCTION__);
+        return AJI_FAILURE;
+    }
+    return (pfn)(open_id);
+}
+
 #define FNAME_AJI_OPEN_DEVICE "?aji_open_device@@YA?AW4AJI_ERROR@@PEAVAJI_CHAIN@@KPEAPEAVAJI_OPEN@@PEBUAJI_CLAIM@@KPEBD@Z"
 AJI_ERROR c_aji_open_device(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_OPEN_ID * open_id, const AJI_CLAIM * claims, DWORD claim_n, const char * application_name){
     assert(c_jtag_client_lib != NULL);
@@ -459,14 +471,14 @@ AJI_ERROR c_aji_access_dr_a(AJI_OPEN_ID open_id, DWORD length_dr, DWORD flags, D
 }
 
 
-#define FNAME_AJI_FLUSH "?aji_flush@@YA?AW4AJI_ERROR@@PEAVAJI_OPEN@@@Z"
-AJI_API AJI_ERROR c_aji_flush(AJI_OPEN_ID open_id) {
-    assert(c_jtag_client_lib != NULL);
-    typedef AJI_ERROR(*ProdFn)(AJI_OPEN_ID);
-    ProdFn pfn = (ProdFn)(void*)GetProcAddress(c_jtag_client_lib, FNAME_AJI_FLUSH);
+#define FNAME_AJI_ACCESS_OVERLAY "?aji_access_overlay@@YA?AW4AJI_ERROR@@PEAVAJI_OPEN@@KPEAK@Z"
+AJI_API AJI_ERROR c_aji_access_overlay(AJI_OPEN_ID node_id, DWORD overlay, DWORD* captured_overlay){
+assert(c_jtag_client_lib != NULL);
+    typedef AJI_ERROR(*ProdFn)(AJI_OPEN_ID, DWORD, DWORD*);
+    ProdFn pfn = (ProdFn)(void*)GetProcAddress(c_jtag_client_lib, FNAME_AJI_ACCESS_OVERLAY);
     if (pfn == NULL) {
         //        LOG_ERROR("Cannot find function '%s'", __FUNCTION__);
         return AJI_FAILURE;
     }
-    return (pfn)(open_id);
+    return (pfn)(node_id, overlay, captured_overlay);
 }

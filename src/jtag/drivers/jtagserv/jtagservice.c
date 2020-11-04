@@ -150,7 +150,7 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
         claims[1].type = AJI_CLAIM_IR_SHARED_OVERLAID;
         claims[1].value = IR_VJTAG_USER0;
         claims[2].type = AJI_CLAIM_OVERLAY_SHARED;
-        claims[2].value = 0b0000000001;
+        claims[2].value = 0b0001000000;
         claims[3].type = AJI_CLAIM_OVERLAY_SHARED;
         claims[3].value = 0b0000100000;
 
@@ -381,6 +381,16 @@ LOG_DEBUG("Getting OPEN ID for SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%08lX"
     if (AJI_NO_ERROR != status) { 
         return status;
     }
+
+DWORD captured = 0;
+AJI_ERROR status1 = AJI_NO_ERROR;
+status1 = c_aji_lock(me->device_open_id_list[tap_index], JTAGSERVICE_TIMEOUT_MS, AJI_PACK_NEVER);
+if (AJI_NO_ERROR != status) {
+    LOG_ERROR("Cannot lock TAP for SLD access. Return status is %d (%s)", status1, c_aji_error_decode(status1));
+}
+c_aji_access_overlay(me->hier_id_open_id_list[tap_index][node_index], 0b1000000, &captured);
+LOG_INFO("*****************> status=%d (%s) captured=%lu", status1, c_aji_error_decode(status1), (unsigned long)captured);
+c_aji_unlock(me->device_open_id_list[tap_index]);
 
     status = jtagservice_update_active_tap_record(me, (unsigned long) tap_index, true, node_index);
     return status;

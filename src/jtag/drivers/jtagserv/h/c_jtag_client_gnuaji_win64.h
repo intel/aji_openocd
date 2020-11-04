@@ -51,11 +51,11 @@ AJI_ERROR c_aji_test_logic_reset(AJI_OPEN_ID open_id);
 AJI_ERROR c_aji_delay(AJI_OPEN_ID open_id, DWORD timeout_microseconds);
 AJI_ERROR c_aji_run_test_idle(AJI_OPEN_ID open_id, DWORD num_clocks);
 AJI_ERROR c_aji_run_test_idle_a(AJI_OPEN_ID open_id, DWORD num_clocks, DWORD flags);
-AJI_ERROR c_aji_access_ir(AJI_OPEN_ID open_id, DWORD instruction, DWORD* captured_ir, DWORD flags);
 
+AJI_ERROR c_aji_access_ir(AJI_OPEN_ID open_id, DWORD instruction, DWORD* captured_ir, DWORD flags);
 AJI_ERROR c_aji_access_ir_a(AJI_OPEN_ID open_id, DWORD length_ir, const BYTE* write_bits, BYTE* read_bits, DWORD flags);
 AJI_ERROR c_aji_access_ir_multiple(DWORD num_devices, const AJI_OPEN_ID* open_id, const DWORD* instructions, DWORD* captured_irs);
 AJI_ERROR c_aji_access_dr(AJI_OPEN_ID open_id, DWORD length_dr, DWORD flags, DWORD write_offset, DWORD write_length, const BYTE* write_bits, DWORD read_offset, DWORD read_length, BYTE* read_bits);
 AJI_ERROR c_aji_access_dr_a(AJI_OPEN_ID open_id, DWORD length_dr, DWORD flags, DWORD write_offset, DWORD write_length, const BYTE* write_bits, DWORD read_offset, DWORD read_length, BYTE* read_bits, DWORD batch);
-
+AJI_ERROR c_aji_access_overlay(AJI_OPEN_ID node_id, DWORD overlay,  DWORD* captured_overlay);
 #endif

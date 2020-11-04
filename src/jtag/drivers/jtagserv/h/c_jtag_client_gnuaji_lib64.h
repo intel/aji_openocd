@@ -113,6 +113,12 @@ AJI_API AJI_ERROR c_aji_unlock_chain_lock(AJI_CHAIN_ID unlock_id, AJI_OPEN_ID lo
     return _Z21aji_unlock_chain_lockP9AJI_CHAINP8AJI_OPEN14AJI_PACK_STYLE(unlock_id, lock_id, pack_style);
 }
 
+extern AJI_API AJI_ERROR _Z9aji_flushP8AJI_OPEN(AJI_OPEN_ID open_id);
+inline
+AJI_API AJI_ERROR c_aji_flush(AJI_OPEN_ID open_id) {
+    return _Z9aji_flushP8AJI_OPEN(open_id);
+}
+
 extern
 AJI_API AJI_ERROR _Z15aji_open_deviceP9AJI_CHAINjPP8AJI_OPENPK9AJI_CLAIMjPKc(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_OPEN_ID * open_id, const AJI_CLAIM * claims, DWORD claim_n, const char * application_name);
 inline
@@ -277,9 +283,9 @@ AJI_API AJI_ERROR c_aji_access_dr_a(AJI_OPEN_ID open_id, DWORD length_dr, DWORD 
     return _Z13aji_access_drP8AJI_OPENjjjjPKhjjPhj(open_id, length_dr, flags, write_offset, write_length, write_bits, read_offset, read_length, read_bits, batch);
 }
 
-extern AJI_API AJI_ERROR _Z9aji_flushP8AJI_OPEN(AJI_OPEN_ID open_id);
+extern AJI_API AJI_ERROR _Z18aji_access_overlayP8AJI_OPENjPj(AJI_OPEN_ID node_id, DWORD overlay, DWORD* captured_overlay);
 inline
-AJI_API AJI_ERROR c_aji_flush(AJI_OPEN_ID open_id) {
-    return _Z9aji_flushP8AJI_OPEN(open_id);
+AJI_ERROR AJI_API c_aji_access_overlay(AJI_OPEN_ID node_id, DWORD overlay, DWORD* captured_overlay){
+    return _Z18aji_access_overlayP8AJI_OPENjPj(open_id, overlay, captured_overlay);
 }
 #endif
