@@ -381,16 +381,99 @@ LOG_DEBUG("Getting OPEN ID for SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%08lX"
     if (AJI_NO_ERROR != status) { 
         return status;
     }
-
-DWORD captured = 0;
 AJI_ERROR status1 = AJI_NO_ERROR;
-status1 = c_aji_lock(me->device_open_id_list[tap_index], JTAGSERVICE_TIMEOUT_MS, AJI_PACK_NEVER);
+DWORD captured = 0;
+status1 = c_aji_lock(me->hier_id_open_id_list[tap_index][node_index], JTAGSERVICE_TIMEOUT_MS, AJI_PACK_NEVER);
 if (AJI_NO_ERROR != status) {
     LOG_ERROR("Cannot lock TAP for SLD access. Return status is %d (%s)", status1, c_aji_error_decode(status1));
 }
-c_aji_access_overlay(me->hier_id_open_id_list[tap_index][node_index], 0b1000000, &captured);
-LOG_INFO("*****************> status=%d (%s) captured=%lu", status1, c_aji_error_decode(status1), (unsigned long)captured);
-c_aji_unlock(me->device_open_id_list[tap_index]);
+captured = 0;
+status1 = c_aji_access_overlay(me->hier_id_open_id_list[tap_index][node_index], 0b1000000, &captured);
+LOG_INFO("***************************>STATUS IR open_id=%p status=%d (%s) captured=%lu", 
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0,0,NULL, 0,32, (BYTE*)&captured);
+LOG_INFO("***************************>STATUS DR open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+
+captured = 0;
+status1 = c_aji_access_overlay(me->hier_id_open_id_list[tap_index][node_index], 0b100000, &captured);
+LOG_INFO("*****************>CRC IR open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0,32, (BYTE*) &captured);
+LOG_INFO("*****************>CRC DR  0 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR  1 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR  2 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR  3 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR  4 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR  5 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR  6 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR  7 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR 00 open_id=%p status=%d (%s) captured=%lu -expects 0",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured); 
+/* output repeats*/
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR 10 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR 11 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR 12 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR 13 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR 14 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR 15 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR 16 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+captured = 0;
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR 17 open_id=%p status=%d (%s) captured=%lu",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
+LOG_INFO("*****************>CRC DR 00 open_id=%p status=%d (%s) captured=%lu -expects 0",
+    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
+
+c_aji_unlock(me->hier_id_open_id_list[tap_index][node_index]);
 
     status = jtagservice_update_active_tap_record(me, (unsigned long) tap_index, true, node_index);
     return status;
