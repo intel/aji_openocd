@@ -381,6 +381,7 @@ LOG_DEBUG("Getting OPEN ID for SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%08lX"
     if (AJI_NO_ERROR != status) { 
         return status;
     }
+/*
 AJI_ERROR status1 = AJI_NO_ERROR;
 DWORD captured = 0;
 status1 = c_aji_lock(me->hier_id_open_id_list[tap_index][node_index], JTAGSERVICE_TIMEOUT_MS, AJI_PACK_NEVER);
@@ -436,7 +437,7 @@ captured = 0;
 status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
 LOG_INFO("*****************>CRC DR 00 open_id=%p status=%d (%s) captured=%lu -expects 0",
     me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured); 
-/* output repeats*/
+/* output repeats 
 captured = 0;
 status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
 LOG_INFO("*****************>CRC DR 10 open_id=%p status=%d (%s) captured=%lu",
@@ -474,7 +475,7 @@ LOG_INFO("*****************>CRC DR 00 open_id=%p status=%d (%s) captured=%lu -ex
     me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
 
 c_aji_unlock(me->hier_id_open_id_list[tap_index][node_index]);
-
+*/
     status = jtagservice_update_active_tap_record(me, (unsigned long) tap_index, true, node_index);
     return status;
 }
