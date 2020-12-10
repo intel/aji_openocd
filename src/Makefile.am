@@ -33,7 +33,7 @@ else
 endif
 
 if MINIJTAGSERV
-%C%_openocd_LDADD += -ljtag_client -lccl_ver
+%C%_openocd_LDADD += -ljtag_client
 if IS_WIN32
 %C%_openocd_LDADD += -lssp
 %C%_openocd_LDFLAGS +=  -L%D%/jtag/minijtagserv/win64
@@ -46,7 +46,7 @@ endif
 
 if JTAGSERV_DRIVER
 %C%_openocd_LDFLAGS += -L%D%/jtag/drivers/jtagserv/lib64
-%C%_openocd_LDADD += -ljtag_client -lccl_ver -lSafeString
+%C%_openocd_LDADD += -ljtag_client -lSafeString
 endif
 
 %C%_libopenocd_la_CPPFLAGS =
