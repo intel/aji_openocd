@@ -40,7 +40,29 @@ extern void jtag_tap_add(struct jtag_tap *t);
 #define IDCODE_SOCVHPS (0x4BA00477)
 #define IDCODE_FE310_G002 (0x20000913)
 
-//=================================
+
+/** 
+ * Masking Manufacturer ID bit[12:1] together with
+ *  bit[0]. The latter is always 1
+ */
+#define JTAG_IDCODE_MANUFID_W_ONE_MASK 0x00000FFF 
+/**
+ * ARM Manufacturer ID in bit[12:1] with
+ * bit[0]=1
+ */
+#define JTAG_IDCODE_MANUFID_ALTERA_W_ONE 0x0DD 
+/**
+ * ARM Manufacturer ID in bit[12:1] with 
+ * bit[0]=1
+ */
+#define JTAG_IDCODE_MANUFID_ARM_W_ONE 0x477  
+/**
+ * SiFive Manufacturer ID in bit[12:1] with
+ * bit[0]=1
+ */
+#define JTAG_IDCODE_MANUFID_SIFIVE_W_ONE 0x913 
+
+ //=================================
 // Global variables
 //=================================
 static struct jtagservice_record jtagservice;
@@ -726,13 +748,15 @@ static AJI_ERROR select_tap(void)
                     (unsigned long) device.features, 
                     device.device_name
         );
-        if (IDCODE_FE310_G002 == device.device_id) {
+        DWORD manufacturer_with_one = device.device_id & JTAG_IDCODE_MANUFID_W_ONE_MASK;
+
+        if (JTAG_IDCODE_MANUFID_SIFIVE_W_ONE == manufacturer_with_one) {
             jtagservice.device_type_list[tap_position] = RISCV; 
             arm_riscv_index = tap_position;
             found_arm_riscv = true;
             LOG_INFO("Found SiFive device at tap_position %lu", (unsigned long)arm_riscv_index);
         }
-        if( IDCODE_SOCVHPS == device.device_id ) {
+        if(JTAG_IDCODE_MANUFID_ARM_W_ONE == manufacturer_with_one) {
             jtagservice.device_type_list[tap_position] = ARM;
             arm_riscv_index = tap_position;
             found_arm_riscv = true;
