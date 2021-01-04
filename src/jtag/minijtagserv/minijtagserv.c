@@ -1019,7 +1019,9 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
         }
     }
     if (activeIndex == jtagservice.device_count) {
-        LOG_ERROR("Cannot find requested tap for IR instruction");
+        LOG_ERROR("IR - Cannot find requested tap 0x%08lX for IR instruction", 
+		  (unsigned long) active->idcode
+        );
         return ERROR_FAIL;
     }
 assert(activeIndex = arm_or_ricsv_index);  //At present, it should be the same because we cannot access other taps
@@ -1238,7 +1240,9 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
         }
     }
     if (activeIndex == jtagservice.device_count) {
-        LOG_ERROR("Cannot find requested tap for IR instruction");
+        LOG_ERROR("DR - Cannot find requested tap 0x%08lX for DR instruction", 
+		  (unsigned long) active->idcode
+        );
         return ERROR_FAIL;
     }
 assert(activeIndex = jtagservice.in_use_device_tap_position);  //At present, it should be the same because we cannot access other taps
