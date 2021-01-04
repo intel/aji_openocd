@@ -122,7 +122,7 @@ int arm11_run_instr_data_to_core_noack_inner(struct jtag_tap *tap, uint32_t opco
 
 
 //=================================
-// Bits that have to be implemented/copied for src/jtag/core.c
+// Bits that have to be implemented/copied from src/jtag/core.c
 //=================================
 
 
@@ -984,6 +984,22 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
     AJI_ERROR  status = AJI_NO_ERROR;
     DWORD arm_or_ricsv_index = jtagservice.in_use_device_tap_position;
 
+    DWORD activeIndex = 0;
+    for (struct jtag_tap *t = jtag_tap_next_enabled(NULL); 
+         t != NULL; 
+         t = jtag_tap_next_enabled(t),
+            ++activeIndex
+    ) {
+        if (t == active) {
+            break;
+        }
+    }
+    if (activeIndex == jtagservice.device_count) {
+        LOG_ERROR("Cannot find requested tap for IR instruction");
+        return ERROR_FAIL;
+    }
+assert(activeIndex = arm_or_ricsv_index);  //At present, it should be the same because we cannot access other taps
+
     if (jtag_tap_on_all_vtaps_list(active)) {
         DWORD tap_index=0;
         jtagservice_device_index_by_idcode(
@@ -1000,13 +1016,13 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
             jtagservice.hier_id_n[tap_index],
             &sld_index); //Not checking return status because it should pass
             
-        if     (jtagservice.is_sld == false
+        if(jtagservice.is_sld == false
             || jtagservice.in_use_device_tap_position != tap_index 
             || jtagservice.in_use_hier_id_node_position != sld_index
-            ) {
+        ) {
             status = jtagservice_activate_virtual_tap(&jtagservice, 0, tap_index, sld_index);
             if (AJI_NO_ERROR != status) {
-                LOG_ERROR("Cannot activate virtual tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
+                LOG_ERROR("IR - Cannot activate virtual tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
                             active->dotted_name, (unsigned long)active->expected_ids[0],
                             status, c_aji_error_decode(status)
                 );
@@ -1023,7 +1039,7 @@ assert(0); //deliberately assert() to be able to see where the error is, if it o
         status = jtagservice_activate_jtag_tap(&jtagservice, 0, arm_or_ricsv_index);
     
         if (AJI_NO_ERROR != status) {
-            LOG_ERROR("Cannot reactivate physical tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
+            LOG_ERROR("IR - Cannot reactivate physical tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
                     active->dotted_name, (unsigned long)active->expected_ids[0],
                     status, c_aji_error_decode(status)
             );
@@ -1187,11 +1203,28 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 */    
 	/* synchronously do the operation here */
 
+    DWORD activeIndex = 0;
+    for (struct jtag_tap* t = jtag_tap_next_enabled(NULL);
+        t != NULL;
+        t = jtag_tap_next_enabled(t),
+        ++activeIndex
+        ) {
+        if (t == active) {
+            break;
+        }
+    }
+    if (activeIndex == jtagservice.device_count) {
+        LOG_ERROR("Cannot find requested tap for IR instruction");
+        return ERROR_FAIL;
+    }
+assert(activeIndex = jtagservice.in_use_device_tap_position);  //At present, it should be the same because we cannot access other taps
+
     /* Right now, we can only do ARMVHPS or FE310-G002 */
     uint32_t idcode = active->idcode;
     if (jtag_tap_on_all_vtaps_list(active)) {
         idcode = ((struct vjtag_tap*)active)->parent->idcode;
     }
+    
     static bool NotYetWarned = false;
     if (NotYetWarned) {
         if (idcode == 0 || jtagservice.in_use_device_id != idcode) {
@@ -1202,6 +1235,21 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
             );
         }
     }
+
+
+    if (jtagservice.in_use_device_tap_position != activeIndex
+        ) {
+        AJI_ERROR status = jtagservice_activate_jtag_tap(&jtagservice, 0, activeIndex);
+
+        if (AJI_NO_ERROR != status) {
+            LOG_ERROR("DR - Cannot reactivate physical tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
+                active->dotted_name, (unsigned long)active->expected_ids[0],
+                status, c_aji_error_decode(status)
+            );
+            assert(0); //deliberately assert() to be able to see where the error is, if it occurs
+            return ERROR_FAIL;
+        }
+    } //end if(jtagservice.is_sld == true)        
 
     /* prepare the input/output fields for AJI */
     DWORD length_dr = 0;
