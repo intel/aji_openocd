@@ -286,6 +286,6 @@ AJI_API AJI_ERROR c_aji_access_dr_a(AJI_OPEN_ID open_id, DWORD length_dr, DWORD 
 extern AJI_API AJI_ERROR _Z18aji_access_overlayP8AJI_OPENjPj(AJI_OPEN_ID node_id, DWORD overlay, DWORD* captured_overlay);
 inline
 AJI_ERROR AJI_API c_aji_access_overlay(AJI_OPEN_ID node_id, DWORD overlay, DWORD* captured_overlay){
-    return _Z18aji_access_overlayP8AJI_OPENjPj(open_id, overlay, captured_overlay);
+    return _Z18aji_access_overlayP8AJI_OPENjPj(node_id, overlay, captured_overlay);
 }
 #endif
