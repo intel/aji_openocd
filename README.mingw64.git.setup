@@ -10,23 +10,52 @@
 
 git config --global core.autocrlf true   # on windows
 
+
+
 ## Fix Symbolic Link Issue
+## Ref: https://www.joshkel.com/2018/01/18/symlinks-in-windows/
+## SETUP YOU NEED TO DO MANUALLY
+##   Enable developer mode: Go under Settings, 
+##   under Update & Security, under For developers, 
+##   and set “Use developer features” to “Developer mode.” 
+##   This is how you enable the Windows 10 Creators Update option 
+##   of allowing users to create symlinks without UAC elevation.
+##   
+##   [As described in the page, on older windows10 and git
+##   you might have to edit Local Group Policy and Local Security
+##   policy as mentioned in the article
+##   https://github.com/git-for-windows/git/wiki/Symbolic-Links#allowing-non-administrators-to-create-symbolic-links
+##   ]
+##
+
+if [[ '' = "$(echo ${MSYS}) | grep 'winsymlinks:nativestrict'" ]]; then
+   echo "WARNING: Please set enviornment variable MSYS to 'winsymlinks:nativestrict' in your bash profile."
+   echo "Will set it for you in this session"
+   export MSYS=winsymlinks:nativestrict
+fi
+
 function fn_fix_symlink {
 
 local SOURCE="${1}" #Relative link from TARGET
 local TARGET="${2}"
 
-if [[ '' != "$(file ${TARGET} | grep 'ASCII text')" ]]; then
+if [[ ! -e ${TARGET} ]]; then
+  ln -s ${SOURCE} ${TARGET}
+elif [[ '' != "$(file ${TARGET} | grep 'ASCII text')" ]]; then
   rm -f ${TARGET}
   ln -s ${SOURCE} ${TARGET}
-elif [[ '' != "$(file ${TARGET} | grep 'directory')" ]]; then
-  file ${TARGET}
-  echo "Keep original symbolic link"
-else 
+elif [[ '' == "$(file ${TARGET} | grep 'symbolic link to '${SOURCE})" ]]; then
+  echo "ERROR: $(file ${TARGET})"
   echo "ERROR: Target ${TARGET} is not a symbolic link to ${SOURCE}, or a ASCII text file created by git."
   exit 1
 fi 
 
+if [[ '' == "$(file ${TARGET} | grep 'symbolic link to')" ]]; then
+  echo "ERROR: Target ${TARGET} is not a symbolic link to ${SOURCE} after attempting to make it so"
+  echo "       Please go to https://www.joshkel.com/2018/01/18/symlinks-in-windows/"
+  echo "       or read comment in this script  for instruction"
+  echo "       to setup your Windows10 installation to accept symbolic link"
+fi
 } ##end fn_fix_symlink
 
 
