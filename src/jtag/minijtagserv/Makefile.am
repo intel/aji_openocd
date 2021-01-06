@@ -59,8 +59,8 @@ noinst_LTLIBRARIES += %D%/libocdminijtagserv.la
 %C%_libocdminijtagserv_la_LDLIBS =
 %C%_libocdminijtagserv_la_LIBADD =
 
-include %D%/h/Makefile.am
-%C%_libocdminijtagserv_la_LIBADD += $(top_builddir)/%D%/h/libocdcaji.la
+include %D%/aji/Makefile.am
+%C%_libocdminijtagserv_la_LIBADD += $(top_builddir)/%D%/aji/libocdcaji.la
 
 
 %C%_libocdminijtagserv_la_SOURCES += $(MINIJTAGSERV_SRC)
@@ -75,15 +75,15 @@ include %D%/h/Makefile.am
     -static-libgcc 
 
 MINIJTAGSERV_SRC = \
-    %D%/h/aji.h %D%/h/c_aji.h  %D%/c2_aji.h \
-    %D%/h/jtag_client_gnuaji.h %D%/h/c_jtag_client_gnuaji.h  \
+    %D%/aji/aji.h %D%/aji/c_aji.h  %D%/c2_aji.h \
+    %D%/aji/c_jtag_client_gnuaji.h  \
     %D%/jtagservice.h %D%/jtagservice.c \
     %D%/minijtagserv.c 
 
 #if IS_WIN32
-MINIJTAGSERV_SRC += %D%/h/jtag_client_gnuaji_win64.h %D%/h/c_jtag_client_gnuaji_win64.h
+MINIJTAGSERV_SRC += %D%/aji/jtag_client_gnuaji_win64.h %D%/aji/c_jtag_client_gnuaji_win64.h
 #else
-#MINIJTAGSERV_SRC += %D%/h/jtag_client_gnuaji_lib64.h %D%/h/c_jtag_client_gnuaji_lib64.h
+#MINIJTAGSERV_SRC += %D%/aji/jtag_client_gnuaji_lib64.h %D%/aji/c_jtag_client_gnuaji_lib64.h
 #endif
 
 #@TODO During installation, copy all the dependent libraries

@@ -28,8 +28,8 @@
 #include "jtag/commands.h"
 #include "log.h"
 
-#include "h/aji.h"
-#include "h/c_jtag_client_gnuaji.h"
+#include "aji/aji.h"
+#include "aji/c_jtag_client_gnuaji.h"
 #include "jtagservice.h"
 
 extern void jtag_tap_add(struct jtag_tap *t);

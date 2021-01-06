@@ -59,7 +59,7 @@ fi
 } ##end fn_fix_symlink
 
 
-fn_fix_symlink "../drivers/jtagserv/h" "src/jtag/minijtagserv/h"
+fn_fix_symlink "../drivers/jtagserv/h" "src/jtag/minijtagserv/aji"
 fn_fix_symlink "../drivers/jtagserv/lib64" "src/jtag/minijtagserv/lib64"
 fn_fix_symlink "../drivers/jtagserv/win64" "src/jtag/minijtagserv/win64"
 fn_fix_symlink "../drivers/jtagserv/jtagservice.c" "src/jtag/minijtagserv/jtagservice.c"
