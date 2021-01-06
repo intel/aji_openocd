@@ -26,6 +26,10 @@
 #ifndef OPENOCD_JTAG_MINIJTAGSERV_MINIDRIVER_IMP_H
 #define OPENOCD_JTAG_MINIJTAGSERV_MINIDRIVER_IMP_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <jtag/jtag_minidriver.h>
 
 void interface_jtag_add_callback(jtag_callback1_t f, jtag_callback_data_t data0);

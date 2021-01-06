@@ -1,5 +1,10 @@
-#ifndef OPENOCD_C_JTAG_CLIENT_GNUAJI_H
-#define OPENOCD_C_JTAG_CLIENT_GNUAJI_H
+#ifndef INC_C_JTAG_CLIENT_GNUAJI_H
+#define INC_C_JTAG_CLIENT_GNUAJI_H
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #if PORT==WINDOWS
 #include "c_jtag_client_gnuaji_win64.h"
 #else

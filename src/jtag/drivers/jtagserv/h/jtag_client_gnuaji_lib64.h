@@ -11,6 +11,9 @@
 //
 //END_MODULE_HEADER//////////////////////////////////////////////////////////
 
+#ifndef INC_JTAG_CLIENT_GNUAJI_LIB64_H
+#define INC_JTAG_CLIENT_GNUAJI_LIB64_H
+
 //START_ALGORITHM_HEADER/////////////////////////////////////////////////////
 //
 //
@@ -18,6 +21,10 @@
 //
 
 // INCLUDE FILES ////////////////////////////////////////////////////////////
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "aji.h"
 
@@ -253,3 +260,5 @@ AJI_API AJI_ERROR _Z18aji_access_overlayP8AJI_OPENmPm(AJI_OPEN_ID node_id, DWORD
 } //end extern "C"
 #endif 
 
+
+#endif //INC_JTAG_CLIENT_GNUAJI_LIB64_H

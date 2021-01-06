@@ -1,6 +1,5 @@
-#ifndef OPENOCD_C_JTAG_CLIENT_GNUAJI_WIN64_H
-#define OPENOCD_C_JTAG_CLIENT_GNUAJI_WIN64_H
-
+#ifndef INC_C_JTAG_CLIENT_GNUAJI_WIN64_H
+#define INC_C_JTAG_CLIENT_GNUAJI_WIN64_H
 
 /**
  * C AJI functions
@@ -12,6 +11,10 @@
  * will add suffix '_a','_b', '_c' etc. Not using numeric suffix because
  * AJI might be using it already
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <winsock2.h>
 #include <windows.h>

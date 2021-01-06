@@ -1,6 +1,10 @@
 #ifndef JTAGSERVICE_H_INCLUDED
 #define JTAGSERVICE_H_INCLUDED
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #if IS_WIN32
 #include <windows.h>
 #endif

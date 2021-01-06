@@ -26,6 +26,10 @@
 #ifndef OPENOCD_JTAG_MINIJTAGSERV_JTAG_MINIDRIVER_H
 #define OPENOCD_JTAG_MINIJTAGSERV_JTAG_MINIDRIVER_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /* Currently Empty. Required file for build system */
 
 #endif /* OPENOCD_JTAG_MINIJTAGSERV_MINIDRIVER_IMP_H */

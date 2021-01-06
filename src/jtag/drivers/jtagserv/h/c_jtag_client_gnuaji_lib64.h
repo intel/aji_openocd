@@ -1,5 +1,9 @@
-#ifndef OPENOCD_C_JTAG_CLIENT_GNUAJI_LIB64_H
-#define OPENOCD_C_JTAG_CLIENT_GNUAJI_LIB64_H
+#ifndef INC_C_JTAG_CLIENT_GNUAJI_LIB64_H
+#define INC_C_JTAG_CLIENT_GNUAJI_LIB64_H
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "aji.h"
 #include "c_aji.h"
