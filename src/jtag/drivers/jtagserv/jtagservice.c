@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "jtagservice.h"
 
 #include <time.h>
@@ -80,9 +84,9 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
     if (UNKNOWN < *records_n) {
         DWORD csize = 0;
 #if PORT == WINDOWS
-        AJI_CLAIM* claims = calloc(csize, sizeof(AJI_CLAIM)); //It's empty, NULL perhaps?
+        AJI_CLAIM* claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM)); //It's empty, NULL perhaps?
 #else
-        AJI_CLAIM2 *claims = calloc(csize, sizeof(AJI_CLAIM2)); //It's empty, NULL perhaps?
+        AJI_CLAIM2 *claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2)); //It's empty, NULL perhaps?
 #endif
         if (claims == NULL) {
             return AJI_NO_MEMORY;
@@ -91,9 +95,9 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
     if (ARM < *records_n) {
         DWORD csize = 4;
 #if PORT == WINDOWS
-        AJI_CLAIM* claims = calloc(csize, sizeof(AJI_CLAIM));
+        AJI_CLAIM* claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM));
 #else
-        AJI_CLAIM2* claims = calloc(csize, sizeof(AJI_CLAIM2));
+        AJI_CLAIM2* claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
 #endif
         if (claims == NULL) {
             return AJI_NO_MEMORY;
@@ -115,9 +119,9 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
     if (RISCV < *records_n) {
         DWORD csize = 3;
 #if PORT == WINDOWS
-        AJI_CLAIM* claims = calloc(csize, sizeof(AJI_CLAIM)); //It's empty, NULL perhaps?
+        AJI_CLAIM* claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM)); 
 #else
-        AJI_CLAIM2* claims = calloc(csize, sizeof(AJI_CLAIM2)); //It's empty, NULL perhaps?
+        AJI_CLAIM2* claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
 #endif
         if (claims == NULL) {
             return AJI_NO_MEMORY;
@@ -137,9 +141,9 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
     if (VJTAG < *records_n) {
         DWORD csize = 4;
 #if PORT == WINDOWS
-        AJI_CLAIM* claims = calloc(csize, sizeof(AJI_CLAIM)); //It's empty, NULL perhaps?
+        AJI_CLAIM* claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM)); 
 #else
-        AJI_CLAIM2* claims = calloc(csize, sizeof(AJI_CLAIM2)); //It's empty, NULL perhaps?
+        AJI_CLAIM2* claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
 #endif
         if (claims == NULL) {
             return AJI_NO_MEMORY;
@@ -541,7 +545,7 @@ AJI_ERROR jtagservice_init_cable(jtagservice_record* me, DWORD timeout) {
 }
 
 AJI_ERROR jtagservice_init_common(jtagservice_record* me, DWORD timeout) {
-    me->appIdentifier = calloc(28, sizeof(char));
+    me->appIdentifier = (char*) calloc(28, sizeof(char));
     if (NULL == me->appIdentifier) {
         return AJI_NO_MEMORY;
     }
@@ -555,7 +559,7 @@ AJI_ERROR jtagservice_init_common(jtagservice_record* me, DWORD timeout) {
     LOG_INFO("Application name is %s", me->appIdentifier);
 
     me->claims_count = DEVICE_TYPE_COUNT;
-    me->claims = calloc(me->claims_count, sizeof(CLAIM_RECORD));
+    me->claims = (CLAIM_RECORD*) calloc(me->claims_count, sizeof(CLAIM_RECORD));
     if (NULL == me->claims) {
         return AJI_NO_MEMORY;
     }
@@ -778,13 +782,13 @@ int jtagservice_query_main(void) {
                 
 #if PORT == WINDOWS
                 AJI_CLAIM claims[] = {
-                      { AJI_CLAIM_IR_SHARED, device.device_id == 0x4BA00477 ? 0b1110 : 0b0000000110 },
-                      { AJI_CLAIM_IR_SHARED, device.device_id == 0x4BA00477 ? 0b1111 : 0b1111111111 }, //NO NEED for BYPASS instruction actually
+                      { AJI_CLAIM_IR_SHARED, device.device_id == 0x4BA00477 ? 0b1110u : 0b0000000110u },
+                      { AJI_CLAIM_IR_SHARED, device.device_id == 0x4BA00477 ? 0b1111u : 0b1111111111u }, //NO NEED for BYPASS instruction actually
                 };
 #else
                 AJI_CLAIM2 claims[] = { 
-                      { AJI_CLAIM_IR_SHARED, 0, device.device_id == 0x4BA00477 ? 0b1110 : 0b0000000110 },
-                      { AJI_CLAIM_IR_SHARED, 0, device.device_id == 0x4BA00477 ? 0b1111 : 0b1111111111 }, //NO NEED for BYPASS instruction actually
+                      { AJI_CLAIM_IR_SHARED, 0, device.device_id == 0x4BA00477 ? 0b1110u : 0b0000000110u },
+                      { AJI_CLAIM_IR_SHARED, 0, device.device_id == 0x4BA00477 ? 0b1111u : 0b1111111111u }, //NO NEED for BYPASS instruction actually
                 }; 
 #endif
                 char appname[] = "MyApp";
