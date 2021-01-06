@@ -19,7 +19,7 @@ local TARGET="${2}"
 if [[ '' != "$(file ${TARGET} | grep 'ASCII text')" ]]; then
   rm -f ${TARGET}
   ln -s ${SOURCE} ${TARGET}
-elif [[ '' != "$(file ${TARGET} | grep 'symbolic link to' | grep  ${SOURCE})" ]]; then
+elif [[ '' != "$(file ${TARGET} | grep 'directory')" ]]; then
   file ${TARGET}
   echo "Keep original symbolic link"
 else 
