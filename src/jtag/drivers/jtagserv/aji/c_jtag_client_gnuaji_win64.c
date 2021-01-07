@@ -68,7 +68,7 @@
 #include "c_aji.h"
 
 #define LIBRARY_NAME_JTAG_CLIENT "jtag_client.dll"
-#define LIBRARY_NAME_JTAG_CLIENT__MINGW64 "libjtag_client.dll"
+#define LIBRARY_NAME_JTAG_CLIENT__MINGW64 "libjclient.dll"
 
 
 HINSTANCE c_jtag_client_lib;
