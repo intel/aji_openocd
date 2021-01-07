@@ -28,10 +28,10 @@ git config --global core.autocrlf true   # on windows
 ##   ]
 ##
 
-if [[ '' = "$(echo ${MSYS}) | grep 'winsymlinks:nativestrict'" ]]; then
+if [[ '' = "$(echo ${MSYS} | grep 'winsymlinks:nativestrict')" ]]; then
    echo "WARNING: Please set enviornment variable MSYS to 'winsymlinks:nativestrict' in your bash profile."
-   echo "Will set it for you in this session"
-   export MSYS=winsymlinks:nativestrict
+   echo "         Will set it for you in this script"
+   export MSYS=winsymlinks:nativestrict   
 fi
 
 function fn_fix_symlink {
@@ -50,17 +50,21 @@ elif [[ '' == "$(file ${TARGET} | grep 'symbolic link to '${SOURCE})" ]]; then
   exit 1
 fi 
 
-if [[ '' == "$(file ${TARGET} | grep 'symbolic link to')" ]]; then
+if [[ '' = "$(file ${TARGET} | grep 'symbolic link to')" ]]; then
   echo "ERROR: Target ${TARGET} is not a symbolic link to ${SOURCE} after attempting to make it so"
   echo "       Please go to https://www.joshkel.com/2018/01/18/symlinks-in-windows/"
   echo "       or read comment in this script  for instruction"
   echo "       to setup your Windows10 installation to accept symbolic link"
 fi
+
+echo "OK: $(file ${TARGET})"
 } ##end fn_fix_symlink
 
 
 fn_fix_symlink "../drivers/jtagserv/aji" "src/jtag/minijtagserv/aji"
 fn_fix_symlink "../drivers/jtagserv/lib64" "src/jtag/minijtagserv/lib64"
+fn_fix_symlink "libjtag_client.so" "src/jtag/drivers/jtagserv/lib64/libjclient.so"
 fn_fix_symlink "../drivers/jtagserv/win64" "src/jtag/minijtagserv/win64"
+fn_fix_symlink "jtag_client.dll" "src/jtag/drivers/jtagserv/win64/libjclient.dll"
 fn_fix_symlink "../drivers/jtagserv/jtagservice.c" "src/jtag/minijtagserv/jtagservice.c"
 fn_fix_symlink "../drivers/jtagserv/jtagservice.h" "src/jtag/minijtagserv/jtagservice.h"
