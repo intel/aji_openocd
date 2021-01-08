@@ -32,8 +32,8 @@
 #include "aji/aji.h"
 #include "aji/c_aji.h"
 
-
-#define JTAGSERVICE_TIMEOUT_MS 10000
+//Maximum time out time is 0x7FFFFF.
+#define JTAGSERVICE_TIMEOUT_MS 60 * 1000 
 
 #define IR_ARM_ABORT  0b1000 // dr_len=35
 #define IR_ARM_DPACC  0b1010 // dr_len=35
