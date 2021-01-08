@@ -720,7 +720,7 @@ int jtagservice_query_main(void) {
     }
     
     printf("Initialize Variables\n");
-    unsigned int timeout =10000; //0x7FFFFF;
+    unsigned int timeout = JTAGSERVICE_TIMEOUT_MS;
     
     DWORD hardware_capacity = 10;
     AJI_HARDWARE *hardware_list = (AJI_HARDWARE*) calloc(hardware_capacity, sizeof(AJI_HARDWARE));
@@ -730,10 +730,10 @@ int jtagservice_query_main(void) {
         return AJI_NO_MEMORY;
     }
 
-    printf("Query JTAG\n");
+    printf("Query JTAG (timeout = %u s)\n", timeout/1000);
     DWORD hardware_count = hardware_capacity;
-    AJI_ERROR status = c_aji_get_hardware2( &hardware_count, hardware_list, server_version_info_list,timeout);
-    printf("Return Status is %i\n", status);
+    AJI_ERROR status = c_aji_get_hardware2( &hardware_count, hardware_list, server_version_info_list, timeout);
+    printf("Return Status is %d (%s)\n", status, c_aji_error_decode(status));
 
     printf("Output Result\n");
     if (AJI_NO_ERROR == status) {
