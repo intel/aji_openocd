@@ -451,7 +451,7 @@ static AJI_ERROR select_cable(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     AJI_ERROR status = AJI_NO_ERROR;
 
-    LOG_INFO("Querying JTAG Server ...");
+    LOG_INFO("Querying JTAG Server (timeout = %u s) ,,,\n", JTAGSERVICE_TIMEOUT_MS/1000);
     if (minijtagserv_config.hardware_id != NULL) {
         LOG_INFO("Attempting to find '%s'", minijtagserv_config.hardware_id);
         jtagservice.hardware_count = 1;
