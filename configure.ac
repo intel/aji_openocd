@@ -664,7 +664,7 @@ AS_IF([test "x$build_target64" = "xyes"], [
 #       as right now it is assuming if libjtag_client is available,
 #       win64/jtag_client.dll is also available
 #AC_CHECK_LIB([jtag_client], [_Z16aji_get_hardwarePjP12AJI_HARDWAREj])
-AC_CHECK_FILE([src/jtag/drivers/jtagserv/lib64/libjtag_client.so],[
+AC_CHECK_FILE([src/jtag/minijtagserv/minijtagserv.c],[
     use_jtagserv=yes
     AS_IF([test "x$build_minijtagserv" = "xyes"], [
 		ADAPTER_VAR([MINIJTAGSERV_ADAPTERS])=yes
