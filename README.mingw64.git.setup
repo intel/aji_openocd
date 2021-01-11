@@ -62,9 +62,18 @@ echo "OK: $(file ${TARGET})"
 
 
 fn_fix_symlink "../drivers/jtagserv/aji" "src/jtag/minijtagserv/aji"
-fn_fix_symlink "../drivers/jtagserv/lib64" "src/jtag/minijtagserv/lib64"
-fn_fix_symlink "libjtag_client.so" "src/jtag/drivers/jtagserv/lib64/libjclient.so"
-fn_fix_symlink "../drivers/jtagserv/win64" "src/jtag/minijtagserv/win64"
-fn_fix_symlink "jtag_client.dll" "src/jtag/drivers/jtagserv/win64/libjclient.dll"
 fn_fix_symlink "../drivers/jtagserv/jtagservice.c" "src/jtag/minijtagserv/jtagservice.c"
 fn_fix_symlink "../drivers/jtagserv/jtagservice.h" "src/jtag/minijtagserv/jtagservice.h"
+
+
+if [ '' != "$(uname | grep Linux)" ]; then
+  mkdir  "src/jtag/minijtagserv/lib64" 2>/dev/null || true
+  for file in ../../../../../git.jtagclient-standalone/tmp/lib/libjtag_client.so* \
+              ../../../../../git.jtagclient-standalone/tmp/lib/libSafeString.so*; \
+  do
+	  fn_fix_symlink "../${file}""src/jtag/drivers/jtagserv/lib64/$(basename file)"
+  done
+else
+  mkdir  "src/jtag/minijtagserv/win64" 2>/dev/null || true
+  fn_fix_symlink "../../../../../git.jtagclient-standalone/tmp/bin/libjclient.dll" "src/jtag/minijtagserv/win64/libjclient.dll"
+fi
