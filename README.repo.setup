@@ -1,23 +1,30 @@
 #! /bin/sh -xe 
 
-## Setup git to handle symlinks
+LINUX=FALSE
+if [ '' != "$(uname | grep Linux)" ]; then
+  LINUX=TRUE
+fi
 
 
-##Setup so that endian conversion is correct, i.e. repository save in Unix format:
-#Ref: 
-#https://stackoverflow.com/questions/31653922/git-ignore-line-endings
-#https://adaptivepatchwork.com/2012/03/01/mind-the-end-of-your-line/
+## Setup so that endian conversion is correct, i.e. repository save in Unix format:
+## Ref: 
+## https://stackoverflow.com/questions/31653922/git-ignore-line-endings
+## https://adaptivepatchwork.com/2012/03/01/mind-the-end-of-your-line/
 
-git config --global core.autocrlf true   # on windows
+if [ 'TRUE' == "${LINUX}" ]; then
+    git config --global core.autocrlf input  # on linux and macosx
+
+else
+    git config --global core.autocrlf true   # on windows
+fi
 
 
-
-## Fix Symbolic Link Issue
+## Fix Symbolic Link Issue on Windows
 ## Ref: https://www.joshkel.com/2018/01/18/symlinks-in-windows/
 ## SETUP YOU NEED TO DO MANUALLY
 ##   Enable developer mode: Go under Settings, 
 ##   under Update & Security, under For developers, 
-##   and set “Use developer features” to “Developer mode.” 
+##   and set "Use developer features" to "Developer mode".
 ##   This is how you enable the Windows 10 Creators Update option 
 ##   of allowing users to create symlinks without UAC elevation.
 ##   
@@ -28,34 +35,50 @@ git config --global core.autocrlf true   # on windows
 ##   ]
 ##
 
-if [[ '' = "$(echo ${MSYS} | grep 'winsymlinks:nativestrict')" ]]; then
-   echo "WARNING: Please set enviornment variable MSYS to 'winsymlinks:nativestrict' in your bash profile."
-   echo "         Will set it for you in this script"
-   export MSYS=winsymlinks:nativestrict   
+
+if [[ 'FALSE' == "${LINUX}" ]]; then
+   if [[ '' = "$(echo ${MSYS} | grep 'winsymlinks:nativestrict')" ]]; then
+       echo "WARNING: Please set enviornment variable MSYS to 'winsymlinks:nativestrict' in your bash profile."
+       echo "         Will set it for you in this script"
+       export MSYS=winsymlinks:nativestrict   
+   fi
 fi
 
+
+## Create Symlinks
 function fn_fix_symlink {
 
 local SOURCE="${1}" #Relative link from TARGET
 local TARGET="${2}"
 
+
+
 if [[ ! -e ${TARGET} ]]; then
+if [[ '' == "$(file ${TARGET} | grep 'broken symbolic link to')${SOURCE}" ]]; then
+file ${TARGET}
+  echo "ERROR: Target ${TARGET} is a broken symbolic link to ${SOURCE}"
+  echo "       Please remove manually"
+  exit 1
+fi
   ln -s ${SOURCE} ${TARGET}
 elif [[ '' != "$(file ${TARGET} | grep 'ASCII text')" ]]; then
   rm -f ${TARGET}
   ln -s ${SOURCE} ${TARGET}
-elif [[ '' == "$(file ${TARGET} | grep 'symbolic link to '${SOURCE})" ]]; then
+elif [[ '' == "$(file ${TARGET} | grep 'symbolic link to ')${SOURCE}" ]]; then
   echo "ERROR: $(file ${TARGET})"
   echo "ERROR: Target ${TARGET} is not a symbolic link to ${SOURCE}, or a ASCII text file created by git."
   exit 1
 fi 
 
-if [[ '' = "$(file ${TARGET} | grep 'symbolic link to')" ]]; then
+if [[ '' == "$(file ${TARGET} | grep 'symbolic link to')${SOURCE}" ]]; then
   echo "ERROR: Target ${TARGET} is not a symbolic link to ${SOURCE} after attempting to make it so"
   echo "       Please go to https://www.joshkel.com/2018/01/18/symlinks-in-windows/"
   echo "       or read comment in this script  for instruction"
   echo "       to setup your Windows10 installation to accept symbolic link"
+  exit 1
 fi
+
+
 
 echo "OK: $(file ${TARGET})"
 } ##end fn_fix_symlink
@@ -68,10 +91,10 @@ fn_fix_symlink "../drivers/jtagserv/jtagservice.h" "src/jtag/minijtagserv/jtagse
 
 if [ '' != "$(uname | grep Linux)" ]; then
   mkdir  "src/jtag/minijtagserv/lib64" 2>/dev/null || true
-  for file in ../../../../../git.jtagclient-standalone/tmp/lib/libjtag_client.so* \
-              ../../../../../git.jtagclient-standalone/tmp/lib/libSafeString.so*; \
+  for file in $(ls ../git.jtagclient-standalone/tmp/lib/libjclient.so* \
+                   ../git.jtagclient-standalone/tmp/lib/libSafeString.so*); \
   do
-	  fn_fix_symlink "../${file}""src/jtag/drivers/jtagserv/lib64/$(basename file)"
+	  fn_fix_symlink "../../../../${file}" "src/jtag/minijtagserv/lib64/$(basename ${file})"
   done
 else
   mkdir  "src/jtag/minijtagserv/win64" 2>/dev/null || true

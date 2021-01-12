@@ -11,7 +11,7 @@ export http_proxy=${https_proxy}
 ## directories does not exit, do the steps below to recover
 ##
 ##
-#   #Remove all submodule entries in .git/config:wq
+#   #Remove all submodule entries in .git/config
 
 #   rm -fr tools/git2cl jimtcl src/jtag/drviers/libjaylink
 #	git submodule add https://repo.or.cz/git2cl.git tools/git2cl

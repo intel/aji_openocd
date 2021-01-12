@@ -33,9 +33,3 @@ wget https://github.com/libusb/libusb/releases/download/v1.0.23/libusb-1.0.23.7z
 export LDFLAGS="$LDFLAGS -L${PWD}/libusb/MinGW64/dll"
 popd
 
-
-## initialize submodules
-git submodule update --init
-
-## setup git to handle symlinks
-sh -xe README.mingw64.git.setup

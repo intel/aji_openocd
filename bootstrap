@@ -47,5 +47,7 @@ if [ -x src/jtag/drivers/libjaylink/autogen.sh ]; then
     )
 fi
 
+sh -xe README.repo.setup
+
 echo "Bootstrap complete. Quick build instructions:"
 echo "./configure ...."
