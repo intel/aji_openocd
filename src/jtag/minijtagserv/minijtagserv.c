@@ -38,7 +38,7 @@ extern void jtag_tap_add(struct jtag_tap *t);
 #define HARDWARE_OPT_EXPECTED_ID 1
 
 #define IDCODE_SOCVHPS (0x4BA00477)
-#define IDCODE_FE310_G002 (0x20000913)
+//#define IDCODE_FE310_G002 (0x20000913)
 
 
 /** 
@@ -60,7 +60,7 @@ extern void jtag_tap_add(struct jtag_tap *t);
  * SiFive Manufacturer ID in bit[12:1] with
  * bit[0]=1
  */
-#define JTAG_IDCODE_MANUFID_SIFIVE_W_ONE 0x913 
+//#define JTAG_IDCODE_MANUFID_SIFIVE_W_ONE 0x913 
 
  //=================================
 // Global variables
@@ -631,10 +631,8 @@ static AJI_ERROR select_tap(void)
         return AJI_NO_DEVICES;
     }
     LOG_INFO("At present, will not honour OpenOCD target selection and"
-             " try to select the ARM SOCVHPS with IDCODE %X or "
-             " SiFive chip with IDCODE %X automatically",
-             IDCODE_SOCVHPS,
-             IDCODE_FE310_G002
+             " try to select the ARM SOCVHPS with IDCODE %X",
+             IDCODE_SOCVHPS
     );
     LOG_INFO("Will Search through %lx TAP devices", (unsigned long) jtagservice.device_count);
 /*
@@ -736,8 +734,8 @@ static AJI_ERROR select_tap(void)
         LOG_WARNING("Have failures in SLD discovery. See previous log entries. Continuing ...");
     }
 */
-    DWORD arm_riscv_index = 0;
-    bool  found_arm_riscv = false;
+    DWORD arm_index = 0;
+    bool  found_arm = false;
     for(DWORD tap_position=0; tap_position<jtagservice.device_count; ++tap_position) {
         AJI_DEVICE device = jtagservice.device_list[tap_position];
         LOG_INFO("Detected device (tap_position=%lu) device_id=%08lx," 
@@ -749,23 +747,23 @@ static AJI_ERROR select_tap(void)
                     device.device_name
         );
         DWORD manufacturer_with_one = device.device_id & JTAG_IDCODE_MANUFID_W_ONE_MASK;
-
+/*
         if (JTAG_IDCODE_MANUFID_SIFIVE_W_ONE == manufacturer_with_one) {
             jtagservice.device_type_list[tap_position] = RISCV; 
-            arm_riscv_index = tap_position;
-            found_arm_riscv = true;
-            LOG_INFO("Found SiFive device at tap_position %lu", (unsigned long)arm_riscv_index);
-        }
+            arm_index = tap_position;
+            found_arm = true;
+            LOG_INFO("Found SiFive device at tap_position %lu", (unsigned long)arm_index);
+        } */
         if(JTAG_IDCODE_MANUFID_ARM_W_ONE == manufacturer_with_one) {
             jtagservice.device_type_list[tap_position] = ARM;
-            arm_riscv_index = tap_position;
-            found_arm_riscv = true;
-            LOG_INFO("Found SOCVHPS device at tap_position %lu.", (unsigned long)arm_riscv_index);
+            arm_index = tap_position;
+            found_arm = true;
+            LOG_INFO("Found SOCVHPS device at tap_position %lu.", (unsigned long)arm_index);
         }
     } //end for tap_position
 
-    if(!found_arm_riscv) {
-        LOG_ERROR("No SOCVHPS or FE310-G002 device found.");
+    if(!found_arm) {
+        LOG_ERROR("No SOCVHPS or device found.");
         c_aji_unlock_chain(hw.chain_id);
         return AJI_FAILURE;
     }
@@ -773,7 +771,7 @@ static AJI_ERROR select_tap(void)
 
     
     CLAIM_RECORD claims =
-        jtagservice.claims[jtagservice.device_type_list[arm_riscv_index]];
+        jtagservice.claims[jtagservice.device_type_list[arm_index]];
 
     // Only allowed to open one device at a time.
     // If you don't, then anytime after  c_aji_test_logic_reset() call, 
@@ -782,22 +780,22 @@ static AJI_ERROR select_tap(void)
 #if PORT == WINDOWS
     status = c_aji_open_device(
         hw.chain_id,
-        arm_riscv_index,
-        &(jtagservice.device_open_id_list[arm_riscv_index]),
+        arm_index,
+        &(jtagservice.device_open_id_list[arm_index]),
         claims.claims, claims.claims_n, jtagservice.appIdentifier
     );
 #else
     status = c_aji_open_device_a(
         hw.chain_id,
-        arm_riscv_index,
-        &(jtagservice.device_open_id_list[arm_riscv_index]),
+        arm_index,
+        &(jtagservice.device_open_id_list[arm_index]),
         claims.claims, claims.claims_n, jtagservice.appIdentifier
     );
 #endif
     if(AJI_NO_ERROR != status) {
             LOG_ERROR("Cannot open device number %lu (IDCODE=%lX)",
-                      (unsigned long) arm_riscv_index,
-                      (unsigned long) jtagservice.device_list[arm_riscv_index].device_id
+                      (unsigned long) arm_index,
+                      (unsigned long) jtagservice.device_list[arm_index].device_id
             );
     }
     status = c_aji_unlock_chain(hw.chain_id);
@@ -805,7 +803,7 @@ static AJI_ERROR select_tap(void)
         LOG_WARNING("Cannot unlock JTAG Chain ");
     }
     
-    jtagservice_activate_jtag_tap(&jtagservice, 0,  arm_riscv_index);
+    jtagservice_activate_jtag_tap(&jtagservice, 0,  arm_index);
 LOG_DEBUG("***> END %s(%d): %s in_use_device_tap_position=%lu\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long) jtagservice.in_use_device_tap_position);
     return status;
 }
@@ -1058,7 +1056,7 @@ assert(0); //deliberately assert() to be able to see where the error is, if it o
         } //end if jtagservice.is_sld
     } //end if if(jtag_tap_on_all_vtaps_list(active))
     */
-    //FORCE BACK TO RISCV/SOCVHPS
+    //FORCE BACK TO SOCVHPS
     if (
         jtagservice.in_use_device_tap_position != arm_or_ricsv_index 
     ) {

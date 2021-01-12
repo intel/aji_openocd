@@ -84,11 +84,6 @@ echo "OK: $(file ${TARGET})"
 } ##end fn_fix_symlink
 
 
-fn_fix_symlink "../drivers/jtagserv/aji" "src/jtag/minijtagserv/aji"
-fn_fix_symlink "../drivers/jtagserv/jtagservice.c" "src/jtag/minijtagserv/jtagservice.c"
-fn_fix_symlink "../drivers/jtagserv/jtagservice.h" "src/jtag/minijtagserv/jtagservice.h"
-
-
 if [ '' != "$(uname | grep Linux)" ]; then
   mkdir  "src/jtag/minijtagserv/lib64" 2>/dev/null || true
   for file in $(ls ../git.jtagclient-standalone/tmp/lib/libjclient.so* \

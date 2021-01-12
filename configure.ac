@@ -111,9 +111,6 @@ m4_define([ADAPTER_OPT], [m4_translit(ADAPTER_ARG($1), [_], [-])])
 m4_define([MINIJTAGSERV_ADAPTERS],
 	[[[minijtagserv], [Intel MINIJTAG Server], [MINIJTAGSERV]]])
 
-m4_define([JTAGSERV_ADAPTERS],
-	[[[jtagserv], [Intel JTAG Server], [JTAGSERV]]])
-
 m4_define([USB1_ADAPTERS],
 	[[[ftdi], [MPSSE mode of FTDI based devices], [FTDI]],
 	[[stlink], [ST-Link Programmer], [HLADAPTER_STLINK]],
@@ -246,7 +243,6 @@ m4_define([AC_ARG_ADAPTERS], [
 ])
 
 AC_ARG_ADAPTERS([
-  JTAGSERV_ADAPTERS,
   USB1_ADAPTERS,
   USB0_ADAPTERS,
   HIDAPI_ADAPTERS,
@@ -668,15 +664,12 @@ AC_CHECK_FILE([src/jtag/minijtagserv/minijtagserv.c],[
     use_jtagserv=yes
     AS_IF([test "x$build_minijtagserv" = "xyes"], [
 		ADAPTER_VAR([MINIJTAGSERV_ADAPTERS])=yes
-		ADAPTER_VAR([JTAGSERV_ADAPTERS])=no
 	], [
 		ADAPTER_VAR([MINIJTAGSERV_ADAPTERS])=no
-		ADAPTER_VAR([JTAGSERV_ADAPTERS])=yes
 	])
     AC_DEFINE([HAVE_JTAGSERV],[1], [Defined if you have libjtagclient.so])
     ], [
     use_jtagserv=no
-    ADAPTER_VAR([JTAGSERV_ADAPTERS])=no
     ADAPTER_VAR([MINIJTAGSERV_ADAPTERS])=no
     ])
 
@@ -736,7 +729,6 @@ m4_define([PROCESS_ADAPTERS], [
   ])
 ])
 
-PROCESS_ADAPTERS([JTAGSERV_ADAPTERS], ["x$use_jtagserv" = "xyes" -a "x$build_jtagminiserv" != "xyes"], [jtagserv])
 PROCESS_ADAPTERS([USB1_ADAPTERS], ["x$use_libusb1" = "xyes"], [libusb-1.x])
 PROCESS_ADAPTERS([USB0_ADAPTERS], ["x$use_libusb0" = "xyes"], [libusb-0.1])
 PROCESS_ADAPTERS([HIDAPI_ADAPTERS], ["x$use_hidapi" = "xyes"], [hidapi])
@@ -799,7 +791,6 @@ AM_CONDITIONAL([BITBANG], [test "x$build_bitbang" = "xyes"])
 AM_CONDITIONAL([JTAG_VPI], [test "x$build_jtag_vpi" = "xyes" -o "x$build_jtag_vpi" = "xyes"])
 AM_CONDITIONAL([USB_BLASTER_DRIVER], [test "x$enable_usb_blaster" != "xno" -o "x$enable_usb_blaster_2" != "xno"])
 AM_CONDITIONAL([MINIJTAGSERV_DRIVER], [test "x$build_minijtagserv" != "xno" -a "x$use_jtagserv" != "xno"])
-AM_CONDITIONAL([JTAGSERV_DRIVER], [test "x$enable_jtagserv" != "xno" -a "x$build_minijtagserv" != "xyes"])
 AM_CONDITIONAL([AMTJTAGACCEL], [test "x$build_amtjtagaccel" = "xyes"])
 AM_CONDITIONAL([GW16012], [test "x$build_gw16012" = "xyes"])
 AM_CONDITIONAL([OOCD_TRACE], [test "x$build_oocd_trace" = "xyes"])
@@ -809,7 +800,6 @@ AM_CONDITIONAL([SYSFSGPIO], [test "x$build_sysfsgpio" = "xyes"])
 AM_CONDITIONAL([XLNX_PCIE_XVC], [test "x$build_xlnx_pcie_xvc" = "xyes"])
 AM_CONDITIONAL([USE_LIBUSB0], [test "x$use_libusb0" = "xyes"])
 AM_CONDITIONAL([USE_LIBUSB1], [test "x$use_libusb1" = "xyes"])
-AM_CONDITIONAL([USE_JTAGSERV], [test "x$use_jtagserv" = "xyes"])
 AM_CONDITIONAL([IS_CYGWIN], [test "x$is_cygwin" = "xyes"])
 AM_CONDITIONAL([IS_MINGW], [test "x$is_mingw" = "xyes"])
 AM_CONDITIONAL([IS_WIN32], [test "x$is_win32" = "xyes"])
@@ -886,7 +876,7 @@ echo
 echo
 echo OpenOCD configuration summary
 echo --------------------------------------------------
-m4_foreach([adapter], [MINIJTAGSERV_ADAPTERS, JTAGSERV_ADAPTERS, 
+m4_foreach([adapter], [MINIJTAGSERV_ADAPTERS,
     USB1_ADAPTERS, USB0_ADAPTERS,
 	HIDAPI_ADAPTERS, HIDAPI_USB1_ADAPTERS, LIBFTDI_ADAPTERS,
 	LIBGPIOD_ADAPTERS,

@@ -44,11 +44,6 @@ endif
 endif
 
 
-if JTAGSERV_DRIVER
-%C%_openocd_LDFLAGS += -L%D%/jtag/drivers/jtagserv/lib64
-%C%_openocd_LDADD += -ljclient -lSafeString
-endif
-
 %C%_libopenocd_la_CPPFLAGS =
 
 # banner output includes RELSTR appended to $VERSION from the configure script
