@@ -215,7 +215,7 @@ static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
  * 
  * \param vtap 
  * \return true if found, false otherwise
- */
+ */ /*
 static bool vjtag_examine_chain_match_tap(struct vjtag_tap* vtap) {
     AJI_ERROR status = AJI_NO_ERROR;
 
@@ -259,7 +259,7 @@ static bool vjtag_examine_chain_match_tap(struct vjtag_tap* vtap) {
     );
     return true;
 }
-
+*/
 /**
  * @pre jtagservice is filled with device inforamtion. That should
  *      already been done during adapter initialization via 
@@ -317,7 +317,7 @@ int jtag_examine_chain(void)
 		if (!jtag_examine_chain_match_tap(tap))
 			retval = ERROR_JTAG_INIT_SOFT_FAIL;
     } //end for t
-
+/*
     if (AJI_NO_ERROR != retval && ERROR_JTAG_INIT_SOFT_FAIL != retval) {
         return retval;
     }
@@ -334,7 +334,7 @@ int jtag_examine_chain(void)
             retval = ERROR_JTAG_INIT_SOFT_FAIL;
             continue;
         }
-    }
+    } */
     return retval;
 }
 
@@ -637,7 +637,7 @@ static AJI_ERROR select_tap(void)
              IDCODE_FE310_G002
     );
     LOG_INFO("Will Search through %lx TAP devices", (unsigned long) jtagservice.device_count);
-
+/*
     //SLD discovery
     bool sld_discovery_failed = false;
     jtagservice.hier_id_n = (DWORD*) calloc(jtagservice.device_count, sizeof(DWORD));
@@ -735,7 +735,7 @@ static AJI_ERROR select_tap(void)
     if (sld_discovery_failed) {
         LOG_WARNING("Have failures in SLD discovery. See previous log entries. Continuing ...");
     }
-
+*/
     DWORD arm_riscv_index = 0;
     bool  found_arm_riscv = false;
     for(DWORD tap_position=0; tap_position<jtagservice.device_count; ++tap_position) {
@@ -806,7 +806,7 @@ static AJI_ERROR select_tap(void)
     }
     
     jtagservice_activate_jtag_tap(&jtagservice, 0,  arm_riscv_index);
-LOG_DEBUG("***> END %s(%d): %s in_use_device_tap_position=%lu is_sld=%s in_use_hier_id_node_position=%lu \n", __FILE__, __LINE__, __FUNCTION__, (unsigned long) jtagservice.in_use_device_tap_position, jtagservice.is_sld? "Yes" : "No", (unsigned long) jtagservice.in_use_hier_id_node_position);
+LOG_DEBUG("***> END %s(%d): %s in_use_device_tap_position=%lu\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long) jtagservice.in_use_device_tap_position);
     return status;
 }
 
@@ -817,8 +817,8 @@ static AJI_ERROR unselect_tap(void) {
 }
 
 AJI_ERROR reacquire_open_id(void) 
-{  LOG_DEBUG("***> IN %s(%d): %s in_use_device_tap_position=%lu is_sld=%s in_use_hier_id_node_position=%lu \n", __FILE__, __LINE__, __FUNCTION__, (unsigned long)jtagservice.in_use_device_tap_position, jtagservice.is_sld? "Yes" : "No", (unsigned long)jtagservice.in_use_hier_id_node_position);
-jtagservice.in_use_device_tap_position = 1, jtagservice.is_sld = false;
+{  LOG_DEBUG("***> IN %s(%d): %s in_use_device_tap_position=%lu\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long)jtagservice.in_use_device_tap_position);
+jtagservice.in_use_device_tap_position = 1;
     int max_try = 5;
     int sleep_duration = 5; //seconds
     AJI_ERROR status = AJI_NO_ERROR;
@@ -1025,7 +1025,7 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
         return ERROR_FAIL;
     }
 assert(activeIndex = arm_or_ricsv_index);  //At present, it should be the same because we cannot access other taps
-
+/*
     if (jtag_tap_on_all_vtaps_list(active)) {
         DWORD tap_index=0;
         jtagservice_device_index_by_idcode(
@@ -1057,10 +1057,10 @@ assert(0); //deliberately assert() to be able to see where the error is, if it o
             }            
         } //end if jtagservice.is_sld
     } //end if if(jtag_tap_on_all_vtaps_list(active))
-
+    */
     //FORCE BACK TO RISCV/SOCVHPS
-    if     (jtagservice.is_sld == true
-            || jtagservice.in_use_device_tap_position != arm_or_ricsv_index 
+    if (
+        jtagservice.in_use_device_tap_position != arm_or_ricsv_index 
     ) {
         status = jtagservice_activate_jtag_tap(&jtagservice, 0, arm_or_ricsv_index);
     
@@ -1249,10 +1249,10 @@ assert(activeIndex = jtagservice.in_use_device_tap_position);  //At present, it 
 
     /* Right now, we can only do ARMVHPS or FE310-G002 */
     uint32_t idcode = active->idcode;
-    if (jtag_tap_on_all_vtaps_list(active)) {
+/*    if (jtag_tap_on_all_vtaps_list(active)) {
         idcode = ((struct vjtag_tap*)active)->parent->idcode;
     }
-    
+*/    
     static bool NotYetWarned = false;
     if (NotYetWarned) {
         if (idcode == 0 || jtagservice.in_use_device_id != idcode) {

@@ -208,23 +208,18 @@ unsigned jtag_tap_count_enabled(void)
 	return n;
 }
 
-static void jtag_tap_add_imp(struct jtag_tap **list, struct jtag_tap *t) 
+/** Append a new TAP to the chain of all taps. */
+void jtag_tap_add(struct jtag_tap *t)
 {
 	unsigned jtag_num_taps = 0;
 
-	struct jtag_tap **tap = list;
+	struct jtag_tap **tap = &__jtag_all_taps;
 	while (*tap != NULL) {
 		jtag_num_taps++;
 		tap = &(*tap)->next_tap;
 	}
 	*tap = t;
 	t->abs_chain_position = jtag_num_taps;
-
-}
-/** Append a new TAP to the chain of all taps. */
-void jtag_tap_add(struct jtag_tap *t)
-{
-	jtag_tap_add_imp(&__jtag_all_taps, t);
 }
 
 /* returns a pointer to the n-th device in the scan chain */
@@ -238,10 +233,10 @@ struct jtag_tap *jtag_tap_by_position(unsigned n)
 	return t;
 }
 
-struct jtag_tap *jtag_tap_by_string_imp(struct jtag_tap* list, const char *s)
+struct jtag_tap *jtag_tap_by_string(const char *s)
 {
 	/* try by name first */
-	struct jtag_tap *t = list;
+	struct jtag_tap *t = jtag_all_taps();
 
 	while (t) {
 		if (0 == strcmp(t->dotted_name, s))
@@ -250,49 +245,20 @@ struct jtag_tap *jtag_tap_by_string_imp(struct jtag_tap* list, const char *s)
 	}
 
 	/* no tap found by name, so try to parse the name as a number */
-	/* s is not guaranteed to be an integer, particularly after
-	   the introduction of vjtag as it means s can represent a tap
-	   on another list. When this happens, parse_ullong(),
-	   which is called by parse_unit() will display an error message.
-	   To avoid this, s must be tested to contain a number.
-    */	   
-	   
-	char* p;
-	long int val = strtol(s, &p, 10);
-	if (p != s && val >= 0) {
-		unsigned n;
-		if (parse_uint(s, &n) != ERROR_OK)
-			return NULL;
+	unsigned n;
+	if (parse_uint(s, &n) != ERROR_OK)
+		return NULL;
 
-		/* FIXME remove this numeric fallback code late June 2010, along
-		 * with all info in the User's Guide that TAPs have numeric IDs.
-		 * Also update "scan_chain" output to not display the numbers.
-		 */
-		t = jtag_tap_by_position(n);
-		if (t)
-			LOG_WARNING("Specify TAP '%s' by name, not number %u, or number is less than zero",
-				t->dotted_name, n);
-	}
+	/* FIXME remove this numeric fallback code late June 2010, along
+	 * with all info in the User's Guide that TAPs have numeric IDs.
+	 * Also update "scan_chain" output to not display the numbers.
+	 */
+	t = jtag_tap_by_position(n);
+	if (t)
+		LOG_WARNING("Specify TAP '%s' by name, not number %u",
+			t->dotted_name, n);
+
 	return t;
-}
-
-struct jtag_tap* jtag_tap_by_string(const char* s) {
-	return jtag_tap_by_string_imp(jtag_all_taps(), s);
-}
-
-bool jtag_tap_on_list(struct jtag_tap* list, struct jtag_tap* tap) {
-	struct jtag_tap* ptap = list;
-	while (ptap) {
-		if (ptap == tap) {
-			return true;
-		}
-		ptap = ptap->next_tap;
-	}
-	return false;
-}
-
-bool jtag_tap_on_all_taps_list(struct jtag_tap* tap) {
-	return jtag_tap_on_list(__jtag_all_taps, tap);
 }
 
 struct jtag_tap *jtag_tap_next_enabled(struct jtag_tap *p)
@@ -358,7 +324,7 @@ int jtag_call_event_callbacks(enum jtag_event event)
 {
 	struct jtag_event_callback *callback = jtag_event_callbacks;
 
-    LOG_DEBUG("jtag event: %s", jtag_event_strings[event]);
+	LOG_DEBUG("jtag event: %s", jtag_event_strings[event]);
 
 	while (callback) {
 		struct jtag_event_callback *next;
@@ -587,7 +553,7 @@ int jtag_add_statemove(tap_state_t goal_state)
 	tap_state_t cur_state = cmd_queue_cur_state;
 
 	if (goal_state != cur_state) {
-        LOG_DEBUG("cur_state=%s goal_state=%s",
+		LOG_DEBUG("cur_state=%s goal_state=%s",
 			tap_state_name(cur_state),
 			tap_state_name(goal_state));
 	}
@@ -740,6 +706,7 @@ static void legacy_jtag_add_reset(int req_tlr_or_trst, int req_srst)
 			return;
 		}
 	}
+
 	/* SRST resets everything hooked up to that signal */
 	if (jtag_srst != new_srst) {
 		jtag_srst = new_srst;
@@ -1502,11 +1469,7 @@ done:
 }
 #endif /* BUILD_MINIJTAGSERV */
 
-/**
- * Initilaize JTAG Tap.
- * @note Will not fill in @chip, @tapname and @dottedname.
- */
-void jtag_tap_init_only(struct jtag_tap* tap)
+void jtag_tap_init(struct jtag_tap *tap)
 {
 	unsigned ir_len_bits;
 	unsigned ir_len_bytes;
@@ -1528,7 +1491,6 @@ void jtag_tap_init_only(struct jtag_tap* tap)
 
 	/* TAP will be in bypass mode after jtag_validate_ircapture() */
 	tap->bypass = 1;
-
 	buf_set_ones(tap->cur_instr, tap->ir_length);
 
 	/* register the reset callback for the TAP */
@@ -1537,15 +1499,7 @@ void jtag_tap_init_only(struct jtag_tap* tap)
 #ifdef BUILD_MINIJTAGSERV
 	tap->hardware = NULL;
 #endif
-}
-/**
- * Initilaize JTAG Tap.
- * @see jtag_tap_init_only
- * @sideeffect Register @tap to master list of jtags.
- */
-void jtag_tap_init(struct jtag_tap* tap)
-{
-	jtag_tap_init_only(tap);
+
 	jtag_tap_add(tap);
 
 	LOG_DEBUG("Created Tap: %s @ abs position %d, "
@@ -1677,8 +1631,8 @@ int jtag_init_inner(struct command_context *cmd_ctx)
 	/* Examine DR values first.  This discovers problems which will
 	 * prevent communication ... hardware issues like TDO stuck, or
 	 * configuring the wrong number of (enabled) TAPs.
-	 */ 
-	retval = jtag_examine_chain(); 
+	 */
+	retval = jtag_examine_chain();
 	switch (retval) {
 		case ERROR_OK:
 			/* complete success */
@@ -1717,6 +1671,8 @@ int jtag_init_inner(struct command_context *cmd_ctx)
 		jtag_notify_event(JTAG_TAP_EVENT_SETUP);
 	else
 		LOG_WARNING("Bypassing JTAG setup events due to errors");
+
+
 	return ERROR_OK;
 }
 
@@ -1736,13 +1692,6 @@ int adapter_quit(void)
 		t = n;
 	}
 
-	struct vjtag_tap* vt = vjtag_all_taps();
-	while (vt) {
-		struct vjtag_tap* n = 
-			(struct vjtag_tap*) vt->next_tap;
-		vjtag_tap_free(vt);
-		vt =  n;
-	}
 	return ERROR_OK;
 }
 
@@ -1832,7 +1781,7 @@ int jtag_init(struct command_context *cmd_ctx)
 	int retval = adapter_init(cmd_ctx);
 	if (retval != ERROR_OK)
 		return retval;
-		
+
 	/* guard against oddball hardware: force resets to be inactive */
 	jtag_add_reset(0, 0);
 
@@ -1843,7 +1792,7 @@ int jtag_init(struct command_context *cmd_ctx)
 		else
 			LOG_WARNING("\'srst_nogate\' reset_config option is required");
 	}
-	
+
 	retval = jtag_execute_queue();
 	if (retval != ERROR_OK)
 		return retval;
@@ -2056,11 +2005,6 @@ static int jtag_select(struct command_context *ctx)
 	if (retval != ERROR_OK)
 		return retval;
 
-	retval = vjtag_register_commands(ctx);
-
-	if (retval != ERROR_OK)
-		return retval;
-
 	retval = svf_register_commands(ctx);
 
 	if (retval != ERROR_OK)
@@ -2194,53 +2138,4 @@ int adapter_poll_trace(uint8_t *buf, size_t *size)
 		return jtag->poll_trace(buf, size);
 
 	return ERROR_FAIL;
-}
-
-
-/**
- * Virtual JTAG
- *
- */
-
-static struct vjtag_tap* __vjtag_all_taps;
-
-struct vjtag_tap* vjtag_all_taps(void)
-{
-	return __vjtag_all_taps;
-};
-
-/** Append a new TAP to the chain of all taps. */
-void vjtag_tap_add(struct vjtag_tap* t)
-{
-	jtag_tap_add_imp( (struct jtag_tap**) &__vjtag_all_taps, (struct jtag_tap*) t);
-}
-
- /**
-  * Initilaize Virtual JTAG Tap.
-  * @note Will not fill in @chip, @tapname and @dottedname.
-  * @sideeffect Register @tap to master list of jtags.
-  */
-void vjtag_tap_init(struct vjtag_tap* tap) {
-	jtag_tap_init_only((struct jtag_tap*)tap);
-	vjtag_tap_add(tap); /* Ideally this command should be ... */
-	                    /* ... called explicitly outside ... */
-	                    /* ... vjtag_tap_init() but included ... */
-	                    /* ... here to be consistent with ... */
-	                    /* ... jtag_tap_init() */
-
-	LOG_DEBUG("Created virtual tap: %s, parent: %s", 
-		tap->dotted_name, tap->parent->dotted_name
-	);
-}
-
-void vjtag_tap_free(struct vjtag_tap* tap) {
-	jtag_tap_free((struct jtag_tap*)tap);
-}
-
-struct vjtag_tap* vjtag_tap_by_string(const char* dotted_name) {
-	return (struct vjtag_tap*) jtag_tap_by_string_imp( (struct jtag_tap*) vjtag_all_taps(), dotted_name);
-}
-
-bool jtag_tap_on_all_vtaps_list(struct jtag_tap* tap) {
-	return jtag_tap_on_list((struct jtag_tap*) __vjtag_all_taps, tap);
 }

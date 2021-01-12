@@ -156,7 +156,7 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
         records[RISCV].claims_n = csize;
         records[RISCV].claims = claims;
     }
-
+/*
     if (VJTAG < *records_n) {
         DWORD csize = 4;
 #if PORT == WINDOWS
@@ -180,7 +180,7 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
         records[VJTAG].claims_n = csize;
         records[VJTAG].claims = claims;
     }
-
+    */
     AJI_ERROR status = AJI_NO_ERROR;
     if (*records_n < DEVICE_TYPE_COUNT) {
         status = AJI_TOO_MANY_CLAIMS;
@@ -234,7 +234,7 @@ AJI_ERROR jtagservice_update_active_tap_record(jtagservice_record* me, const DWO
     me->in_use_device_id = device.device_id;
     me->in_use_device_tap_position = tap_index;
     me->in_use_device_irlen = device.instruction_length;
-
+/*
     me->is_sld = is_sld;
     if (me->is_sld) {
         me->in_use_hier_id_node_position = node_index;
@@ -245,7 +245,7 @@ AJI_ERROR jtagservice_update_active_tap_record(jtagservice_record* me, const DWO
         me->in_use_hier_id_node_position = -1;
         me->in_use_hier_id = NULL;
         me->in_use_hier_id_idcode = 0;
-    }
+    } */
     return AJI_NO_ERROR;
 }
 
@@ -327,7 +327,7 @@ AJI_ERROR jtagservice_activate_jtag_tap (
 /**
  * Activate Virtual Tap
  * \param hardware_index Not yet in use, set to zero.
- */
+ */ /*
 AJI_ERROR jtagservice_activate_virtual_tap(
     jtagservice_record* me, 
     const DWORD hardware_index,
@@ -498,11 +498,11 @@ LOG_INFO("*****************>CRC DR 00 open_id=%p status=%d (%s) captured=%lu -ex
     me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
 
 c_aji_unlock(me->hier_id_open_id_list[tap_index][node_index]);
-*/
+*/ /*
     status = jtagservice_update_active_tap_record(me, (unsigned long) tap_index, true, node_index);
     return status;
 }
-
+*/
 AJI_ERROR jtagservice_init(jtagservice_record* me, const DWORD timeout) {
     AJI_ERROR status = AJI_NO_ERROR;
 
@@ -529,24 +529,23 @@ AJI_ERROR jtagservice_init_tap(jtagservice_record* me, DWORD timeout) {
     me->device_list = NULL;
     me->device_open_id_list = NULL;
     me->device_type_list = NULL;
-
+/*
     me->hier_id_n = 0;
     me->hier_ids = NULL;
     me->hub_infos = NULL;
     me->hier_id_open_id_list = NULL;
     me->hier_id_type_list = NULL;
-
-
+*/
     me->in_use_device_tap_position = -1;
     me->in_use_device = NULL;
     me->in_use_device_id = 0;
     me->in_use_device_irlen = 0;
-
+/*
     me->is_sld = false;
     me->in_use_hier_id_node_position = -1;
     me->in_use_hier_id = NULL;
     me->in_use_hier_id_idcode = 0;
-
+*/
     return AJI_NO_ERROR;
 }
 
@@ -615,7 +614,7 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
 
 AJI_ERROR  jtagservice_free_tap(jtagservice_record* me, const DWORD timeout)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-
+/*
     if (me->hier_id_n) {
         for (DWORD i = 0; i < me->device_count; ++i) {
             free(me->hier_ids[i]);
@@ -636,7 +635,7 @@ AJI_ERROR  jtagservice_free_tap(jtagservice_record* me, const DWORD timeout)
 
         me->hier_id_n = 0;
     }
-
+*/
     if (me->device_count != 0) {
         free(me->device_list);
         free(me->device_open_id_list);
@@ -653,12 +652,12 @@ AJI_ERROR  jtagservice_free_tap(jtagservice_record* me, const DWORD timeout)
     me->in_use_device = NULL;
     me->in_use_device_id = 0;
     me->in_use_device_irlen = 0;
-
+/*
     me->is_sld = false;
     me->in_use_hier_id_node_position = -1;
     me->in_use_hier_id = NULL;
     me->in_use_hier_id_idcode = 0;
-
+*/
     return AJI_NO_ERROR;
 }
 
@@ -934,7 +933,7 @@ void jtagservice_sld_node_printf(const AJI_HIER_ID* hier_id, const AJI_HUB_INFO*
         } //end for m (bridge)
     }
 }
-
+/*
 void jtagservice_display_sld_nodes(const jtagservice_record me) {
     DWORD taps = me.device_count;
     for (DWORD t = 0; t < taps; ++t) {
@@ -958,3 +957,4 @@ void jtagservice_display_sld_nodes(const jtagservice_record me) {
 
     } //end for(t in taps)
 }
+*/
