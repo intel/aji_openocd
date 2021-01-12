@@ -76,7 +76,7 @@ HINSTANCE c_jtag_client_lib;
 AJI_ERROR c_jtag_client_gnuaji_init(void) {
     c_jtag_client_lib = LoadLibrary(TEXT(LIBRARY_NAME_JTAG_CLIENT__MINGW64));
     if (c_jtag_client_lib == NULL) {
-        LOG_ERROR("Cannot find %s.", LIBRARY_NAME_JTAG_CLIENT);
+        //LOG_ERROR("Cannot find %s.", LIBRARY_NAME_JTAG_CLIENT);
         return AJI_FAILURE;
     }
     return AJI_NO_ERROR;
