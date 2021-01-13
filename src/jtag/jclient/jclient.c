@@ -34,7 +34,7 @@
 
 extern void jtag_tap_add(struct jtag_tap *t);
 
-// for "minijtagserv hardware" command
+// for "jclient hardware" command
 #define HARDWARE_OPT_EXPECTED_ID 1
 
 #define IDCODE_SOCVHPS (0x4BA00477)
@@ -74,15 +74,15 @@ static struct jtagservice_record jtagservice;
  *      as global/static instance where it is automatically initialized to all zero
  *      (or zero equivalent such as NULL). Initialization is guaranteed by C99.
  */
-struct minijtagserv_parameters {
+struct jclient_parameters {
     char* hardware_name;
     char* hardware_id; //<AJI compliant hardware descriptor. @see aji_find_hardware
 };
-typedef struct minijtagserv_parameters minijtagserv_parameters;
+typedef struct jclient_parameters jclient_parameters;
 
-minijtagserv_parameters minijtagserv_config;
+jclient_parameters jclient_config;
 
-AJI_ERROR minijtagserv_parameters_free(minijtagserv_parameters *me) {
+AJI_ERROR jclient_parameters_free(jclient_parameters *me) {
     if (me->hardware_id) {
         free(me->hardware_id);
         me->hardware_id = NULL;
@@ -452,8 +452,8 @@ static AJI_ERROR select_cable(void)
     AJI_ERROR status = AJI_NO_ERROR;
 
     LOG_INFO("Querying JTAG Server (timeout = %u s) ,,,\n", JTAGSERVICE_TIMEOUT_MS/1000);
-    if (minijtagserv_config.hardware_id != NULL) {
-        LOG_INFO("Attempting to find '%s'", minijtagserv_config.hardware_id);
+    if (jclient_config.hardware_id != NULL) {
+        LOG_INFO("Attempting to find '%s'", jclient_config.hardware_id);
         jtagservice.hardware_count = 1;
         jtagservice.hardware_list =
             calloc(jtagservice.hardware_count, sizeof(AJI_HARDWARE));
@@ -466,7 +466,7 @@ static AJI_ERROR select_cable(void)
         }
 
         status = c_aji_find_hardware_a(
-            minijtagserv_config.hardware_id,
+            jclient_config.hardware_id,
             &(jtagservice.hardware_list[0]),
             JTAGSERVICE_TIMEOUT_MS
         );
@@ -476,7 +476,7 @@ static AJI_ERROR select_cable(void)
          */
         if (AJI_TIMEOUT == status) {
             status = c_aji_find_hardware_a(
-                minijtagserv_config.hardware_id,
+                jclient_config.hardware_id,
                 &(jtagservice.hardware_list[0]),
                 JTAGSERVICE_TIMEOUT_MS
             );
@@ -484,7 +484,7 @@ static AJI_ERROR select_cable(void)
 
         if (AJI_NO_ERROR != status) {
             LOG_ERROR("Cannot find cable '%s'. Return status is %d (%s)",
-                minijtagserv_config.hardware_id,
+                jclient_config.hardware_id,
                 status, c_aji_error_decode(status)
             );
         }
@@ -527,7 +527,7 @@ static AJI_ERROR select_cable(void)
         return AJI_BAD_HARDWARE;
     }
 
-    if (minijtagserv_config.hardware_id == NULL) {
+    if (jclient_config.hardware_id == NULL) {
         LOG_INFO("At present, The first hardware cable will be used"
             " [%lu cable(s) detected]",
             (unsigned long)jtagservice.hardware_count
@@ -890,7 +890,7 @@ static int miniinit(void)
             status, c_aji_error_decode(status)
         );
         jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
-        minijtagserv_parameters_free(&minijtagserv_config);
+        jclient_parameters_free(&jclient_config);
         return ERROR_JTAG_INIT_FAILED;
     }
 #endif
@@ -902,7 +902,7 @@ jtagservice_query_main();
             status, c_aji_error_decode(status)
         );
         jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
-        minijtagserv_parameters_free(&minijtagserv_config);
+        jclient_parameters_free(&jclient_config);
         return ERROR_JTAG_INIT_FAILED;
     }
     
@@ -923,7 +923,7 @@ jtagservice_query_main();
 static int miniquit(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
-    minijtagserv_parameters_free(&minijtagserv_config);
+    jclient_parameters_free(&jclient_config);
 
 #if IS_WIN32
     c_jtag_client_gnuaji_free();
@@ -1618,7 +1618,7 @@ assert(0); //"Need to implement interface_jtag_add_tms_seq");
 	return ERROR_OK;
 }
 
-COMMAND_HANDLER(minijtagserv_handle_minijtagserv_hardware_command)
+COMMAND_HANDLER(jclient_handle_jclient_hardware_command)
 {
     if (CMD_ARGC == 1) {
         int count = strlen(CMD_ARGV[0]);
@@ -1628,10 +1628,10 @@ COMMAND_HANDLER(minijtagserv_handle_minijtagserv_hardware_command)
             return ERROR_COMMAND_SYNTAX_ERROR;
         }
 
-        minijtagserv_config.hardware_id = calloc(count + 1, sizeof(char));
-        strncpy(minijtagserv_config.hardware_id, CMD_ARGV[0], count);
+        jclient_config.hardware_id = calloc(count + 1, sizeof(char));
+        strncpy(jclient_config.hardware_id, CMD_ARGV[0], count);
     } else {
-        command_print(CMD, "Need exactly one argument for 'minijtagserv hardware'.");
+        command_print(CMD, "Need exactly one argument for 'jclient hardware'.");
         return ERROR_COMMAND_SYNTAX_ERROR;
     }
     return ERROR_OK;
@@ -1650,22 +1650,22 @@ int jim_newtap_hardware(Jim_Nvp* n, Jim_GetOptInfo* goi, struct jtag_tap* pTap)
 
     LOG_INFO("Finding hardware. Expecting %s, candidate hardware %s",
         hardware_name, 
-        minijtagserv_config.hardware_name
+        jclient_config.hardware_name
     );
     /* Currently only expecting and supporting one hardware */
-    int namelen = strlen(minijtagserv_config.hardware_name);
+    int namelen = strlen(jclient_config.hardware_name);
     if (strncmp(hardware_name,
-                minijtagserv_config.hardware_name, 
+                jclient_config.hardware_name, 
                 len < namelen ? len :  namelen
     )) {
         Jim_SetResultFormatted(
             goi->interp, 
             "%s: Unknown hardware %s. Expecting %s", 
-            n->name, hardware_name, minijtagserv_config.hardware_name);
+            n->name, hardware_name, jclient_config.hardware_name);
 
         //For reason unknwon, not seeing the above error message
         LOG_ERROR("%s: Unknown hardware %s. Expecting %s",
-            n->name, hardware_name, minijtagserv_config.hardware_name);
+            n->name, hardware_name, jclient_config.hardware_name);
         free((char*)hardware_name);
         return JIM_ERR;
     }
@@ -1686,28 +1686,28 @@ static int jim_hardware_cmd(Jim_GetOptInfo* goi)
         return JIM_ERR;
     }
 
-    Jim_GetOpt_String(goi, (const char**) (&minijtagserv_config.hardware_name), NULL);
-    Jim_GetOpt_String(goi, (const char**) (&minijtagserv_config.hardware_id),   NULL);
+    Jim_GetOpt_String(goi, (const char**) (&jclient_config.hardware_name), NULL);
+    Jim_GetOpt_String(goi, (const char**) (&jclient_config.hardware_id),   NULL);
     LOG_DEBUG("Creating New hardware, Name: %s, ID %s",
-        minijtagserv_config.hardware_name,
-        minijtagserv_config.hardware_id
+        jclient_config.hardware_name,
+        jclient_config.hardware_id
     );
 
     return JIM_OK;
 }
 
-int minijtagserv_jim_minijtagserv_hardware_command(Jim_Interp* interp, int argc, Jim_Obj* const* argv)
+int jclient_jim_jclient_hardware_command(Jim_Interp* interp, int argc, Jim_Obj* const* argv)
 {
     LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     Jim_GetOptInfo goi;
     Jim_GetOpt_Setup(&goi, interp, argc - 1, argv + 1);
     return jim_hardware_cmd(&goi);
 }
-static const struct command_registration minijtagserv_subcommand_handlers[] = {
+static const struct command_registration jclient_subcommand_handlers[] = {
     {
         .name = "hardware",
-        .jim_handler = &minijtagserv_jim_minijtagserv_hardware_command,
-//        .handler = &minijtagserv_handle_minijtagserv_hardware_command,
+        .jim_handler = &jclient_jim_jclient_hardware_command,
+//        .handler = &jclient_handle_jclient_hardware_command,
         .mode = COMMAND_CONFIG,
         .help = "select the hardware",
         .usage = "<name> <type>[<port>]",
@@ -1715,13 +1715,13 @@ static const struct command_registration minijtagserv_subcommand_handlers[] = {
     COMMAND_REGISTRATION_DONE
 };
 
-static const struct command_registration minijtagserv_command_handlers[] = {
+static const struct command_registration jclient_command_handlers[] = {
     {
-        .name = "minijtagserv",
+        .name = "jclient",
         .mode = COMMAND_CONFIG,
-        .help = "Perform minijtagserv management",
+        .help = "Perform jclient management",
         .usage = "",
-        .chain = minijtagserv_subcommand_handlers,
+        .chain = jclient_subcommand_handlers,
     },
     COMMAND_REGISTRATION_DONE
 };
@@ -1731,10 +1731,10 @@ static struct jtag_interface miniinterface = {
 	.execute_queue = NULL,
 };
 
-struct adapter_driver minijtagserv_adapter_driver = {
-	.name = "minijtagserv",
+struct adapter_driver jclient_adapter_driver = {
+	.name = "jclient",
 	.transports = jtag_only,
-	.commands = minijtagserv_command_handlers,
+	.commands = jclient_command_handlers,
 
 	.init = miniinit,
 	.quit = miniquit,

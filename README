@@ -5,7 +5,7 @@ it with jtagd, or jtagserv.exe distributed with Quartus
 
 It also assume you are reading this file because you 
 want to or need to recompile OpenOCD with the driver
-to access jtagd/jtagserv.exe, i.e. minijtagserv.
+to access jtagd/jtagserv.exe, i.e. jclient.
 
 PREREQUISITE:
 
@@ -21,19 +21,19 @@ Linux:
 (1) Create directory lib64 as need be.
 Copy libjclient.so and libjclient.so.*,
 and libSafeString.so and libSafeString.so.* to
-src/jtag/minijtagserv/lib64. Take care not to copy
+src/jtag/jclient/lib64. Take care not to copy
 any *.la file.
 
 (2) Run :
       
   ./bootstrap
-  ./configure --prefix=$(pwd) --enable-minijtagserv
+  ./configure --prefix=$(pwd) --enable-jclient
   make
 
 (3) You should now be able to run openocd using the
 following instructions:
 
-  export LD_LIBRARY_PATH=$(pwd)/src/jtag/minijtagserv/lib64:$LD_LIRBARY_PATH
+  export LD_LIBRARY_PATH=$(pwd)/src/jtag/jclient/lib64:$LD_LIRBARY_PATH
   src/openocd
 
 (4) If you run "make install", then normally we can expect 
@@ -50,7 +50,7 @@ Windows:
 Only compilation using MinGW64-64bit is supported
 
 (1) Create directory win64 as need be. 
-Copy libjclient.dll to src/jtag/minijtagserv/win64. 
+Copy libjclient.dll to src/jtag/jclient/win64. 
 Take care not to copy any *.la files
 
 (2) Run 
@@ -59,7 +59,7 @@ Take care not to copy any *.la files
   export CFLAGS="$CFLAGS -Wno-error"
   ./bootstrap
   ./configure --disable-doxygen-pdf \
-     --enable-minijtagserv --enable-ftdi --enable-jlink --enable-ulink \
+     --enable-jclient --enable-ftdi --enable-jlink --enable-ulink \
      --build=x86_64-w64-mingw32 --host=x86_64-w64-mingw32
   make
   cp /opt/x86_64-w64-mingw32/bin/libwinpthread-1.dll ./src
@@ -67,7 +67,7 @@ Take care not to copy any *.la files
 (3) You should now be able to run openocd using the
 following instructions:
 
-  export PATH=$(pwd)/src/jtag/minijtagserv/win64:$LD_LIRBARY_PATH
+  export PATH=$(pwd)/src/jtag/jclient/win64:$LD_LIRBARY_PATH
   src/openocd.exe
 
 (4) If you run "make install", then normally we can expect 

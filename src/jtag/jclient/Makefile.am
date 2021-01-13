@@ -1,12 +1,12 @@
-MINIJTAGSERV_BUILTINS_CPPFLAGS = -DWINDOWS=1 -DUNIX=2 -DLINUX=3
+JCLIENT_BUILTINS_CPPFLAGS = -DWINDOWS=1 -DUNIX=2 -DLINUX=3
 if IS_WIN32
-MINIJTAGSERV_BUILTINS_CPPFLAGS += -DPORT=WINDOWS -DSYS=WINDOWS
+JCLIENT_BUILTINS_CPPFLAGS += -DPORT=WINDOWS -DSYS=WINDOWS
 else
-MINIJTAGSERV_BUILTINS_CPPFLAGS += -DPORT=UNIX -DSYS=LINUX
+JCLIENT_BUILTINS_CPPFLAGS += -DPORT=UNIX -DSYS=LINUX
 endif
 
-MINIJTAGSERV_GENERAL_CPPFLAGS = -DUSE_STD_NAMESPACE -DUSE_STD_IOSTREAMS -D_CRT_NONSTDC_NO_WARNINGS
-MINIJTAGSERV_ALTERA_CPPFLAGS  = -DALTERA_NO_FSTREAM_WRAPPER  -DUSE_QT5 -DMODE_64_BIT \
+JCLIENT_GENERAL_CPPFLAGS = -DUSE_STD_NAMESPACE -DUSE_STD_IOSTREAMS -D_CRT_NONSTDC_NO_WARNINGS
+JCLIENT_ALTERA_CPPFLAGS  = -DALTERA_NO_FSTREAM_WRAPPER  -DUSE_QT5 -DMODE_64_BIT \
     -DCODE_PREFIX_RAW=JTAG \
     -DJTAG_DLLEXPORT=ALTERA_DLLEXPORT \
     -DJTAG_DLLPRIVATE=ALTERA_PRIVATE \
@@ -22,7 +22,7 @@ MINIJTAGSERV_ALTERA_CPPFLAGS  = -DALTERA_NO_FSTREAM_WRAPPER  -DUSE_QT5 -DMODE_64
     -D_FILE_OFFSET_BITS=64 \
     -DALTERA_DEFINE_MACRO_BEFORE_USE  
 
-MINIJTAGSERV_MISC_FLAGS = -Wno-error=coverage-mismatch    -fPIC -fvisibility=hidden -ggdb1 -O1 -mmmx -msse \
+JCLIENT_MISC_FLAGS = -Wno-error=coverage-mismatch    -fPIC -fvisibility=hidden -ggdb1 -O1 -mmmx -msse \
     -fno-strict-aliasing -finline -fno-inline-functions -fno-builtin -momit-leaf-frame-pointer -fomit-frame-pointer \
     -funwind-tables -Wall -Wno-system-headers -Wno-extra -Wno-switch -Wno-unused-function -Wno-unknown-pragmas \
     -Wno-comment -Wno-parentheses -Wno-strict-overflow -Werror -Wno-error=deprecated-declarations -fopenmp \
@@ -32,7 +32,7 @@ MINIJTAGSERV_MISC_FLAGS = -Wno-error=coverage-mismatch    -fPIC -fvisibility=hid
     -Wformat-security -fPIE -fPIC -D_FORTIFY_SOURCE=2 -Werror=delete-incomplete
 
 ## @FIXME Now disabling print string format check on windows to avoid problem with 
-## src/jtag/minijtagserv/minijtagserv.c:858:16: warning: format '%u' expects argument of type 'unsigned int', 
+## src/jtag/jclient/jclient.c:858:16: warning: format '%u' expects argument of type 'unsigned int', 
 ##     but argument 7 has type 'DWORD' {aka 'long unsigned int'} [-Wformat=]
 ##  858 |      LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %d, but got tap position %u instead",
 ##      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -46,44 +46,44 @@ MINIJTAGSERV_MISC_FLAGS = -Wno-error=coverage-mismatch    -fPIC -fvisibility=hid
 ##  DWORD for windows is a different datatype from linux
 
 if !IS_WIN32
-MINIJTAGSERV_MISC_FLAGS += -Wformat
+JCLIENT_MISC_FLAGS += -Wformat
 endif
 
 
 
-noinst_LTLIBRARIES += %D%/libocdminijtagserv.la
+noinst_LTLIBRARIES += %D%/libocdjclient.la
 
-%C%_libocdminijtagserv_la_SOURCES = 
-%C%_libocdminijtagserv_la_CPPFLAGS =
-%C%_libocdminijtagserv_la_LDFLAGS = 
-%C%_libocdminijtagserv_la_LDLIBS =
-%C%_libocdminijtagserv_la_LIBADD =
+%C%_libocdjclient_la_SOURCES = 
+%C%_libocdjclient_la_CPPFLAGS =
+%C%_libocdjclient_la_LDFLAGS = 
+%C%_libocdjclient_la_LDLIBS =
+%C%_libocdjclient_la_LIBADD =
 
 include %D%/aji/Makefile.am
-%C%_libocdminijtagserv_la_LIBADD += $(top_builddir)/%D%/aji/libocdcaji.la
+%C%_libocdjclient_la_LIBADD += $(top_builddir)/%D%/aji/libocdcaji.la
 
 
-%C%_libocdminijtagserv_la_SOURCES += $(MINIJTAGSERV_SRC)
+%C%_libocdjclient_la_SOURCES += $(JCLIENT_SRC)
 
-%C%_libocdminijtagserv_la_CPPFLAGS += -I%D%/h -I%D%/.. \
+%C%_libocdjclient_la_CPPFLAGS += -I%D%/h -I%D%/.. \
     $(AM_CPPFLAGS) \
-    $(MINIJTAGSERV_BUILTINS_CPPFLAGS) $(MINIJTAGSERV_GENERAL_CPPFLAGS) $(MINIJTAGSERV_ALTERA_CPPFLAGS) \
-    $(MINIJTAGSERV_MISC_FLAGS) 
+    $(JCLIENT_BUILTINS_CPPFLAGS) $(JCLIENT_GENERAL_CPPFLAGS) $(JCLIENT_ALTERA_CPPFLAGS) \
+    $(JCLIENT_MISC_FLAGS) 
 
-%C%_libocdminijtagserv_la_LDFLAGS += -Wl,-fuse-ld=gold -z noexecstack -z relro -rdynamic \
+%C%_libocdjclient_la_LDFLAGS += -Wl,-fuse-ld=gold -z noexecstack -z relro -rdynamic \
     -fopenmp \
     -static-libgcc 
 
-MINIJTAGSERV_SRC = \
+JCLIENT_SRC = \
     %D%/aji/aji.h %D%/aji/c_aji.h  %D%/c2_aji.h \
     %D%/aji/c_jtag_client_gnuaji.h  \
     %D%/jtagservice.h %D%/jtagservice.c \
-    %D%/minijtagserv.c 
+    %D%/jclient.c 
 
 #if IS_WIN32
-MINIJTAGSERV_SRC += %D%/aji/jtag_client_gnuaji_win64.h %D%/aji/c_jtag_client_gnuaji_win64.h
+JCLIENT_SRC += %D%/aji/jtag_client_gnuaji_win64.h %D%/aji/c_jtag_client_gnuaji_win64.h
 #else
-#MINIJTAGSERV_SRC += %D%/aji/jtag_client_gnuaji_lib64.h %D%/aji/c_jtag_client_gnuaji_lib64.h
+#JCLIENT_SRC += %D%/aji/jtag_client_gnuaji_lib64.h %D%/aji/c_jtag_client_gnuaji_lib64.h
 #endif
 
 #@TODO During installation, copy all the dependent libraries

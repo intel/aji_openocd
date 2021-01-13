@@ -32,13 +32,13 @@ else
 %C%_openocd_LDADD += -ljim
 endif
 
-if MINIJTAGSERV
+if JCLIENT
 %C%_openocd_LDADD += -ljclient
 if IS_WIN32
 %C%_openocd_LDADD += -lssp
-%C%_openocd_LDFLAGS +=  -L%D%/jtag/minijtagserv/win64
+%C%_openocd_LDFLAGS +=  -L%D%/jtag/jclient/win64
 else
-%C%_openocd_LDFLAGS += -L%D%/jtag/minijtagserv/lib64
+%C%_openocd_LDFLAGS += -L%D%/jtag/jclient/lib64
 %C%_openocd_LDADD += -lSafeString
 endif
 endif

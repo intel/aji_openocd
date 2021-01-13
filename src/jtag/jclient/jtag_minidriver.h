@@ -1,5 +1,5 @@
 /* WARNING 
- * This file is copied from src/jtag/minijtagserv/ to src/jtag by the make
+ * This file is copied from src/jtag/jclient/ to src/jtag by the make
  * process. Make sure you do not edit the copy in src/jtag as it can be 
  * replaced by the original, and SCM is setup to ignore the copy in src/jtag
  */
@@ -23,8 +23,8 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
 
-#ifndef OPENOCD_JTAG_MINIJTAGSERV_JTAG_MINIDRIVER_H
-#define OPENOCD_JTAG_MINIJTAGSERV_JTAG_MINIDRIVER_H
+#ifndef OPENOCD_JTAG_JCLIENT_JTAG_MINIDRIVER_H
+#define OPENOCD_JTAG_JCLIENT_JTAG_MINIDRIVER_H
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -32,5 +32,5 @@
 
 /* Currently Empty. Required file for build system */
 
-#endif /* OPENOCD_JTAG_MINIJTAGSERV_MINIDRIVER_IMP_H */
+#endif /* OPENOCD_JTAG_JCLIENT_MINIDRIVER_IMP_H */
 

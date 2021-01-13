@@ -953,7 +953,7 @@ int default_interface_jtag_execute_queue(void)
 
 	int result = jtag->jtag_ops->execute_queue();
 
-#if !BUILD_ZY1000 && !BUILD_MINIJTAGSERV
+#if !BUILD_ZY1000 && !BUILD_JCLIENT
 	/* Only build this if we use a regular driver with a command queue.
 	 * Otherwise jtag_command_queue won't be found at compile/link time. Its
 	 * definition is in jtag/commands.c, which is only built/linked by
@@ -1090,14 +1090,14 @@ void jtag_sleep(uint32_t us)
 /* a larger IR length than we ever expect to autoprobe */
 #define JTAG_IRLEN_MAX          60
 
-#if BUILD_MINIJTAGSERV
+#if BUILD_JCLIENT
 /* Minijtagserv should define its own jtag_examine_chain(). All jtag_examine_*()
- * in this file are there to support jtag_examine_chain(). As such minijtagserv
+ * in this file are there to support jtag_examine_chain(). As such jclient
  * need not define them.
  */
 extern int jtag_examine_chain(void);
 
-#else /* BUILD_MINIJTAGSERV */
+#else /* BUILD_JCLIENT */
 static int jtag_examine_chain_execute(uint8_t *idcode_buffer, unsigned num_idcode)
 {
 	struct scan_field field = {
@@ -1336,14 +1336,14 @@ out:
 	free(idcode_buffer);
 	return retval;
 }
-#endif /* BUILD_MINIJTAGSERV */
+#endif /* BUILD_JCLIENT */
 
-#if BUILD_MINIJTAGSERV
+#if BUILD_JCLIENT
 /* Minijtagserv should define its own jtag_validate_ircapture(void) 
  */
 extern int jtag_validate_ircapture(void);
 
-#else /* BUILD_MINIJTAGSERV */
+#else /* BUILD_JCLIENT */
 /*
  * Validate the date loaded by entry to the Capture-IR state, to help
  * find errors related to scan chain configuration (wrong IR lengths)
@@ -1467,7 +1467,7 @@ done:
 	}
 	return retval;
 }
-#endif /* BUILD_MINIJTAGSERV */
+#endif /* BUILD_JCLIENT */
 
 void jtag_tap_init(struct jtag_tap *tap)
 {
@@ -1496,7 +1496,7 @@ void jtag_tap_init(struct jtag_tap *tap)
 	/* register the reset callback for the TAP */
 	jtag_register_event_callback(&jtag_reset_callback, tap);
 
-#ifdef BUILD_MINIJTAGSERV
+#ifdef BUILD_JCLIENT
 	tap->hardware = NULL;
 #endif
 
@@ -1511,7 +1511,7 @@ void jtag_tap_init(struct jtag_tap *tap)
 
 void jtag_tap_free(struct jtag_tap *tap)
 {
-#ifdef BUILD_MINIJTAGSERV
+#ifdef BUILD_JCLIENT
 	if (tap->hardware) {
 		free(tap->hardware);
 	}
