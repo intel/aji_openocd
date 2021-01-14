@@ -92,6 +92,5 @@ if [ '' != "$(uname | grep Linux)" ]; then
 	  fn_fix_symlink "../../../../${file}" "src/jtag/jclient/lib64/$(basename ${file})"
   done
 else
-  mkdir  "src/jtag/jclient/win64" 2>/dev/null || true
-  fn_fix_symlink "../../../../../git.jtagclient-standalone/tmp/bin/libjclient.dll" "src/jtag/jclient/win64/libjclient.dll"
+  fn_fix_symlink "../../../../../git.jtagclient-standalone/tmp/bin/libjclient.dll" "src/libjclient.dll"
 fi

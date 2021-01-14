@@ -67,6 +67,8 @@
 
 #include <winsock2.h>
 #include <windows.h>
+#include <shlwapi.h>
+
 #include "c_aji.h"
 
 #define LIBRARY_NAME_JTAG_CLIENT__MINGW64 "libjclient.dll"
@@ -76,9 +78,36 @@ HINSTANCE c_jtag_client_lib;
 
 
 AJI_ERROR c_jtag_client_gnuaji_init(void) {
-    c_jtag_client_lib = LoadLibrary(TEXT(LIBRARY_NAME_JTAG_CLIENT__MINGW64));
+    /* Intel policy strike ...
+     * To prevent DLL hijacking we must only provide absolute path
+     * to a "safe" path that cannot be modified to the LoadLibrary(). 
+     * The only safe path that we can guarantee to be available is 
+     * where the program reside, so we we must have all dynamically
+     * loaded DLL there.
+     */
+    char name[256];
+    char fullpathname[256], * leaf;
+
+    GetModuleFileName(NULL, name, sizeof(name) - 2);
+    GetFullPathName(name, sizeof(fullpathname), fullpathname, &leaf);
+    *leaf = 0;
+    if (leaf < fullpathname + sizeof(fullpathname) - (sizeof(LIBRARY_NAME_JTAG_CLIENT__MINGW64) + 1)) {
+        strcat_s(fullpathname, sizeof(fullpathname), LIBRARY_NAME_JTAG_CLIENT__MINGW64);
+    } else {
+        //fprintf(stderr, "ERROR: Cannot accommodate DLL filename with full path: Buffer too small\n"  
+        //                "Buffer size is %lld, and cannot accommodate '%s%s' because it is requires %lld\n",
+        //    sizeof(fullpathname), fullpathname, LIBRARY_NAME_JTAG_CLIENT__MINGW64,
+        //    strlen(fullpathname) + sizeof(LIBRARY_NAME_JTAG_CLIENT__MINGW64)+1);
+        return AJI_FAILURE;
+    }
+
+    if (PathIsRelativeA(fullpathname)) {
+        //fprintf(stderr, "ERROR: Path name for DLL ('%s') cannot be a relative path.\n", fullpathname);
+        return AJI_FAILURE;
+    }
+    c_jtag_client_lib = LoadLibrary(TEXT(fullpathname));
     if (c_jtag_client_lib == NULL) {
-        //LOG_ERROR("Cannot find %s.", LIBRARY_NAME_JTAG_CLIENT);
+        //fprintf(stderr, "Cannot find %s.", fullpathname);
         return AJI_FAILURE;
     }
     return AJI_NO_ERROR;
