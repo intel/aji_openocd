@@ -40,8 +40,6 @@
 #include <windows.h>
 #include "c_aji.h"
 
-#define LIBRARY_NAME_JTAG_CLIENT "jtag_client.dll"
-
 AJI_ERROR c_jtag_client_gnuaji_init(void);
 AJI_ERROR c_jtag_client_gnuaji_free(void);
 

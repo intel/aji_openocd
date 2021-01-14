@@ -64,6 +64,8 @@
  *   The mangled name above is only correct if it is compiled by MSVC. For libjtag_client.dll compiled by gcc in mingw64,
  *   another mangled name scheme is used. 
  */
+
+#include <winsock2.h>
 #include <windows.h>
 #include "c_aji.h"
 
