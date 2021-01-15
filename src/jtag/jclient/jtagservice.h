@@ -53,11 +53,11 @@
 typedef struct CLAIM_RECORD CLAIM_RECORD;
 struct CLAIM_RECORD {
     DWORD claims_n;    ///! number of claims
-#if PORT == WINDOWS
+//#if PORT == WINDOWS
     AJI_CLAIM* claims;
-#else
-    AJI_CLAIM2* claims; ///! IR claims
-#endif
+//#else
+//    AJI_CLAIM2* claims; ///! IR claims
+//#endif
 };
 
 #define DEVICE_TYPE_COUNT 4

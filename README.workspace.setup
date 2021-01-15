@@ -70,14 +70,18 @@ elif [[ '' == "$(file ${TARGET} | grep 'symbolic link to ')${SOURCE}" ]]; then
   exit 1
 fi 
 
-if [[ '' == "$(file ${TARGET} | grep 'symbolic link to')${SOURCE}" ]]; then
+if [[ '' != "$(file ${TARGET} | grep -i 'broken symbolic link to ')" ]]; then
+  echo "ERROR:  $(file ${TARGET})"
+  exit 1
+fi
+
+if [[ '' == "$(file ${TARGET} | grep 'symbolic link to')" ]]; then
   echo "ERROR: Target ${TARGET} is not a symbolic link to ${SOURCE} after attempting to make it so"
   echo "       Please go to https://www.joshkel.com/2018/01/18/symlinks-in-windows/"
   echo "       or read comment in this script  for instruction"
   echo "       to setup your Windows10 installation to accept symbolic link"
   exit 1
 fi
-
 
 
 echo "OK: $(file ${TARGET})"
@@ -89,7 +93,7 @@ if [ '' != "$(uname | grep Linux)" ]; then
   for file in $(ls ../git.jtagclient-standalone/tmp/lib/libjclient.so* \
                    ../git.jtagclient-standalone/tmp/lib/libSafeString.so*); \
   do
-	  fn_fix_symlink "../../../../${file}" "src/jtag/jclient/lib64/$(basename ${file})"
+	  fn_fix_symlink "../${file}" "src/$(basename ${file})"
   done
 else
   fn_fix_symlink "../../../../../git.jtagclient-standalone/tmp/bin/libjclient.dll" "src/libjclient.dll"

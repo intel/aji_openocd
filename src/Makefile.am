@@ -35,10 +35,10 @@ endif
 if JCLIENT
 %C%_openocd_LDADD += -ljclient
 if IS_WIN32
-%C%_openocd_LDADD += -lshlwapi -lssp
 %C%_openocd_LDFLAGS +=  -L%D% 
+%C%_openocd_LDADD += -lshlwapi -lssp
 else
-%C%_openocd_LDFLAGS += -L%D%/jtag/jclient/lib64
+%C%_openocd_LDFLAGS += -L%D%
 %C%_openocd_LDADD += -lSafeString
 endif
 endif

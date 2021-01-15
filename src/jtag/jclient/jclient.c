@@ -777,25 +777,27 @@ static AJI_ERROR select_tap(void)
     // If you don't, then anytime after  c_aji_test_logic_reset() call, 
     //  you can get fatal error
     //  "*** glibc detected *** src/openocd: double free or corruption (fasttop): 0x00000000027bc7a0 ***"
-#if PORT == WINDOWS
+//#if PORT == WINDOWS
     status = c_aji_open_device(
         hw.chain_id,
         arm_index,
         &(jtagservice.device_open_id_list[arm_index]),
         claims.claims, claims.claims_n, jtagservice.appIdentifier
     );
-#else
-    status = c_aji_open_device_a(
-        hw.chain_id,
-        arm_index,
-        &(jtagservice.device_open_id_list[arm_index]),
-        claims.claims, claims.claims_n, jtagservice.appIdentifier
-    );
-#endif
+//#else
+//    status = c_aji_open_device_a(
+//        hw.chain_id,
+//        arm_index,
+//        &(jtagservice.device_open_id_list[arm_index]),
+//        claims.claims, claims.claims_n, jtagservice.appIdentifier
+//    );
+//#endif
     if(AJI_NO_ERROR != status) {
-            LOG_ERROR("Cannot open device number %lu (IDCODE=%lX)",
+            LOG_ERROR("Cannot open device number %lu (IDCODE=%lX). Returned %d (%s)",
                       (unsigned long) arm_index,
-                      (unsigned long) jtagservice.device_list[arm_index].device_id
+                      (unsigned long) jtagservice.device_list[arm_index].device_id,
+		      status,
+		      c_aji_error_decode(status)
             );
     }
     status = c_aji_unlock_chain(hw.chain_id);
@@ -883,7 +885,6 @@ static int miniinit(void)
     jtagservice_init(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
     AJI_ERROR status = AJI_NO_ERROR;
 
-#if IS_WIN32
     status = c_jtag_client_gnuaji_init();
     if (AJI_NO_ERROR != status) {
         LOG_ERROR("Cannot initialize C_JTAG_CLIENT library. Return status is %d (%s)",
@@ -893,7 +894,7 @@ static int miniinit(void)
         jclient_parameters_free(&jclient_config);
         return ERROR_JTAG_INIT_FAILED;
     }
-#endif
+
 jtagservice_query_main();
 
     status = select_cable();
@@ -925,9 +926,8 @@ static int miniquit(void)
     jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
     jclient_parameters_free(&jclient_config);
 
-#if IS_WIN32
+
     c_jtag_client_gnuaji_free();
-#endif
 
     return ERROR_OK;
 }
