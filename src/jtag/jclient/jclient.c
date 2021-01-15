@@ -451,70 +451,91 @@ static AJI_ERROR select_cable(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     AJI_ERROR status = AJI_NO_ERROR;
 
-    LOG_INFO("Querying JTAG Server (timeout = %u s) ,,,\n", JTAGSERVICE_TIMEOUT_MS/1000);
-    if (jclient_config.hardware_id != NULL) {
-        LOG_INFO("Attempting to find '%s'", jclient_config.hardware_id);
-        jtagservice.hardware_count = 1;
-        jtagservice.hardware_list =
-            calloc(jtagservice.hardware_count, sizeof(AJI_HARDWARE));
-        jtagservice.server_version_info_list =
-            calloc(jtagservice.hardware_count, sizeof(char*));
-        if (jtagservice.hardware_list == NULL
-            || jtagservice.server_version_info_list == NULL
-            ) {
-            return AJI_NO_MEMORY;
-        }
-
-        status = c_aji_find_hardware_a(
-            jclient_config.hardware_id,
-            &(jtagservice.hardware_list[0]),
-            JTAGSERVICE_TIMEOUT_MS
-        );
-        /* Documentation says retry immediately after a timeout,
-           as AJI is still trying to connect at the background
-           after timeout so immediate retry might be successful 
-         */
-        if (AJI_TIMEOUT == status) {
-            status = c_aji_find_hardware_a(
-                jclient_config.hardware_id,
-                &(jtagservice.hardware_list[0]),
-                JTAGSERVICE_TIMEOUT_MS
-            );
-        }
-
-        if (AJI_NO_ERROR != status) {
-            LOG_ERROR("Cannot find cable '%s'. Return status is %d (%s)",
-                jclient_config.hardware_id,
-                status, c_aji_error_decode(status)
-            );
-        }
-    }
-    else {
-        LOG_INFO("No cable specified, so searching for cables");
-        status = c_aji_get_hardware2(
-            &(jtagservice.hardware_count),
-            jtagservice.hardware_list,
-            jtagservice.server_version_info_list,
-            JTAGSERVICE_TIMEOUT_MS
-        );
-        if (AJI_TOO_MANY_DEVICES == status) {
+    DWORD MYJTAGTIMEOUT = 250; //ms
+    DWORD TRIES = 4 * 60; 
+    for (DWORD i = 0; i < TRIES; i++) {
+        LOG_INFO("Querying JTAG Server (timeout = %lu s) ...\n", (long unsigned) MYJTAGTIMEOUT * TRIES / 1000);
+        if (jclient_config.hardware_id != NULL) {
+            LOG_INFO("Attempting to find '%s'", jclient_config.hardware_id);
+            jtagservice.hardware_count = 1;
             jtagservice.hardware_list =
                 calloc(jtagservice.hardware_count, sizeof(AJI_HARDWARE));
             jtagservice.server_version_info_list =
                 calloc(jtagservice.hardware_count, sizeof(char*));
             if (jtagservice.hardware_list == NULL
                 || jtagservice.server_version_info_list == NULL
-                ) {
+            ) {
                 return AJI_NO_MEMORY;
             }
+
+            status = c_aji_find_hardware_a(
+                jclient_config.hardware_id,
+                &(jtagservice.hardware_list[0]),
+                MYJTAGTIMEOUT
+            );
+            /* Documentation says retry immediately after a timeout,
+               as AJI is still trying to connect at the background
+               after timeout so immediate retry might be successful
+             */
+            if (AJI_TIMEOUT == status) {
+                status = c_aji_find_hardware_a(
+                    jclient_config.hardware_id,
+                    &(jtagservice.hardware_list[0]),
+                    0
+                );
+            }
+
+            if (AJI_NO_ERROR != status) {
+                LOG_ERROR("Cannot find cable '%s'. Return status is %d (%s)",
+                    jclient_config.hardware_id,
+                    status, c_aji_error_decode(status)
+                );
+            }
+        }
+        else {
+            LOG_INFO("No cable specified, so searching for cables");
             status = c_aji_get_hardware2(
                 &(jtagservice.hardware_count),
                 jtagservice.hardware_list,
                 jtagservice.server_version_info_list,
-                JTAGSERVICE_TIMEOUT_MS
+                MYJTAGTIMEOUT
             );
-        } //end if (AJI_TOO_MANY_DEVICES)
-    }
+            if (AJI_TOO_MANY_DEVICES == status) {
+                jtagservice.hardware_list =
+                    calloc(jtagservice.hardware_count, sizeof(AJI_HARDWARE));
+                jtagservice.server_version_info_list =
+                    calloc(jtagservice.hardware_count, sizeof(char*));
+                if (jtagservice.hardware_list == NULL
+                    || jtagservice.server_version_info_list == NULL
+                ) {
+                    return AJI_NO_MEMORY;
+                }
+                status = c_aji_get_hardware2(
+                    &(jtagservice.hardware_count),
+                    jtagservice.hardware_list,
+                    jtagservice.server_version_info_list,
+                    0
+                );
+            } //end if (AJI_TOO_MANY_DEVICES)
+        } //end if (jclient_config.hardware_id != NULL)
+
+        if (status != AJI_TIMEOUT)
+            break;
+        if (i == 2)
+            fprintf(stderr, "Connecting to server(s) [.                   ]"
+                "\b\b\b\b\b\b\b\b\b\b"
+                "\b\b\b\b\b\b\b\b\b\b"
+                "\b\b\b\b\b\b\b\b\b\b"
+                "\b\b\b\b\b\b\b\b\b\b"
+                "\b\b\b\b\b\b\b\b\b\b"
+                "\b\b\b\b\b\b\b\b\b\b");
+        else if ((i % 4) == 2)
+            fprintf(stderr, ".");
+        fflush(stderr);
+
+    } // end for i
+
+
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failed to query server for hardware cable information. "
                   " Return Status is %i (%s)\n", 
