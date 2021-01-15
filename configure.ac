@@ -109,7 +109,7 @@ m4_define([ADAPTER_VAR], [enable_[]ADAPTER_ARG($1)])
 m4_define([ADAPTER_OPT], [m4_translit(ADAPTER_ARG($1), [_], [-])])
 
 m4_define([JCLIENT_ADAPTERS],
-	[[[jclient], [Intel JClient Client], [JCLIENT]]])
+	[[[jclient], [Intel JClient for SOCVHPS], [JCLIENT]]])
 
 m4_define([USB1_ADAPTERS],
 	[[[ftdi], [MPSSE mode of FTDI based devices], [FTDI]],
