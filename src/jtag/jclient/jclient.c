@@ -524,12 +524,8 @@ static AJI_ERROR select_cable(void)
         if (i == 2)
             fprintf(stderr, "Connecting to server(s) [.                   ]"
                 "\b\b\b\b\b\b\b\b\b\b"
-                "\b\b\b\b\b\b\b\b\b\b"
-                "\b\b\b\b\b\b\b\b\b\b"
-                "\b\b\b\b\b\b\b\b\b\b"
-                "\b\b\b\b\b\b\b\b\b\b"
                 "\b\b\b\b\b\b\b\b\b\b");
-        else if ((i % 4) == 2)
+        else if ((i % 12) == 2)
             fprintf(stderr, ".");
         fflush(stderr);
 

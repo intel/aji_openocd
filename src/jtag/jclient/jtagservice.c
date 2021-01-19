@@ -729,9 +729,27 @@ int jtagservice_query_main(void) {
         return AJI_NO_MEMORY;
     }
 
-    printf("Query JTAG (timeout = %u s)\n", timeout/1000);
+    AJI_ERROR status = AJI_NO_ERROR;
     DWORD hardware_count = hardware_capacity;
-    AJI_ERROR status = c_aji_get_hardware2( &hardware_count, hardware_list, server_version_info_list, timeout);
+
+    DWORD MYJTAGTIMEOUT = 250; //ms
+    DWORD TRIES = 4 * 60;
+    printf("Query JTAG (timeout = %u s)\n", (long unsigned) MYJTAGTIMEOUT * TRIES /1000);
+    for (DWORD i=0; i < TRIES; ++i) {
+        status = c_aji_get_hardware2( &hardware_count, hardware_list, server_version_info_list, MYJTAGTIMEOUT);
+        if (status != AJI_TIMEOUT) {
+            break;
+        }
+        if (i == 2) {
+            fprintf(stderr, "Connecting to server(s) [.                   ]"
+                     "\b\b\b\b\b\b\b\b\b\b"
+                     "\b\b\b\b\b\b\b\b\b\b");
+        } else if ((i % 12) == 2) {
+           fprintf(stderr, ".");
+        }
+        fflush(stderr);
+    } //end for i
+
     printf("Return Status is %d (%s)\n", status, c_aji_error_decode(status));
 
     printf("Output Result\n");
@@ -812,12 +830,13 @@ int jtagservice_query_main(void) {
                 char appname[] = "MyApp";
                 printf("            (C1-1) Open Device %lX ...\n", (unsigned long) device.device_id); fflush(stdout);
                 AJI_OPEN_ID open_id = NULL;   
-                    
+                
 //#if PORT == WINDOWS
                 status = c_aji_open_device(chain_id, tap_position, &open_id, claims, claim_size, appname);
-//#else
+//#else 
 //                status = c_aji_open_device_a(chain_id, tap_position, &open_id, claims, claim_size, appname);
 //#endif
+
                 if(AJI_NO_ERROR  != status) {
                     printf("            Cannot open device. Returned %d (%s). This is not an error if the device is not SOCVHPS or FPGA Tap\n", status, c_aji_error_decode(status));
                     continue;
