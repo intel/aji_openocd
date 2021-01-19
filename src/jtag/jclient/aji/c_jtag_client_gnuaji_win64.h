@@ -40,4 +40,4 @@
 #include <windows.h>
 
 //empty. See c_jtag_client_gnu_aji.h for functions to implement
-
+#endif //INC_C_JTAG_CLIENT_GNUAJI_WIN64_H
