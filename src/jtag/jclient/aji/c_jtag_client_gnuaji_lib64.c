@@ -23,7 +23,12 @@
 #endif
 
 #include <dlfcn.h>
+#include <unistd.h>
+#include <libgen.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
+#include "log.h"
 #include "c_aji.h"
 #include "c_jtag_client_gnuaji_lib64.h"
 
@@ -41,22 +46,75 @@
  */
 
 
-#define LIBRARY_NAME_SAFESTRING__LINUX "libjclient.so.0"
+#define LIBRARY_NAME_SAFESTRING__LINUX "libSafeString.so.0"
 #define LIBRARY_NAME_JTAG_CLIENT__LINUX "libjclient.so.0"
 
+#define MAX_PATH 256
 void* c_safestring_lib;
 void* c_jtag_client_lib;
 
 
 AJI_ERROR c_jtag_client_gnuaji_init(void) {
-    c_safestring_lib = dlopen(LIBRARY_NAME_SAFESTRING__LINUX, RTLD_NOW);
+    char safestring_path[MAX_PATH],
+         jtag_client_path[MAX_PATH];
+
+#if 1 //INTEL SECURITY POLICY APPLY
+    { //dummy block
+    char sym_exe_path[MAX_PATH], 
+         abs_exe_path[MAX_PATH];
+    snprintf(sym_exe_path, sizeof(sym_exe_path), "/proc/%d/exe", getpid());
+
+    ssize_t s = readlink(sym_exe_path, abs_exe_path, sizeof(abs_exe_path));
+    if(s == -1) {
+   	    LOG_ERROR("Cannot find actual program path from symlink %s. errno is %d.", sym_exe_path, errno);
+	    return AJI_FAILURE;
+    }
+    if( (s+1lu) > sizeof(abs_exe_path)) {
+   	    LOG_ERROR("Buffer for storing absolute path is too small");
+	    return AJI_FAILURE;
+    }
+    abs_exe_path[s]=0;
+    if('/' != abs_exe_path[0]) {
+  	    LOG_ERROR(
+            "ERROR: Cannot resolve symbolic program path into an absolute path: %s => %s\n", 
+            sym_exe_path, 
+            abs_exe_path
+        );
+	    return AJI_FAILURE;
+     }
+
+    char *abs_exe_dir = dirname(abs_exe_path); 
+    int  abs_exe_dir_length = strnlen(abs_exe_dir, sizeof(abs_exe_path));
+    int maxlibsize =  sizeof(LIBRARY_NAME_SAFESTRING__LINUX) > sizeof(LIBRARY_NAME_JTAG_CLIENT__LINUX)?
+	 	              sizeof(LIBRARY_NAME_SAFESTRING__LINUX) : sizeof(LIBRARY_NAME_JTAG_CLIENT__LINUX);
+
+    if( (abs_exe_dir_length+1 + maxlibsize+1) > MAX_PATH) {
+  	    fprintf(stderr, "ERROR: Buffer to short to hold full name of libraries. Needs %d, got %d\n", 
+            abs_exe_dir_length+1 + maxlibsize+1, MAX_PATH
+        );
+	    return AJI_FAILURE;
+    }
+
+    snprintf(safestring_path,  sizeof(safestring_path),  "%s/%s", abs_exe_dir, LIBRARY_NAME_SAFESTRING__LINUX);
+    snprintf(jtag_client_path, sizeof(jtag_client_path), "%s/%s", abs_exe_dir, LIBRARY_NAME_JTAG_CLIENT__LINUX);
+    } //dummy block
+#else 
+    { //dummyblock
+    snprintf(safestring_path,  sizeof(safestring_path),  "%s", LIBRARY_NAME_SAFESTRING__LINUX);
+    snprintf(jtag_client_path, sizeof(jtag_client_path), "%s", LIBRARY_NAME_JTAG_CLIENT__LINUX);
+    } //dummy block
+#endif //INTEL_SECURITY_POLICY
+
+    LOG_DEBUG("Loading %s", safestring_path);
+    c_safestring_lib = dlopen(safestring_path, RTLD_NOW);
     if (c_safestring_lib == NULL) {
         fprintf(stderr, "ERROR: Cannot load %s - \n", LIBRARY_NAME_SAFESTRING__LINUX, dlerror());
         //LOG_ERROR("Cannot find %s.", LIBRARY_NAME_JTAG_CLIENT);
         return AJI_FAILURE;
     }
 
-    c_jtag_client_lib = dlopen(LIBRARY_NAME_JTAG_CLIENT__LINUX, RTLD_NOW);
+    LOG_DEBUG("Loading %s", jtag_client_path);
+    c_jtag_client_lib = dlopen(jtag_client_path, RTLD_NOW);
     if (c_jtag_client_lib == NULL) {
         fprintf(stderr, "ERROR: Cannot load %s - \n", LIBRARY_NAME_JTAG_CLIENT__LINUX, dlerror());
         //LOG_ERROR("Cannot find %s.", LIBRARY_NAME_JTAG_CLIENT);
