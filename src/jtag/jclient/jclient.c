@@ -263,7 +263,7 @@ static bool vjtag_examine_chain_match_tap(struct vjtag_tap* vtap) {
 /**
  * @pre jtagservice is filled with device inforamtion. That should
  *      already been done during adapter initialization via 
- *      @c miniinit() function.
+ *      @c jclient_init() function.
  */
 int jtag_examine_chain(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
@@ -891,7 +891,7 @@ jtagservice.in_use_device_tap_position = 1;
  * Returns ERROR_OK if JTAG Server found.
  * TODO: Write a TCL Command that allows me to specify the jtagserver config file
  */
-static int miniinit(void)
+static int jclient_init(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     LOG_DEBUG("Capture server\n");
     char *quartus_jtag_client_config = getenv("QUARTUS_JTAG_CLIENT_CONFIG");
@@ -942,7 +942,7 @@ jtagservice_query_main();
     return ERROR_OK;
 }
 
-static int miniquit(void)
+static int jclient_quit(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
     jclient_parameters_free(&jclient_config);
@@ -1748,7 +1748,7 @@ static const struct command_registration jclient_command_handlers[] = {
 };
 
 
-static struct jtag_interface miniinterface = {
+static struct jtag_interface jclient_interface = {
 	.execute_queue = NULL,
 };
 
@@ -1757,14 +1757,14 @@ struct adapter_driver jclient_adapter_driver = {
 	.transports = jtag_only,
 	.commands = jclient_command_handlers,
 
-	.init = miniinit,
-	.quit = miniquit,
+	.init = jclient_init,
+	.quit = jclient_quit,
 	.speed = NULL,
 	.khz = NULL,
 	.speed_div = NULL,
 	.power_dropout = NULL,
 	.srst_asserted = NULL,
 
-	.jtag_ops = &miniinterface,
+	.jtag_ops = &jclient_interface,
 };
 
