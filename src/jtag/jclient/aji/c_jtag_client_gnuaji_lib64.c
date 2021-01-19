@@ -89,8 +89,8 @@ AJI_ERROR c_jtag_client_gnuaji_init(void) {
 	 	              sizeof(LIBRARY_NAME_SAFESTRING__LINUX) : sizeof(LIBRARY_NAME_JTAG_CLIENT__LINUX);
 
     if( (abs_exe_dir_length+1 + maxlibsize+1) > MAX_PATH) {
-  	    fprintf(stderr, "ERROR: Buffer to short to hold full name of libraries. Needs %d, got %d\n", 
-            abs_exe_dir_length+1 + maxlibsize+1, MAX_PATH
+  	    LOG_ERROR("Buffer to short to hold full name of libraries. Needs %d, got %d\n", 
+                  abs_exe_dir_length+1 + maxlibsize+1, MAX_PATH
         );
 	    return AJI_FAILURE;
     }
@@ -106,18 +106,18 @@ AJI_ERROR c_jtag_client_gnuaji_init(void) {
 #endif //INTEL_SECURITY_POLICY
 
     LOG_DEBUG("Loading %s", safestring_path);
-    c_safestring_lib = dlopen(safestring_path, RTLD_NOW);
+    c_safestring_lib = dlopen(safestring_path, RTLD_GLOBAL|RTLD_NOW);
     if (c_safestring_lib == NULL) {
-        fprintf(stderr, "ERROR: Cannot load %s - \n", LIBRARY_NAME_SAFESTRING__LINUX, dlerror());
-        //LOG_ERROR("Cannot find %s.", LIBRARY_NAME_JTAG_CLIENT);
+        char *err = dlerror();
+        LOG_ERROR("Cannot load %s: %s\n", LIBRARY_NAME_SAFESTRING__LINUX, err);
         return AJI_FAILURE;
     }
 
     LOG_DEBUG("Loading %s", jtag_client_path);
-    c_jtag_client_lib = dlopen(jtag_client_path, RTLD_NOW);
+    c_jtag_client_lib = dlopen(jtag_client_path, RTLD_GLOBAL|RTLD_NOW);
     if (c_jtag_client_lib == NULL) {
-        fprintf(stderr, "ERROR: Cannot load %s - \n", LIBRARY_NAME_JTAG_CLIENT__LINUX, dlerror());
-        //LOG_ERROR("Cannot find %s.", LIBRARY_NAME_JTAG_CLIENT);
+        char *err = dlerror();
+        LOG_ERROR("Cannot load %s: %s \n", LIBRARY_NAME_JTAG_CLIENT__LINUX, err);
         return AJI_FAILURE;
     }
     return AJI_NO_ERROR;
