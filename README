@@ -21,7 +21,7 @@ Linux:
 (1) Create directory lib64 as need be.
 Copy libjclient.so and libjclient.so.*,
 and libSafeString.so and libSafeString.so.* to
-src/jtag/jclient/lib64. Take care not to copy
+src. Take care not to copy
 any *.la file.
 
 (2) Run :
@@ -41,7 +41,8 @@ the command:
 
   openocd
 
-to work
+to work, provided you copy libSafeString.so and libjclient.* to the
+same directory as openocd
       
 
 
@@ -75,5 +76,6 @@ the command:
 
   openocd.exe
 
-to work
+to work, provided you copy libSafeString.so and libjclient.* to the
+same directory as openocd
 
