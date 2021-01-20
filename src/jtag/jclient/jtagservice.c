@@ -708,24 +708,24 @@ AJI_ERROR  jtagservice_free_common(jtagservice_record* me, const DWORD timeout)
 
 
 int jtagservice_query_main(void) {
-    printf("Check inputs\n");
+    LOG_INFO("Check inputs\n");
     char *quartus_jtag_client_config = getenv("QUARTUS_JTAG_CLIENT_CONFIG");
     if (quartus_jtag_client_config != NULL) {
-        printf("Configuration file, set via QUARTUS_JTAG_CLIENT_CONFIG, is '%s'\n", 
+        LOG_INFO("Configuration file, set via QUARTUS_JTAG_CLIENT_CONFIG, is '%s'\n", 
                quartus_jtag_client_config
         );
     } else {
-        printf("Environment variable QUARTUS_JTAG_CLIENT_CONFIG not setted\n");
+        LOG_DEBUG("Environment variable QUARTUS_JTAG_CLIENT_CONFIG not set.\n");
     }
     
-    printf("Initialize Variables\n");
+    LOG_INFO("Initialize Variables\n");
     unsigned int timeout = JTAGSERVICE_TIMEOUT_MS;
     
     DWORD hardware_capacity = 10;
     AJI_HARDWARE *hardware_list = (AJI_HARDWARE*) calloc(hardware_capacity, sizeof(AJI_HARDWARE));
     char **server_version_info_list = (char**) calloc(hardware_capacity, sizeof(char*));
     if(NULL == hardware_list) {
-        printf("Failed to allocate memory for hardware_list\n");
+        LOG_ERROR("Failed to allocate memory for hardware_list\n");
         return AJI_NO_MEMORY;
     }
 
@@ -734,44 +734,43 @@ int jtagservice_query_main(void) {
 
     DWORD MYJTAGTIMEOUT = 250; //ms
     DWORD TRIES = 4 * 60;
-    printf("Query JTAG (timeout = %u s)\n", (long unsigned) MYJTAGTIMEOUT * TRIES /1000);
     for (DWORD i=0; i < TRIES; ++i) {
         status = c_aji_get_hardware2( &hardware_count, hardware_list, server_version_info_list, MYJTAGTIMEOUT);
         if (status != AJI_TIMEOUT) {
             break;
         }
         if (i == 2) {
-            fprintf(stderr, "Connecting to server(s) [.                   ]"
+            LOG_INFO("Connecting to server(s) [.                   ]"
                      "\b\b\b\b\b\b\b\b\b\b"
                      "\b\b\b\b\b\b\b\b\b\b");
         } else if ((i % 12) == 2) {
-           fprintf(stderr, ".");
+           LOG_OUTPUT(".");
         }
-        fflush(stderr);
     } //end for i
+    LOG_OUTPUT("\n");
 
-    printf("Return Status is %d (%s)\n", status, c_aji_error_decode(status));
+    LOG_INFO("Connection Request reply is %d (%s)", status, c_aji_error_decode(status));
 
-    printf("Output Result\n");
+    LOG_INFO("Output Result");
     if (AJI_NO_ERROR == status) {
-        printf("Number of hardware is %lu\n", (unsigned long) hardware_count);
+        LOG_INFO("Number of hardware is %lu", (unsigned long) hardware_count);
 
         for(unsigned int i=0; i<hardware_count; ++i) {
             AJI_HARDWARE hw = hardware_list[i];
-            printf("    (%u) device_name=%s hw_name=%s server=%s port=%s chain_id=%p persistent_id=%lu, chain_type=%d, features=%lu, server_version_info_list=%s\n", 
+            LOG_INFO("    (%u) device_name=%s hw_name=%s server=%s port=%s chain_id=%p persistent_id=%lu, chain_type=%d, features=%lu, server_version_info_list=%s", 
                    i+1, hw.device_name, hw.hw_name, hw.server, hw.port,  hw.chain_id, (unsigned long) hw.persistent_id, hw.chain_type, (unsigned long) hw.features,
                    server_version_info_list[i]);
            
             //Assume if persistent_id==0,hw is not defined. Felt that .port="Unable to connect" 
             //..is not a strong enough indicator that something is wrong       
             if(hw.persistent_id == 0) {
-               printf("        Not a valid device.\n");
+               LOG_ERROR("        Not a valid device.");
                continue;
             }
             AJI_CHAIN_ID chain_id = hw.chain_id;
             status = c_aji_lock_chain(chain_id, timeout);
             if(AJI_NO_ERROR !=  status ) { 
-                printf("       Problem with chain locking. Returned %d (%s)\n", status, c_aji_error_decode(status));
+                LOG_ERROR("       Problem with chain locking. Returned %d (%s)", status, c_aji_error_decode(status));
                 continue;
             }
 
@@ -779,18 +778,18 @@ int jtagservice_query_main(void) {
             AJI_DEVICE *device_list = (AJI_DEVICE*) calloc(device_count, sizeof(AJI_DEVICE));
             status = c_aji_read_device_chain(chain_id, &device_count, device_list, 1);
             if(AJI_NO_ERROR !=  status ) { 
-                printf("       Problem with eetting device on this chain. Returned %d (%s)\n", status, c_aji_error_decode(status));
+                LOG_ERROR("       Problem with getting device on this chain. Returned %d (%s)", status, c_aji_error_decode(status));
                 free(device_list);
                 c_aji_unlock_chain(chain_id);
                 continue;
             }
 
-            printf("        Number of devices on chain is %lu\n", (unsigned long) device_count);
+            LOG_INFO("        Number of devices on chain is %lu\n", (unsigned long) device_count);
             for(DWORD tap_position=0; tap_position<device_count; ++tap_position) {
                 AJI_DEVICE device = device_list[tap_position];
-                printf("        (A%lu) device_id=%08lX, instruction_length=%d, features=%lu, device_name=%s\n", 
-                        (unsigned long) tap_position+1, (unsigned long) device.device_id, device.instruction_length,
-                        (unsigned long) device.features, device.device_name
+                LOG_INFO("        (A%lu) device_id=%08lX, instruction_length=%d, features=%lu, device_name=%s", 
+                         (unsigned long) tap_position+1, (unsigned long) device.device_id, device.instruction_length,
+                         (unsigned long) device.features, device.device_name
                 );
                         
                
@@ -800,13 +799,13 @@ int jtagservice_query_main(void) {
 
                 status =  c_aji_get_nodes_b(chain_id, tap_position, hier_ids, &hier_id_n, hub_infos);
                 if(AJI_NO_ERROR !=  status ) { 
-                    printf("       Problem with getting nodes for this tap position. Returned %d (%s)\n", status, c_aji_error_decode(status));
+                    LOG_ERROR("       Problem with getting nodes for this tap position. Returned %d (%s)\n", status, c_aji_error_decode(status));
                     free(hier_ids);
                     free(hub_infos);
                     continue;
                 }
                
-                printf("            Number of SLD nodes (hier_id_n)=%lu,\n", (unsigned long) hier_id_n); //hier_id_n = 0 and status=AJI_NO_ERROR if no SLD_HUB
+                LOG_INFO("            Number of SLD nodes (hier_id_n)=%lu,\n", (unsigned long) hier_id_n); //hier_id_n = 0 and status=AJI_NO_ERROR if no SLD_HUB
                 for(DWORD k=0; k<hier_id_n; ++k) { //With ARRIA10, this loop is entered for the FPGA Tap, if it has SLD nodes.
                     printf("            (B%lu) ", k);
                     jtagservice_sld_node_printf(&(hier_ids[k]), &(hub_infos[k]));

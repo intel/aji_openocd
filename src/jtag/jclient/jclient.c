@@ -451,12 +451,15 @@ static AJI_ERROR select_cable(void)
 {   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     AJI_ERROR status = AJI_NO_ERROR;
 
+    _Bool havent_shown_banner = true;
     DWORD MYJTAGTIMEOUT = 250; //ms
     DWORD TRIES = 4 * 60; 
     for (DWORD i = 0; i < TRIES; i++) {
-        LOG_INFO("Querying JTAG Server (timeout = %lu s) ...\n", (long unsigned) MYJTAGTIMEOUT * TRIES / 1000);
         if (jclient_config.hardware_id != NULL) {
-            LOG_INFO("Attempting to find '%s'", jclient_config.hardware_id);
+            if(havent_shown_banner) {
+                LOG_INFO("Attempting to find '%s'", jclient_config.hardware_id);
+                havent_shown_banner = false;
+            }
             jtagservice.hardware_count = 1;
             jtagservice.hardware_list =
                 calloc(jtagservice.hardware_count, sizeof(AJI_HARDWARE));
@@ -493,7 +496,10 @@ static AJI_ERROR select_cable(void)
             }
         }
         else {
-            LOG_INFO("No cable specified, so searching for cables");
+            if(havent_shown_banner) {
+                LOG_INFO("No cable specified, so will be searching for cables");
+                havent_shown_banner = false;
+            }
             status = c_aji_get_hardware2(
                 &(jtagservice.hardware_count),
                 jtagservice.hardware_list,
@@ -522,14 +528,13 @@ static AJI_ERROR select_cable(void)
         if (status != AJI_TIMEOUT)
             break;
         if (i == 2)
-            fprintf(stderr, "Connecting to server(s) [.                   ]"
+            LOG_INFO("Connecting to server(s) [.                   ]"
                 "\b\b\b\b\b\b\b\b\b\b"
                 "\b\b\b\b\b\b\b\b\b\b");
         else if ((i % 12) == 2)
-            fprintf(stderr, ".");
-        fflush(stderr);
-
+            LOG_OUTPUT(".");
     } // end for i
+    LOG_OUTPUT("\n");
 
 
     if(AJI_NO_ERROR != status) {
@@ -896,7 +901,7 @@ static int jclient_init(void)
                quartus_jtag_client_config
         );
     } else {
-        LOG_INFO("Environment variable QUARTUS_JTAG_CLIENT_CONFIG not set\n"); //TODO: Remove this message, useful for debug will be cause user alarm unnecessarily
+        LOG_DEBUG("You can choose to pass a jtag client config file QUARTUS_JTAG_CLIENT_CONFIG\n");
     }
 
     jtagservice_init(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
@@ -911,8 +916,6 @@ static int jclient_init(void)
         jclient_parameters_free(&jclient_config);
         return ERROR_JTAG_INIT_FAILED;
     }
-
-jtagservice_query_main();
 
     status = select_cable();
     if (AJI_NO_ERROR != status) {
