@@ -46,8 +46,8 @@
  */
 
 
-#define LIBRARY_NAME_SAFESTRING__LINUX "libSafeString.so.0"
-#define LIBRARY_NAME_JTAG_CLIENT__LINUX "libjclient.so.0"
+#define LIBRARY_NAME_SAFESTRING__LINUX "libSafeString.so"
+#define LIBRARY_NAME_JTAG_CLIENT__LINUX "libjclient.so"
 
 #define MAX_PATH 256
 void* c_safestring_lib;
