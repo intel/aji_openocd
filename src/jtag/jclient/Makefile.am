@@ -30,20 +30,6 @@ endif
     -flifetime-dse=1 -frecord-gcc-switches -fstack-protector-strong \
     -Wformat-security -fPIE -fPIC  -Werror=delete-incomplete
 
-## @FIXME Now disabling print string format check on windows to avoid problem with 
-## src/jtag/jclient/jclient.c:858:16: warning: format '%u' expects argument of type 'unsigned int', 
-##     but argument 7 has type 'DWORD' {aka 'long unsigned int'} [-Wformat=]
-##  858 |      LOG_ERROR("Expecting SOCVHPS to be used, i.e. tap_position %d, but got tap position %u instead",
-##      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-##  859 |                  jtagservice.in_use_device_tap_position,
-##  860 |                tap_position
-##      |                ~~~~~~~~~~~~
-##      |                |
-##      |                DWORD {aka long unsigned int}
-##
-##  The reason for this is the formating string is written for with DWORD for linux in mind, this causes problem when 
-##  DWORD for windows is a different datatype from linux
-
 if !IS_WIN32
 %C%_libocdjclient_la_CPPFLAGS += -Wformat
 endif

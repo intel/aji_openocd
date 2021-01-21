@@ -134,53 +134,7 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
         records[ARM].claims_n = csize;
         records[ARM].claims = claims;
     }
-/*
-    if (RISCV < *records_n) {
-        DWORD csize = 3;
-#if PORT == WINDOWS
-        AJI_CLAIM* claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM)); 
-#else
-        AJI_CLAIM2* claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
-#endif
-        if (claims == NULL) {
-            return AJI_NO_MEMORY;
-        }
 
-        claims[0].type = AJI_CLAIM_IR_SHARED;
-        claims[0].value = IR_RISCV_IDCODE;
-        claims[1].type = AJI_CLAIM_IR_SHARED;
-        claims[1].value = IR_RISCV_DTMCS;
-        claims[2].type = AJI_CLAIM_IR_SHARED;
-        claims[2].value = IR_RISCV_DMI;
-
-        records[RISCV].claims_n = csize;
-        records[RISCV].claims = claims;
-    }
-*/ /*
-    if (VJTAG < *records_n) {
-        DWORD csize = 4;
-#if PORT == WINDOWS
-        AJI_CLAIM* claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM)); 
-#else
-        AJI_CLAIM2* claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
-#endif
-        if (claims == NULL) {
-            return AJI_NO_MEMORY;
-        }
-
-        claims[0].type = AJI_CLAIM_IR_SHARED_OVERLAY;
-        claims[0].value = IR_VJTAG_USER1;
-        claims[1].type = AJI_CLAIM_IR_SHARED_OVERLAID;
-        claims[1].value = IR_VJTAG_USER0;
-        claims[2].type = AJI_CLAIM_OVERLAY_SHARED;
-        claims[2].value = 0b0001000000;
-        claims[3].type = AJI_CLAIM_OVERLAY_SHARED;
-        claims[3].value = 0b0000100000;
-
-        records[VJTAG].claims_n = csize;
-        records[VJTAG].claims = claims;
-    }
-    */
     AJI_ERROR status = AJI_NO_ERROR;
     if (*records_n < DEVICE_TYPE_COUNT) {
         status = AJI_TOO_MANY_CLAIMS;
@@ -234,23 +188,12 @@ AJI_ERROR jtagservice_update_active_tap_record(jtagservice_record* me, const DWO
     me->in_use_device_id = device.device_id;
     me->in_use_device_tap_position = tap_index;
     me->in_use_device_irlen = device.instruction_length;
-/*
-    me->is_sld = is_sld;
-    if (me->is_sld) {
-        me->in_use_hier_id_node_position = node_index;
-        me->in_use_hier_id = &(me->hier_ids[tap_index][node_index]);
-        me->in_use_hier_id_idcode = me->hier_ids[tap_index][node_index].idcode;
-    }
-    else {
-        me->in_use_hier_id_node_position = -1;
-        me->in_use_hier_id = NULL;
-        me->in_use_hier_id_idcode = 0;
-    } */
+
     return AJI_NO_ERROR;
 }
 
 /**
- * Activate  Tap
+ * Activate Tap
  * \param hardware_index Not yet in use, set to zero.
  */
 AJI_ERROR jtagservice_activate_jtag_tap (
@@ -324,185 +267,6 @@ AJI_ERROR jtagservice_activate_jtag_tap (
     return status;
 }
 
-/**
- * Activate Virtual Tap
- * \param hardware_index Not yet in use, set to zero.
- */ /*
-AJI_ERROR jtagservice_activate_virtual_tap(
-    jtagservice_record* me, 
-    const DWORD hardware_index,
-    const DWORD tap_index, 
-    const DWORD node_index
-) {
-    AJI_ERROR status = AJI_NO_ERROR;
-    if (!me->hier_id_type_list[tap_index][node_index]) {
-        LOG_WARNING("Unknown device type for  SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%lu",
-            (unsigned long) node_index, (unsigned long) me->hier_ids[tap_index][node_index].idcode,
-            (unsigned long) tap_index, (unsigned long) me->device_list[tap_index].device_id
-        );
-        //@TODO: Do a type lookup instead.
-        //return AJI_FAILURE;
-    }
-
-    if (!me->hier_id_open_id_list[tap_index][node_index]) {
-LOG_DEBUG("Getting OPEN ID for SLD #%lu idcode=0x%08lX, Tap #%lu idcode=0x%08lX",
-    (unsigned long) node_index, (unsigned long) me->hier_ids[tap_index][node_index].idcode,
-    (unsigned long) tap_index, (unsigned long) me->device_list[tap_index].device_id
-);
-
-        status = c_aji_lock_chain(me->in_use_hardware_chain_id,
-                                  JTAGSERVICE_TIMEOUT_MS
-        );
-        if(AJI_NO_ERROR !=  status ) { 
-             LOG_ERROR("Cannot lock chain. Returned %d (%s)\n", 
-                  status, c_aji_error_decode(status)
-             );
-             return status;
-        }
-
-#if PORT == WINDOWS
-        status =  c_aji_open_node_a(
-                    me->in_use_hardware_chain_id,
-                    tap_index, 
-                    node_index,
-                    me->hier_ids[tap_index][node_index].idcode, 
-                    &(me->hier_id_open_id_list[tap_index][node_index]),
-                    (const AJI_CLAIM*)(me->claims[me->hier_id_type_list[tap_index][node_index]].claims),
-                    me->claims[me->hier_id_type_list[tap_index][node_index]].claims_n,
-                    me->appIdentifier
-        );
-#else
-        status = c_aji_open_node_b(
-                    me->in_use_hardware_chain_id, 
-                    tap_index, 
-                    &(me->hier_ids[tap_index][node_index]), 
-                    &(me->hier_id_open_id_list[tap_index][node_index]),
-                    (const AJI_CLAIM2*) (me->claims[me->hier_id_type_list[tap_index][node_index]].claims), 
-                    me->claims[me->hier_id_type_list[tap_index][node_index]].claims_n, 
-                    me->appIdentifier
-        );
-#endif
-        if(AJI_NO_ERROR !=  status ) { 
-             LOG_ERROR("Problem openning node %lu (0x%08lX) for tap position %lu. Returned %d (%s)\n", 
-                  (unsigned long) node_index, 
-                  (unsigned long) me->hier_ids[tap_index][node_index].idcode, 
-                  (unsigned long) tap_index, 
-                  status, 
-                  c_aji_error_decode(status)
-             );
-             return status;
-        }
-        status = c_aji_unlock_chain(me->in_use_hardware_chain_id);
-        if(AJI_NO_ERROR !=  status ) { 
-             LOG_ERROR("Cannot unlock chain. Returned %d (%s)\n", 
-                  status, c_aji_error_decode(status)
-             );
-             return status;
-        }
-    } //end if(!me->hier_id_open_id_list[tap_index][node_index]) 
-
-    if (AJI_NO_ERROR != status) { 
-        return status;
-    }
-/*
-AJI_ERROR status1 = AJI_NO_ERROR;
-DWORD captured = 0;
-status1 = c_aji_lock(me->hier_id_open_id_list[tap_index][node_index], JTAGSERVICE_TIMEOUT_MS, AJI_PACK_NEVER);
-if (AJI_NO_ERROR != status) {
-    LOG_ERROR("Cannot lock TAP for SLD access. Return status is %d (%s)", status1, c_aji_error_decode(status1));
-}
-captured = 0;
-status1 = c_aji_access_overlay(me->hier_id_open_id_list[tap_index][node_index], 0b1000000, &captured);
-LOG_INFO("***************************>STATUS IR open_id=%p status=%d (%s) captured=%lu", 
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0,0,NULL, 0,32, (BYTE*)&captured);
-LOG_INFO("***************************>STATUS DR open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-
-captured = 0;
-status1 = c_aji_access_overlay(me->hier_id_open_id_list[tap_index][node_index], 0b100000, &captured);
-LOG_INFO("*****************>CRC IR open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0,32, (BYTE*) &captured);
-LOG_INFO("*****************>CRC DR  0 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR  1 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR  2 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR  3 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR  4 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR  5 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR  6 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR  7 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR 00 open_id=%p status=%d (%s) captured=%lu -expects 0",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured); 
-/* output repeats 
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR 10 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR 11 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR 12 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR 13 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR 14 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR 15 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR 16 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-captured = 0;
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR 17 open_id=%p status=%d (%s) captured=%lu",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-status1 = c_aji_access_dr(me->hier_id_open_id_list[tap_index][node_index], 32, 0, 0, 0, NULL, 0, 32, (BYTE*)&captured);
-LOG_INFO("*****************>CRC DR 00 open_id=%p status=%d (%s) captured=%lu -expects 0",
-    me->hier_id_open_id_list[tap_index][node_index], status1, c_aji_error_decode(status1), (unsigned long)captured);
-
-c_aji_unlock(me->hier_id_open_id_list[tap_index][node_index]);
-*/ /*
-    status = jtagservice_update_active_tap_record(me, (unsigned long) tap_index, true, node_index);
-    return status;
-}
-*/
 AJI_ERROR jtagservice_init(jtagservice_record* me, const DWORD timeout) {
     AJI_ERROR status = AJI_NO_ERROR;
 
@@ -529,23 +293,12 @@ AJI_ERROR jtagservice_init_tap(jtagservice_record* me, DWORD timeout) {
     me->device_list = NULL;
     me->device_open_id_list = NULL;
     me->device_type_list = NULL;
-/*
-    me->hier_id_n = 0;
-    me->hier_ids = NULL;
-    me->hub_infos = NULL;
-    me->hier_id_open_id_list = NULL;
-    me->hier_id_type_list = NULL;
-*/
+
     me->in_use_device_tap_position = -1;
     me->in_use_device = NULL;
     me->in_use_device_id = 0;
     me->in_use_device_irlen = 0;
-/*
-    me->is_sld = false;
-    me->in_use_hier_id_node_position = -1;
-    me->in_use_hier_id = NULL;
-    me->in_use_hier_id_idcode = 0;
-*/
+
     return AJI_NO_ERROR;
 }
 
@@ -554,7 +307,6 @@ AJI_ERROR jtagservice_init_cable(jtagservice_record* me, DWORD timeout) {
     me->hardware_list = NULL;
     me->server_version_info_list = NULL;
 
-    //me->in_use_hardware_index = 0;
     me->in_use_hardware = NULL;
     me->in_use_hardware_chain_pid = 0;
     me->in_use_hardware_chain_id = NULL;
@@ -587,8 +339,7 @@ AJI_ERROR jtagservice_init_common(jtagservice_record* me, DWORD timeout) {
     return status;
 }
 AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout) 
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-    
+{   
     c_aji_unlock_chain(me->in_use_hardware_chain_id); //TODO: Make all lock/unlock self-contained then remove this
 
     AJI_ERROR retval = AJI_NO_ERROR;
@@ -613,29 +364,7 @@ AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout)
 
 
 AJI_ERROR  jtagservice_free_tap(jtagservice_record* me, const DWORD timeout)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-/*
-    if (me->hier_id_n) {
-        for (DWORD i = 0; i < me->device_count; ++i) {
-            free(me->hier_ids[i]);
-            free(me->hub_infos[i]);
-
-            free(me->hier_id_open_id_list[i]);
-            free(me->hier_id_type_list[i]);
-        }
-        free(me->hier_ids);
-        free(me->hub_infos);
-        free(me->hier_id_open_id_list);
-        free(me->hier_id_type_list);
-
-        me->hier_ids = NULL;
-        me->hub_infos = NULL;
-        me->hier_id_open_id_list = NULL;
-        me->hier_id_type_list = NULL;
-
-        me->hier_id_n = 0;
-    }
-*/
+{
     if (me->device_count != 0) {
         free(me->device_list);
         free(me->device_open_id_list);
@@ -652,12 +381,7 @@ AJI_ERROR  jtagservice_free_tap(jtagservice_record* me, const DWORD timeout)
     me->in_use_device = NULL;
     me->in_use_device_id = 0;
     me->in_use_device_irlen = 0;
-/*
-    me->is_sld = false;
-    me->in_use_hier_id_node_position = -1;
-    me->in_use_hier_id = NULL;
-    me->in_use_hier_id_idcode = 0;
-*/
+
     return AJI_NO_ERROR;
 }
 
@@ -951,28 +675,3 @@ void jtagservice_sld_node_printf(const AJI_HIER_ID* hier_id, const AJI_HUB_INFO*
         } //end for m (bridge)
     }
 }
-/*
-void jtagservice_display_sld_nodes(const jtagservice_record me) {
-    DWORD taps = me.device_count;
-    for (DWORD t = 0; t < taps; ++t) {
-        DWORD num_nodes = me.hier_id_n[t];
-        if (0 == num_nodes) {
-            printf("Tap %ld (0x%l" PRIX32 "): No SLD node\n", 
-                t, me.device_list->device_id
-            );
-            continue;
-        }
-
-        printf("Tap %lu (0x%l" PRIX32 "): have %lu SLD node(s)\n", 
-            t, me.device_list->device_id, num_nodes
-        );
-
-        for (DWORD n = 0; n < num_nodes; ++n) {
-            printf("  node %ld:", n);
-            jtagservice_sld_node_printf(&(me.hier_ids[t][n]), &(me.hub_infos[t][n]));
-            printf("\n");
-        }
-
-    } //end for(t in taps)
-}
-*/

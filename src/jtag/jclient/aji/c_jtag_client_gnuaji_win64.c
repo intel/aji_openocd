@@ -27,9 +27,9 @@
 
 /**
  * C AJI functions
- * It wraps mangled C++ name in jtag_client_gnu_aji.h with non-manged
- * C function name . Will use the same function name as the original
- * C++ name but with a "c" prefix
+ * It wraps mangled C++ name in non-manged C function names.
+ * Will use the same function name as the original
+ * C++ name but with a "c_" prefix
  *
  * For overloaded function that has to be converted to C names,
  * will add suffix '_a','_b', '_c' etc. Not using numeric suffix because

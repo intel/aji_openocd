@@ -40,15 +40,6 @@
 #define IR_ARM_APACC  0b1011 // dr_len=35
 #define IR_ARM_IDCODE 0b1110 // dr_len=32
 #define IR_ARM_BYPASS 0b1111 // dr_len=1
-/*
-#define IR_RISCV_BYPASS0       0x00  // dr_len=1
-#define IR_RISCV_IDCODE        0x01  // dr_len=32       
-#define IR_RISCV_DTMCS         0x10  // dr_len=32
-#define IR_RISCV_DMI           0x11  // dr_len=<address_length>+34
-#define IR_RISCV_BYPASS        0x1f  // dr_len=1
-*/
-//#define IR_VJTAG_USER0     0xC; // dr_len=<not important>
-//#define IR_VJTAG_USER1     0xE; // dr_len=<not important>
 
 typedef struct CLAIM_RECORD CLAIM_RECORD;
 struct CLAIM_RECORD {
@@ -64,8 +55,6 @@ struct CLAIM_RECORD {
 enum DEVICE_TYPE {
     UNKNOWN = 0, ///! UNKNWON DEVICE
     ARM = 1, ///! ARM device, with IR length = 4 bit
-//    RISCV = 2, ///! RISCV device, with IR length = 5 bit 
-//    VJTAG = 3, ///! vJTAG/SLD 
 };
 
 // Windows does not like typedef enum
@@ -108,45 +97,12 @@ struct jtagservice_record {
     AJI_OPEN_ID *device_open_id_list;
     DEVICE_TYPE *device_type_list;
     
-/*
-    //SLD / Virtual JTAG
-    DWORD* hier_id_n; //< How many SLD node per TAP device.
-                       //< size = device_count since one number
-                       //< per TAP (device), in the same order 
-                       //< as device_list
-    AJI_HIER_ID** hier_ids; //< hier_ids[TAP][SLD] where TAP =
-                            //< [0, device_count), in the same  
-                            //< order as device_list,
-                            //< and SLD = [0, hier_id_n[TAP])
-    AJI_HUB_INFO** hub_infos; //< hub_infos[TAP][HUB] where 
-                      //< TAP = [0, device_count), in the same  
-                      //< order as device_list, and hub =
-                      //< [0, AJI_MAX_HIERARCHICAL_HUB_DEPTH)
-    AJI_OPEN_ID**  hier_id_open_id_list; //< 
-                            //<hier_ids[TAP][SLD] where TAP =
-                            //< [0, device_count), in the same  
-                            //< order as device_list,
-                            //< and SLD = [0, hier_id_n[TAP])
-    DEVICE_TYPE** hier_id_type_list; //< 
-                        //< hier_ids_device_type[TAP][SLD] 
-                        //< where TAP = [0, device_count),   
-                        //< in the same order as device_list,
-                        //< and SLD = [0, hier_id_n[TAP])
-*/
     //Active Tap
     DWORD       in_use_device_tap_position;
     AJI_DEVICE* in_use_device;
     DWORD       in_use_device_id;
     BYTE        in_use_device_irlen;
-/*
-    //SLD Node
-    //Additional information needed if
-    //  SLD node was selected
-    bool         is_sld; 
-    DWORD        in_use_hier_id_node_position;
-    AJI_HIER_ID* in_use_hier_id;
-    DWORD        in_use_hier_id_idcode;
-*/
+
 };
  
 AJI_ERROR jtagservice_init(jtagservice_record *me, const DWORD timeout);

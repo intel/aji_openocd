@@ -38,7 +38,6 @@ extern void jtag_tap_add(struct jtag_tap *t);
 #define HARDWARE_OPT_EXPECTED_ID 1
 
 #define IDCODE_SOCVHPS (0x4BA00477)
-//#define IDCODE_FE310_G002 (0x20000913)
 
 
 /** 
@@ -56,11 +55,7 @@ extern void jtag_tap_add(struct jtag_tap *t);
  * bit[0]=1
  */
 #define JTAG_IDCODE_MANUFID_ARM_W_ONE 0x477  
-/**
- * SiFive Manufacturer ID in bit[12:1] with
- * bit[0]=1
- */
-//#define JTAG_IDCODE_MANUFID_SIFIVE_W_ONE 0x913 
+
 
  //=================================
 // Global variables
@@ -99,8 +94,8 @@ AJI_ERROR jclient_parameters_free(jclient_parameters *me) {
  * Access functions to lowlevel driver, agnostic of libftdi/libftdxx
  */
 static char *hexdump(const uint8_t *buf, const unsigned int size)
-{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-	unsigned int i;
+{
+    unsigned int i;
 	char *str = calloc(size * 2 + 1, 1);
 
 	for (i = 0; i < size; i++)
@@ -161,7 +156,8 @@ int arm11_run_instr_data_to_core_noack_inner(struct jtag_tap *tap, uint32_t opco
 /* copied from src/jtag/core.c */
 static void jtag_examine_chain_display(enum log_levels level, const char *msg,
 	const char *name, uint32_t idcode)
-{	log_printf_lf(level, __FILE__, __LINE__, __func__,
+{	
+    log_printf_lf(level, __FILE__, __LINE__, __func__,
 		"JTAG tap: %s %16.16s: 0x%08x "
 		"(mfg: 0x%3.3x (%s), part: 0x%4.4x, ver: 0x%1.1x)",
 		name, msg,
@@ -174,9 +170,7 @@ static void jtag_examine_chain_display(enum log_levels level, const char *msg,
 
 /* copied from src/jtag/core.c */
 static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
-{    LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-
-
+{
 	if (tap->expected_ids_cnt == 0 || !tap->hasidcode)
 		return true;
 
@@ -211,63 +205,12 @@ static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
 }
 
 /**
- * Match vtap to the list of discovered virtual JTAG/SLD nodes.
- * 
- * \param vtap 
- * \return true if found, false otherwise
- */ /*
-static bool vjtag_examine_chain_match_tap(struct vjtag_tap* vtap) {
-    AJI_ERROR status = AJI_NO_ERROR;
-
-    DWORD tap_index = -1;
-    status = jtagservice_device_index_by_idcode(
-        vtap->parent->idcode,
-        jtagservice.device_list, 
-        jtagservice.device_count,
-        &tap_index
-    );
-    if (AJI_NO_ERROR != status) {
-        jtag_examine_chain_display(
-            LOG_LVL_ERROR, "UNEXPECTED",
-            vtap->parent->dotted_name, vtap->parent->idcode
-        );
-        return false;
-    }
-
-    jtag_examine_chain_display(
-        LOG_LVL_INFO, "Parent Tap found:",
-        vtap->parent->dotted_name, vtap->parent->idcode
-    );
-
-    DWORD node_index = -1;
-    status = jtagservice_hier_id_index_by_idcode(
-        vtap->idcode,
-        jtagservice.hier_ids[tap_index],
-        jtagservice.hier_id_n[tap_index],
-        &node_index
-    );
-
-    if (AJI_NO_ERROR != status) {
-        LOG_ERROR("Cannot find virtual tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
-            vtap->dotted_name, (unsigned long) vtap->expected_ids[0],
-            status, c_aji_error_decode(status)
-        );
-        return false;
-    }
-    LOG_INFO("Virtual Tap/SLD node %06lX found at tap position %lu vtap position %lu",
-        (unsigned long) vtap->expected_ids[0], (unsigned long) tap_index, (unsigned long) node_index
-    );
-    return true;
-}
-*/
-/**
  * @pre jtagservice is filled with device inforamtion. That should
  *      already been done during adapter initialization via 
  *      @c jclient_init() function.
  */
 int jtag_examine_chain(void)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-    //AJI_ERROR status = AJI_NO_ERROR;
+{
     int retval = ERROR_OK;
  
     struct jtag_tap *tap = jtag_tap_next_enabled(NULL);
@@ -317,24 +260,7 @@ int jtag_examine_chain(void)
 		if (!jtag_examine_chain_match_tap(tap))
 			retval = ERROR_JTAG_INIT_SOFT_FAIL;
     } //end for t
-/*
-    if (AJI_NO_ERROR != retval && ERROR_JTAG_INIT_SOFT_FAIL != retval) {
-        return retval;
-    }
 
-    for (struct vjtag_tap *vtap = vjtag_all_taps();
-        vtap != NULL;
-        vtap = (struct vjtag_tap*) vtap->next_tap) {
-        vtap->idcode = vtap->expected_ids[0];
-        vtap->hasidcode = true;
-
-        if (!vjtag_examine_chain_match_tap(vtap)) {
-            vtap->hasidcode = false;
-            vtap->idcode = 0;
-            retval = ERROR_JTAG_INIT_SOFT_FAIL;
-            continue;
-        }
-    } */
     return retval;
 }
 
@@ -345,7 +271,7 @@ int jtag_examine_chain(void)
  * On exit the scan chain is reset.
  */
 int jtag_validate_ircapture(void)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{
     for (struct jtag_tap *tap = jtag_tap_next_enabled(NULL) ; 
 	     tap != NULL; 
 	     tap = jtag_tap_next_enabled(tap)
@@ -448,7 +374,7 @@ void jtag_add_callback4(jtag_callback_t f, jtag_callback_data_t data0,
  * @pos Set jtagservice chain detail if return successful.
  */
 static AJI_ERROR select_cable(void)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   
     AJI_ERROR status = AJI_NO_ERROR;
 
     _Bool havent_shown_banner = true;
@@ -476,7 +402,7 @@ static AJI_ERROR select_cable(void)
                 &(jtagservice.hardware_list[0]),
                 MYJTAGTIMEOUT
             );
-            /* Documentation says retry immediately after a timeout,
+            /* Retry immediately after a timeout,
                as AJI is still trying to connect at the background
                after timeout so immediate retry might be successful
              */
@@ -577,7 +503,8 @@ static AJI_ERROR select_cable(void)
 }
 
 static AJI_ERROR unselect_tap(void);
-static AJI_ERROR unselect_cable(void) {
+static AJI_ERROR unselect_cable(void) 
+{
     AJI_ERROR retval = AJI_NO_ERROR;
     AJI_ERROR status = AJI_NO_ERROR;
 
@@ -599,8 +526,7 @@ static AJI_ERROR unselect_cable(void) {
  * @pos jtagservice will be populated with the selected tap
  */
 static AJI_ERROR select_tap(void)
-{   LOG_DEBUG("***> IN %s(%d): %s in_use_hardware_chain_pid=%lu\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long) jtagservice.in_use_hardware_chain_pid);
-    AJI_ERROR status = AJI_NO_ERROR;
+{   AJI_ERROR status = AJI_NO_ERROR;
 
     AJI_HARDWARE hw;
     status = c_aji_find_hardware(jtagservice.in_use_hardware_chain_pid, &hw, JTAGSERVICE_TIMEOUT_MS);
@@ -656,106 +582,8 @@ static AJI_ERROR select_tap(void)
              " try to select the ARM SOCVHPS with IDCODE %X",
              IDCODE_SOCVHPS
     );
+
     LOG_INFO("Will Search through %lx TAP devices", (unsigned long) jtagservice.device_count);
-/*
-    //SLD discovery
-    bool sld_discovery_failed = false;
-    jtagservice.hier_id_n = (DWORD*) calloc(jtagservice.device_count, sizeof(DWORD));
-    jtagservice.hier_ids = (AJI_HIER_ID**) calloc(jtagservice.device_count, sizeof(AJI_HIER_ID*));
-    jtagservice.hub_infos = (AJI_HUB_INFO**) calloc(jtagservice.device_count, sizeof(AJI_HUB_INFO*));
-    jtagservice.hier_id_open_id_list = (AJI_OPEN_ID**)calloc(jtagservice.device_count, sizeof(AJI_OPEN_ID*));
-    jtagservice.hier_id_type_list = (DEVICE_TYPE**) calloc(jtagservice.device_count, sizeof(DEVICE_TYPE*));
-    if (NULL == jtagservice.hier_id_n) {
-        LOG_ERROR("Ran out of memory for jtagservice's hier_id_n list");
-        return AJI_NO_MEMORY;
-    }
-    if (NULL == jtagservice.hier_ids) {
-        LOG_ERROR("Ran out of memory for jtagservice's hier_ids list");
-        return AJI_NO_MEMORY;
-    }
-    if (NULL == jtagservice.hub_infos) {
-        LOG_ERROR("Ran out of memory for jtagservice's hub_infos list");
-        return AJI_NO_MEMORY;
-    }
-    if (NULL == jtagservice.hier_id_open_id_list) {
-        LOG_ERROR("Ran out of memory for jtagservice's hier_id_open_id_list");
-        return AJI_NO_MEMORY;
-    }
-    if (NULL == jtagservice.hier_id_type_list) {
-        LOG_ERROR("Ran out of memory for jtagservice's hier_id_type_list");
-        return AJI_NO_MEMORY;
-    }
-
-    for (DWORD tap_position = 0; tap_position < jtagservice.device_count; ++tap_position) {
-        jtagservice.hub_infos[tap_position] = (AJI_HUB_INFO*)calloc(AJI_MAX_HIERARCHICAL_HUB_DEPTH, sizeof(AJI_HUB_INFO));
-        if (NULL == jtagservice.hub_infos[tap_position]) {
-            LOG_ERROR("Ran out of memory for jtagservice's tap  %lu's hub_info", (unsigned long) tap_position);
-            return AJI_NO_MEMORY;
-        }
-        jtagservice.hier_id_n[tap_position] = 10; //@TODO Find a good compromise for number of SLD so I don't have to call c_aji_get_nodes_b() twice.
-        jtagservice.hier_ids[tap_position] = (AJI_HIER_ID*)calloc(jtagservice.hier_id_n[tap_position], sizeof(AJI_HIER_ID));
-        status = c_aji_get_nodes_b(
-            hw.chain_id, //could be jtagservice.in_use_hardware_chain_id,
-            tap_position,
-            jtagservice.hier_ids[tap_position],
-            &(jtagservice.hier_id_n[tap_position]),
-            jtagservice.hub_infos[tap_position]
-        );
-        if (AJI_TOO_MANY_DEVICES == status) {
-            free(jtagservice.hier_ids[tap_position]);
-            jtagservice.hier_ids[tap_position] = (AJI_HIER_ID*)calloc(jtagservice.hier_id_n[tap_position], sizeof(AJI_HIER_ID));
-            if (NULL == jtagservice.hub_infos[tap_position]) {
-                LOG_ERROR("Ran out of memory for jtagservice's tap  %lu's hier_ids", (unsigned long) tap_position);
-                return AJI_NO_MEMORY;
-            }
-
-            status = c_aji_get_nodes_b(
-                hw.chain_id, //could be jtagservice.in_use_hardware_chain_id,
-                tap_position,
-                jtagservice.hier_ids[tap_position],
-                &(jtagservice.hier_id_n[tap_position]),
-                jtagservice.hub_infos[tap_position]
-            );
-        } // end if (AJI_TOO_MANY_DEVICES)
-
-        if (AJI_NO_ERROR != status) {
-            LOG_ERROR("Problem with getting nodes for TAP position %lu. Returned %d (%s)", 
-                (unsigned long) tap_position, status, c_aji_error_decode(status));
-            sld_discovery_failed = true;
-            continue;
-        }
-
-        jtagservice.hier_id_open_id_list[tap_position] = \
-            (AJI_OPEN_ID*)calloc(jtagservice.hier_id_n[tap_position], sizeof(AJI_OPEN_ID));
-        jtagservice.hier_id_type_list[tap_position] = \
-            (DEVICE_TYPE*)calloc(jtagservice.hier_id_n[tap_position], sizeof(DEVICE_TYPE));
-        if (NULL == jtagservice.hub_infos[tap_position]) {
-            LOG_ERROR("Ran out of memory for jtagservice's tap  %lu's hier_ids_claims",
-                (unsigned long)tap_position);
-            return AJI_NO_MEMORY;
-        }
-
-        LOG_INFO("TAP position %lu (%lX) has %lu SLD nodes",
-            (unsigned long) tap_position, 
-            (unsigned long) jtagservice.device_list[tap_position].device_id,
-            (unsigned long) jtagservice.hier_id_n[tap_position]
-        );
-        if (jtagservice.hier_id_n[tap_position]) {
-            for (DWORD n = 0; n < jtagservice.hier_id_n[tap_position]; ++n) {
-                LOG_INFO("    node %2lu idcode=%08lX position_n=%lu",
-                    (unsigned long) n,
-                    (unsigned long) (jtagservice.hier_ids[tap_position][n].idcode),
-                    (unsigned long) (jtagservice.hier_ids[tap_position][n].position_n)
-                    );
-                jtagservice.hier_id_type_list[tap_position][n] = VJTAG; //@TODO Might have to ... 
-                                     //... replace with  node specific claims
-            } //end for(n in jtagservice.hier_id_n[tap_position])
-        } //end if (jtagservice.hier_id_n[tap_position])
-    } //end for tap_position (SLD discovery)
-    if (sld_discovery_failed) {
-        LOG_WARNING("Have failures in SLD discovery. See previous log entries. Continuing ...");
-    }
-*/
     DWORD arm_index = 0;
     bool  found_arm = false;
     for(DWORD tap_position=0; tap_position<jtagservice.device_count; ++tap_position) {
@@ -769,13 +597,7 @@ static AJI_ERROR select_tap(void)
                     device.device_name
         );
         DWORD manufacturer_with_one = device.device_id & JTAG_IDCODE_MANUFID_W_ONE_MASK;
-/*
-        if (JTAG_IDCODE_MANUFID_SIFIVE_W_ONE == manufacturer_with_one) {
-            jtagservice.device_type_list[tap_position] = RISCV; 
-            arm_index = tap_position;
-            found_arm = true;
-            LOG_INFO("Found SiFive device at tap_position %lu", (unsigned long)arm_index);
-        } */
+
         if(JTAG_IDCODE_MANUFID_ARM_W_ONE == manufacturer_with_one) {
             jtagservice.device_type_list[tap_position] = ARM;
             arm_index = tap_position;
@@ -828,19 +650,18 @@ static AJI_ERROR select_tap(void)
     }
     
     jtagservice_activate_jtag_tap(&jtagservice, 0,  arm_index);
-LOG_DEBUG("***> END %s(%d): %s in_use_device_tap_position=%lu\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long) jtagservice.in_use_device_tap_position);
     return status;
 }
 
-static AJI_ERROR unselect_tap(void) {
+static AJI_ERROR unselect_tap(void) 
+{
     AJI_ERROR status = AJI_NO_ERROR;
     status = jtagservice_free_tap(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
     return status;
 }
 
 AJI_ERROR reacquire_open_id(void) 
-{  LOG_DEBUG("***> IN %s(%d): %s in_use_device_tap_position=%lu\n", __FILE__, __LINE__, __FUNCTION__, (unsigned long)jtagservice.in_use_device_tap_position);
-jtagservice.in_use_device_tap_position = 1;
+{
     int max_try = 5;
     int sleep_duration = 5; //seconds
     AJI_ERROR status = AJI_NO_ERROR;
@@ -893,8 +714,7 @@ jtagservice.in_use_device_tap_position = 1;
  * TODO: Write a TCL Command that allows me to specify the jtagserver config file
  */
 static int jclient_init(void)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-    LOG_DEBUG("Capture server\n");
+{
     char *quartus_jtag_client_config = getenv("QUARTUS_JTAG_CLIENT_CONFIG");
     if (quartus_jtag_client_config != NULL) {
         LOG_INFO("Configuration file, set via QUARTUS_JTAG_CLIENT_CONFIG, is '%s'\n", 
@@ -942,7 +762,7 @@ static int jclient_init(void)
 }
 
 static int jclient_quit(void)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{
     jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
     jclient_parameters_free(&jclient_config);
 
@@ -953,9 +773,8 @@ static int jclient_quit(void)
 }
 
 int interface_jtag_execute_queue(void)
-{   //LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-
-	/* synchronously do the operation here */
+{	
+    /* synchronously do the operation here */
 	static int reentry;
 
 	assert(reentry == 0);
@@ -969,8 +788,8 @@ int interface_jtag_execute_queue(void)
 	int retval = ERROR_OK; //default_interface_jtag_execute_queue(); 
 	if (retval == ERROR_OK) {
 		struct jtag_callback_entry *entry;
-//LOG_DEBUG("***> IN %s(%d): %s  %s\n", __FILE__, __LINE__, __FUNCTION__, jtag_callback_queue_head == NULL? "No callbacks" : "Firing callbacks");
-		for (entry = jtag_callback_queue_head; entry != NULL; entry = entry->next) {
+
+        for (entry = jtag_callback_queue_head; entry != NULL; entry = entry->next) {
 			retval = entry->callback(entry->data0, entry->data1, entry->data2, entry->data3);
 			if (retval != ERROR_OK)
 				break;
@@ -988,37 +807,7 @@ int interface_jtag_execute_queue(void)
 
 int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field *fields,
 		tap_state_t state)
-{   //LOG_DEBUG("***> IN %s(%d): %s", __FILE__, __LINE__, __FUNCTION__);
-    /*
-    {
-        LOG_INFO("tap=0x%X, num_bits=%d state=(0x%d) %s:", active->idcode, fields->num_bits, state, tap_state_name(state));
-    	
-    	int size = DIV_ROUND_UP(fields->num_bits, 8);
-    	char *value = hexdump(fields->out_value, size);
-        LOG_INFO("  out_value  (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
-        free(value);
-        if(fields->in_value) {
-            value = hexdump(fields->in_value, size);
-            LOG_INFO("  in_value   (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
-            free(value);
-        } else {
-            LOG_INFO("  in_value  : <NONE>");
-        }
-        if(fields->check_value) {
-            value = hexdump(fields->check_value, size);
-            LOG_INFO("  check_value (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
-            free(value);
-
-            value = hexdump(fields->check_mask, size);
-            LOG_INFO("  check_mask  (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
-            free(value);
-        } else {
-            LOG_INFO(" check_value : <NONE>");
-            LOG_INFO(" check_mask  : <NONE>");
-        }
-        printf("\n");
-    }
-    */
+{
 	/* synchronously do the operation here */
 
 	/* loop over all enabled TAPs. */
@@ -1042,41 +831,7 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
         );
         return ERROR_FAIL;
     }
-assert(activeIndex = arm_or_ricsv_index);  //At present, it should be the same because we cannot access other taps
-/*
-    if (jtag_tap_on_all_vtaps_list(active)) {
-        DWORD tap_index=0;
-        jtagservice_device_index_by_idcode(
-            ((struct vjtag_tap*)active)->parent->idcode,
-            jtagservice.device_list,   
-            jtagservice.device_count, 
-            &tap_index
-        ); //Not checking return status because it should pass
 
-        DWORD sld_index=0;
-        jtagservice_hier_id_index_by_idcode(
-            active->idcode,
-            jtagservice.hier_ids[tap_index],
-            jtagservice.hier_id_n[tap_index],
-            &sld_index); //Not checking return status because it should pass
-            
-        if(jtagservice.is_sld == false
-            || jtagservice.in_use_device_tap_position != tap_index 
-            || jtagservice.in_use_hier_id_node_position != sld_index
-        ) {
-            status = jtagservice_activate_virtual_tap(&jtagservice, 0, tap_index, sld_index);
-            if (AJI_NO_ERROR != status) {
-                LOG_ERROR("IR - Cannot activate virtual tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
-                            active->dotted_name, (unsigned long)active->expected_ids[0],
-                            status, c_aji_error_decode(status)
-                );
-assert(0); //deliberately assert() to be able to see where the error is, if it occurs
-                return ERROR_FAIL;
-            }            
-        } //end if jtagservice.is_sld
-    } //end if if(jtag_tap_on_all_vtaps_list(active))
-    */
-    //FORCE BACK TO SOCVHPS
     if (
         jtagservice.in_use_device_tap_position != arm_or_ricsv_index 
     ) {
@@ -1087,7 +842,6 @@ assert(0); //deliberately assert() to be able to see where the error is, if it o
                     active->dotted_name, (unsigned long)active->expected_ids[0],
                     status, c_aji_error_decode(status)
             );
-assert(0); //deliberately assert() to be able to see where the error is, if it occurs
             return ERROR_FAIL;
         }
     } //end if(jtagservice.is_sld == true)        
@@ -1107,26 +861,9 @@ assert(0); //deliberately assert() to be able to see where the error is, if it o
         LOG_ERROR("Failure to lock before accessing IR register. Return Status is %d (%s)\n", 
             status, c_aji_error_decode(status)
         );
-assert(0); //deliberately assert() to be able to see where the error is, if it occurs
         return ERROR_FAIL;
     }
   
-    /*
-    if(fields->out_value) {
-        int size = DIV_ROUND_UP(fields->num_bits, 8);
-	    char *value = hexdump(fields->out_value, size);
-        LOG_INFO("IR write  (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
-	    free(value);
-    } else {
-        LOG_INFO("No IR write");
-    }
-    */
-    
-    /* the code below could had been replaced by c_aji_access_ir_a(), i.e.
-       the BYTE* version of aji_access_ir(). However, for quartus 20.3
-       there is a bug where (1) it expects write_data and read_data to be
-       DWORDs and  it sends the wrong instruction to the TAP, i.e., it 
-       did not send write_bit. */  
     DWORD instruction = 0;
     for (int i = 0 ; i <  (fields->num_bits+7)/8 ; i++) {
         instruction |= fields->out_value[i] << (i * 8);
@@ -1140,37 +877,18 @@ assert(0); //deliberately assert() to be able to see where the error is, if it o
             status, c_aji_error_decode(status)
         );
 	    c_aji_unlock(open_id);
-assert(0);   //deliberately assert() to be able to see where the error is, if it occurs
         return ERROR_FAIL;
     }
-    /*
-    if(fields->in_value) {
-        int size = DIV_ROUND_UP(fields->num_bits, 8);
-    	char *value = hexdump((uint8_t*) &capture, size);
-        LOG_INFO("IR read  (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
-    	free(value);
-    } else {
-        LOG_INFO("No IR read");
-    }
-    */
+
     if(fields->in_value) {
         for (int i = 0 ; i < (fields->num_bits+7)/8 ; i++) {
            fields->in_value[i] = (BYTE) (capture >> (i * 8));
         }
     }
-    /*
-    if(fields->in_value) {
-        int size = DIV_ROUND_UP(fields->num_bits, 8);
-    	char *value = hexdump(fields->in_value, size);
-        LOG_DEBUG("fields.in_value  (size=%d, buf=[0x%s]) -> %u", size, value, fields->num_bits);
-    	free(value);
-    }
-    */
     tap_set_state(TAP_IRUPDATE);
         
     if(TAP_IDLE != state) {
         LOG_WARNING("IR SCAN not yet handle transition to state other than TAP_IDLE(%d). Requested state is %s(%d)", TAP_IDLE, tap_state_name(state), state);
-assert(0); //deliberately assert() to be able to see where the error is, if it occurs
     }
     
     status = c_aji_run_test_idle(open_id, 2);
@@ -1184,67 +902,17 @@ assert(0); //deliberately assert() to be able to see where the error is, if it o
 
 int interface_jtag_add_plain_ir_scan(int num_bits, const uint8_t *out_bits,
 		uint8_t *in_bits, tap_state_t state)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-
-    {
-    int size = DIV_ROUND_UP(num_bits, 8);
-	char *outbits = hexdump(out_bits, size);
-    char *inbits  = hexdump(in_bits,  size);
-    
-	LOG_INFO("  out_bits (size=%d, buf=[0x%s]) -> %u", size, outbits, num_bits);
-	LOG_INFO("  in_bits (size=%d, buf=[0x%s]) -> %u", size, inbits, num_bits);
-	free(outbits);
-	free(inbits);
-    }
-
+{
 	/* synchronously do the operation here */
 
     /* Only needed if we are going to permit SVF or XSVF use */
-    LOG_ERROR("No plan to implement interface_jtag_add_plain_ir_scan");
- assert(0);
-    
+    LOG_ERROR("No plan to implement interface_jtag_add_plain_ir_scan");   
 	return ERROR_FAIL;
 }
 
 int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
 		const struct scan_field *fields, tap_state_t state)
-{   //LOG_INFO("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-
-/*    {
-        LOG_INFO("tap=0x%X, num_fields=%d state=(0x%d) %s:", active->idcode, num_fields, state, tap_state_name(state));
-    	for(int i=0; i<num_fields; ++i) {
-        	int size = DIV_ROUND_UP(fields[i].num_bits, 8);
-        	char *value = NULL;
-        	if(fields[i].out_value) {
-        	    hexdump(fields[i].out_value, size);
-                LOG_INFO("  fields[%d].out_value  (size=%d, buf=[0x%s]) -> %u", i, size, value, fields[i].num_bits);
-                free(value);
-            } else {
-                LOG_INFO("  fields[%d].out_value  : <NONE>", i);
-            }
-            if(fields[i].in_value) {
-                value = hexdump(fields[i].in_value, size);
-                LOG_INFO("  fields[%d].in_value   (size=%d, buf=[0x%s]) -> %u", i, size, value, fields[i].num_bits);
-                free(value);
-            } else {
-                LOG_INFO("  fields[%d].in_value  : <NONE>", i);
-            }
-            if(fields[i].check_value) {
-                value = hexdump(fields[i].check_value, size);
-                LOG_INFO("  fields[%d].check_value (size=%d, buf=[0x%s]) -> %u", i, size, value, fields[i].num_bits);
-                free(value);
-
-                value = hexdump(fields[i].check_mask, size);
-                LOG_INFO("  fields[%d].check_mask  (size=%d, buf=[0x%s]) -> %u", i, size, value, fields[i].num_bits);
-                free(value);
-            } else {
-                LOG_INFO("  fields[%d].check_value : <NONE>", i);
-                LOG_INFO("  fields[%d].check_mask  : <NONE>", i);
-            }
-        } //end for(i)
-        printf("\n");
-    }
-*/    
+{  
 	/* synchronously do the operation here */
 
     DWORD activeIndex = 0;
@@ -1263,14 +931,10 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
         );
         return ERROR_FAIL;
     }
-assert(activeIndex = jtagservice.in_use_device_tap_position);  //At present, it should be the same because we cannot access other taps
 
-    /* Right now, we can only do ARMVHPS or FE310-G002 */
+    // Right now, we can only do ARMVHPS
     uint32_t idcode = active->idcode;
-/*    if (jtag_tap_on_all_vtaps_list(active)) {
-        idcode = ((struct vjtag_tap*)active)->parent->idcode;
-    }
-*/    
+
     static bool NotYetWarned = false;
     if (NotYetWarned) {
         if (idcode == 0 || jtagservice.in_use_device_id != idcode) {
@@ -1292,10 +956,9 @@ assert(activeIndex = jtagservice.in_use_device_tap_position);  //At present, it 
                 active->dotted_name, (unsigned long)active->expected_ids[0],
                 status, c_aji_error_decode(status)
             );
-            assert(0); //deliberately assert() to be able to see where the error is, if it occurs
             return ERROR_FAIL;
         }
-    } //end if(jtagservice.is_sld == true)        
+    }     
 
     /* prepare the input/output fields for AJI */
     DWORD length_dr = 0;
@@ -1320,21 +983,6 @@ assert(activeIndex = jtagservice.in_use_device_tap_position);  //At present, it 
 	    }
 	    bit_count += fields[i].num_bits;
 	} 
-/*printf("BEFORE: length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", length_dr,
-          write_bits[3],write_bits[2],write_bits[1],write_bits[0], 
-          read_bits[3],read_bits[2],read_bits[1],read_bits[0]
-    );    
-*/
-    /*
-    if (write_to_dr) { 
-        int size = DIV_ROUND_UP(length_dr, 8);
-	    char *value = hexdump(fields->out_value, size);
-        LOG_INFO("DR write  (size=%d, buf=[0x%s]) -> %lu", size, value, (unsigned long) length_dr);
-	    free(value);
-    } else {
-        LOG_INFO("No DR write");
-    }
-    */
 
 	AJI_ERROR  status = AJI_NO_ERROR;
 	AJI_OPEN_ID open_id = jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
@@ -1352,7 +1000,6 @@ assert(activeIndex = jtagservice.in_use_device_tap_position);  //At present, it 
         );
         free(read_bits);
         free(write_bits);
-assert(0); //deliberately assert() to be able to see where the error is, if it occurs
         return ERROR_FAIL;
     }
 
@@ -1363,12 +1010,7 @@ assert(0); //deliberately assert() to be able to see where the error is, if it o
         0, write_to_dr?  length_dr : 0, write_bits,
         0, read_from_dr? length_dr : 0, read_bits
     );
-/*    
-printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", length_dr,
-          write_bits[3],write_bits[2],write_bits[1],write_bits[0], 
-          read_bits[3],read_bits[2],read_bits[1],read_bits[0]
-    ); 
-*/   
+
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failure to access DR register. Return Status is %d (%s)\n",
             status, c_aji_error_decode(status)
@@ -1378,16 +1020,7 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
         free(write_bits);
         return ERROR_FAIL;
     }
-    /*
-    if (read_from_dr) { 
-        int size = DIV_ROUND_UP(length_dr, 8);
-    	char *value = hexdump(read_bits, size);
-        LOG_INFO("DR read   (size=%d, buf=[0x%s]) -> %lu", size, value, (unsigned long) length_dr);
-    	free(value);
-    } else {
-        LOG_INFO("No DR read");
-    }
-    */ 
+
     if(read_from_dr) {
         bit_count=0;
 	    for (int i = 0; i < num_fields; i++) {
@@ -1414,7 +1047,6 @@ printf("AFTER:  length_dr=%d write_bits=0x%X%X%X%X read_bits=0x%X%X%X%X\n", leng
         LOG_WARNING("DR SCAN not yet handle transition to state other than TAP_IDLE(%d). Requested state is %s(%d)", 
             TAP_IDLE, tap_state_name(state), state
         );
-assert(0); //deliberately assert() to be able to see where the error is, if it occurs
     }
     
     status = c_aji_run_test_idle(open_id, 2);
@@ -1429,30 +1061,16 @@ assert(0); //deliberately assert() to be able to see where the error is, if it o
 
 int interface_jtag_add_plain_dr_scan(int num_bits, const uint8_t *out_bits,
 		uint8_t *in_bits, tap_state_t state)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-
-    {
-    int size = DIV_ROUND_UP(num_bits, 8);
-	char *outbits = hexdump(out_bits, size);
-    char *inbits  = hexdump(in_bits,  size);
-    
-	LOG_INFO("  out_bits (size=%d, buf=[0x%s]) -> %u", size, outbits, num_bits);
-	LOG_INFO("  in_bits (size=%d, buf=[0x%s]) -> %u", size, inbits, num_bits);
-	free(outbits);
-	free(inbits);
-    }
-
+{
 	/* synchronously do the operation here */
 
     /* Only needed if we are going to permit SVF or XSVF use */
     LOG_ERROR("No plan to implement interface_jtag_add_plain_dr_scan");
-assert(0); //"Need to implement interface_jtag_add_plain_dr_scan");
 	return ERROR_FAIL;
 }
 
 int interface_jtag_add_tlr()
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-
+{
 	/* synchronously do the operation here */
 	AJI_ERROR status = AJI_NO_ERROR;
 	AJI_OPEN_ID open_id = 
@@ -1486,16 +1104,15 @@ int interface_jtag_add_tlr()
 }
 
 int interface_jtag_add_reset(int req_trst, int req_srst)
-{   //LOG_DEBUG("***> IN %s(%d): %s req_trst=%d, req_srst=%d\n", __FILE__, __LINE__, __FUNCTION__, req_trst, req_srst);
-	/* synchronously do the operation here */
+{
+    /* synchronously do the operation here */
 
     LOG_INFO("interface_jtag_add_reset not implemented because we do not need it");
 	return ERROR_OK;
 }
 
 int interface_jtag_add_runtest(int num_cycles, tap_state_t state)
-{   //LOG_DEBUG("***> IN %s(%d): %s num_cycles=%d, end state = (%d) %s\n", __FILE__, __LINE__, __FUNCTION__, num_cycles, state, tap_state_name(state));
-
+{   
 	/* synchronously do the operation here */
 
 	AJI_ERROR status = AJI_NO_ERROR;
@@ -1536,19 +1153,18 @@ int interface_jtag_add_runtest(int num_cycles, tap_state_t state)
 }
 
 int interface_jtag_add_clocks(int num_cycles)
-{   LOG_DEBUG("***> IN %s(%d): %s num_cycyles=%d\n", __FILE__, __LINE__, __FUNCTION__, num_cycles);
-	/* synchronously do the operation here */
+{   
+    /* synchronously do the operation here */
 
     LOG_ERROR("interface_jtag_add_clocks to be implemented if needed");
-assert(0); // "Need to implement interface_jtag_add_clocks"
 	return ERROR_OK;
 }
 
 int interface_jtag_add_sleep(uint32_t us)
-{   LOG_DEBUG("***> IN %s(%d): %s us=%d\n", __FILE__, __LINE__, __FUNCTION__, us);
-
+{
 	/* synchronously do the operation here */
-	AJI_ERROR status = AJI_NO_ERROR;
+
+    AJI_ERROR status = AJI_NO_ERROR;
 	AJI_OPEN_ID open_id = 
         jtagservice.device_open_id_list[jtagservice.in_use_device_tap_position];
         
@@ -1578,21 +1194,21 @@ int interface_jtag_add_sleep(uint32_t us)
 
 	return (status || status2) ? ERROR_FAIL : ERROR_OK;
 }
-int interface_jtag_add_pathmove(int num_states, const tap_state_t *path)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
 
-    { 
+int interface_jtag_add_pathmove(int num_states, const tap_state_t *path)
+{
+    { //dummy block 
     LOG_INFO("Transition from state %s to %s in %d steps. Path:", 
              tap_state_name(cmd_queue_cur_state),
              tap_state_name(path[num_states] -1),
              num_states
     );
-    printf("  %s", tap_state_name(cmd_queue_cur_state));
+    LOG_OUTPUT("  %s", tap_state_name(cmd_queue_cur_state));
     for (int i=0; i<num_states; ++i) {
-        printf(" ->%s", tap_state_name(path[i]));
+        LOG_OUTPUT(" ->%s", tap_state_name(path[i]));
     }
-    printf("\n");
-    }
+    LOG_OUTPUT("\n");
+    } //dummy block
 
 	int state_count;
 	int tms = 0;
@@ -1624,17 +1240,15 @@ int interface_jtag_add_pathmove(int num_states, const tap_state_t *path)
 	/* synchronously do the operation here */
 
     LOG_ERROR("Will implement interface_jtag_add_path_move if we need it");
-assert(0); //"Need to implement interface_jtag_add_path_move");
 
 	return ERROR_OK;
 }
 
 int interface_add_tms_seq(unsigned num_bits, const uint8_t *seq, enum tap_state state)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-	/* synchronously do the operation here */
+{
+    /* synchronously do the operation here */
 
     LOG_ERROR("Will implement interface_jtag_add_tms_seq if we need it");
-assert(0); //"Need to implement interface_jtag_add_tms_seq");
 	return ERROR_OK;
 }
 
@@ -1658,8 +1272,7 @@ COMMAND_HANDLER(jclient_handle_jclient_hardware_command)
 }
 
 int jim_newtap_hardware(Jim_Nvp* n, Jim_GetOptInfo* goi, struct jtag_tap* pTap) 
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-
+{
     const char* hardware_name = NULL;
     int len = 0;
     Jim_GetOpt_String(goi, &hardware_name, &len);
@@ -1696,8 +1309,7 @@ int jim_newtap_hardware(Jim_Nvp* n, Jim_GetOptInfo* goi, struct jtag_tap* pTap)
 }
 
 static int jim_hardware_cmd(Jim_GetOptInfo* goi)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-
+{
     /*
      * we expect NAME + ID
      * */
@@ -1718,7 +1330,6 @@ static int jim_hardware_cmd(Jim_GetOptInfo* goi)
 
 int jclient_jim_jclient_hardware_command(Jim_Interp* interp, int argc, Jim_Obj* const* argv)
 {
-    LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
     Jim_GetOptInfo goi;
     Jim_GetOpt_Setup(&goi, interp, argc - 1, argv + 1);
     return jim_hardware_cmd(&goi);
@@ -1727,7 +1338,6 @@ static const struct command_registration jclient_subcommand_handlers[] = {
     {
         .name = "hardware",
         .jim_handler = &jclient_jim_jclient_hardware_command,
-//        .handler = &jclient_handle_jclient_hardware_command,
         .mode = COMMAND_CONFIG,
         .help = "select the hardware",
         .usage = "<name> <type>[<port>]",
