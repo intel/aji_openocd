@@ -436,7 +436,7 @@ static AJI_ERROR select_cable(void)
         if (status != AJI_TIMEOUT)
             break;
         if (i == 2)
-            LOG_INFO("Connecting to server(s) [.                   ]"
+            LOG_OUTPUT("Connecting to server(s) [.                   ]"
                 "\b\b\b\b\b\b\b\b\b\b"
                 "\b\b\b\b\b\b\b\b\b\b");
         else if ((i % 12) == 2)
