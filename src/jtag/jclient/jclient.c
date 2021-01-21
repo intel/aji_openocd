@@ -402,24 +402,6 @@ static AJI_ERROR select_cable(void)
                 &(jtagservice.hardware_list[0]),
                 MYJTAGTIMEOUT
             );
-            /* Retry immediately after a timeout,
-               as AJI is still trying to connect at the background
-               after timeout so immediate retry might be successful
-             */
-            if (AJI_TIMEOUT == status) {
-                status = c_aji_find_hardware_a(
-                    jclient_config.hardware_id,
-                    &(jtagservice.hardware_list[0]),
-                    0
-                );
-            }
-
-            if (AJI_NO_ERROR != status) {
-                LOG_ERROR("Cannot find cable '%s'. Return status is %d (%s)",
-                    jclient_config.hardware_id,
-                    status, c_aji_error_decode(status)
-                );
-            }
         }
         else {
             if(havent_shown_banner) {
@@ -578,12 +560,8 @@ static AJI_ERROR select_tap(void)
         c_aji_unlock_chain(hw.chain_id);
         return AJI_NO_DEVICES;
     }
-    LOG_INFO("At present, will not honour OpenOCD target selection and"
-             " try to select the ARM SOCVHPS with IDCODE %X",
-             IDCODE_SOCVHPS
-    );
 
-    LOG_INFO("Will Search through %lx TAP devices", (unsigned long) jtagservice.device_count);
+    LOG_INFO("Discovered %lx TAP devices", (unsigned long) jtagservice.device_count);
     DWORD arm_index = 0;
     bool  found_arm = false;
     for(DWORD tap_position=0; tap_position<jtagservice.device_count; ++tap_position) {
@@ -602,7 +580,7 @@ static AJI_ERROR select_tap(void)
             jtagservice.device_type_list[tap_position] = ARM;
             arm_index = tap_position;
             found_arm = true;
-            LOG_INFO("Found SOCVHPS device at tap_position %lu.", (unsigned long)arm_index);
+            LOG_INFO("Found a SOCVHPS device at tap_position %lu.", (unsigned long)arm_index);
         }
     } //end for tap_position
 
