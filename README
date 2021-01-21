@@ -27,13 +27,12 @@ any *.la file.
 (2) Run :
       
   ./bootstrap
-  ./configure --prefix=$(pwd) --enable-jclient
+  ./configure --enable-jclient
   make
 
 (3) You should now be able to run openocd using the
 following instructions:
 
-  export LD_LIBRARY_PATH=$(pwd)/src/jtag/jclient/lib64:$LD_LIRBARY_PATH
   src/openocd
 
 (4) If you run "make install", then normally we can expect 
@@ -68,7 +67,6 @@ Take care not to copy any *.la files
 (3) You should now be able to run openocd using the
 following instructions:
 
-  export PATH=$(pwd)/src/jtag/jclient/win64:$LD_LIRBARY_PATH
   src/openocd.exe
 
 (4) If you run "make install", then normally we can expect 
