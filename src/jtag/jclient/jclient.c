@@ -467,7 +467,7 @@ static AJI_ERROR select_cable(void)
     AJI_HARDWARE hw = jtagservice.hardware_list[0];
     LOG_INFO("Cable %u: device_name=%s, hw_name=%s, server=%s, port=%s,"
               " chain_id=%p, persistent_id=%lu, chain_type=%d, features=%lu,"
-              " server_version_info=%s\n", 
+              " server_version_info=%s", 
           1, hw.device_name, hw.hw_name, hw.server, hw.port,  
           hw.chain_id, (unsigned long) hw.persistent_id, 
           hw.chain_type, (unsigned long) hw.features,
@@ -695,11 +695,11 @@ static int jclient_init(void)
 {
     char *quartus_jtag_client_config = getenv("QUARTUS_JTAG_CLIENT_CONFIG");
     if (quartus_jtag_client_config != NULL) {
-        LOG_INFO("Configuration file, set via QUARTUS_JTAG_CLIENT_CONFIG, is '%s'\n", 
+        LOG_INFO("Configuration file, set via QUARTUS_JTAG_CLIENT_CONFIG, is '%s'", 
                quartus_jtag_client_config
         );
     } else {
-        LOG_DEBUG("You can choose to pass a jtag client config file QUARTUS_JTAG_CLIENT_CONFIG\n");
+        LOG_DEBUG("You can choose to pass a jtag client config file QUARTUS_JTAG_CLIENT_CONFIG");
     }
 
     jtagservice_init(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
