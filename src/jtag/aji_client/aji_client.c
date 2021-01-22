@@ -548,7 +548,7 @@ static AJI_ERROR select_tap(void)
 
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failed to query server for TAP information. "
-                  " Return Status is %i (%s)\n", 
+                  " Return Status is %i (%s)", 
                   status, c_aji_error_decode(status)
         );
         c_aji_unlock_chain(hw.chain_id);
