@@ -1,20 +1,20 @@
-noinst_LTLIBRARIES += %D%/libocdjclient.la
+noinst_LTLIBRARIES += %D%/libocdaji_client.la
 
-%C%_libocdjclient_la_SOURCES = 
-%C%_libocdjclient_la_CPPFLAGS =
-%C%_libocdjclient_la_LDFLAGS = 
-%C%_libocdjclient_la_LDLIBS =
-%C%_libocdjclient_la_LIBADD =
+%C%_libocdaji_client_la_SOURCES = 
+%C%_libocdaji_client_la_CPPFLAGS =
+%C%_libocdaji_client_la_LDFLAGS = 
+%C%_libocdaji_client_la_LDLIBS =
+%C%_libocdaji_client_la_LIBADD =
 
 
-%C%_libocdjclient_la_CPPFLAGS += -DWINDOWS=1 -DUNIX=2 -DLINUX=3
+%C%_libocdaji_client_la_CPPFLAGS += -DWINDOWS=1 -DUNIX=2 -DLINUX=3
 if IS_WIN32
-%C%_libocdjclient_la_CPPFLAGS += -DPORT=WINDOWS -DSYS=WINDOWS
+%C%_libocdaji_client_la_CPPFLAGS += -DPORT=WINDOWS -DSYS=WINDOWS
 else
-%C%_libocdjclient_la_CPPFLAGS += -DPORT=UNIX -DSYS=LINUX
+%C%_libocdaji_client_la_CPPFLAGS += -DPORT=UNIX -DSYS=LINUX
 endif
 
-%C%_libocdjclient_la_CPPFLAGS += \
+%C%_libocdaji_client_la_CPPFLAGS += \
     -DMODE_64_BIT \
     \
     -D_FORTIFY_SOURCE=2  -O1 \
@@ -31,21 +31,21 @@ endif
     -Wformat-security -fPIE -fPIC  -Werror=delete-incomplete
 
 if !IS_WIN32
-%C%_libocdjclient_la_CPPFLAGS += -Wformat
+%C%_libocdaji_client_la_CPPFLAGS += -Wformat
 endif
 
 
 
 include %D%/aji/Makefile.am
-%C%_libocdjclient_la_LIBADD += $(top_builddir)/%D%/aji/libocdcaji.la
+%C%_libocdaji_client_la_LIBADD += $(top_builddir)/%D%/aji/libocdcaji.la
 
 
-%C%_libocdjclient_la_SOURCES += $(JCLIENT_SRC)
+%C%_libocdaji_client_la_SOURCES += $(JCLIENT_SRC)
 
-%C%_libocdjclient_la_CPPFLAGS += -I%D%/h -I%D%/.. \
+%C%_libocdaji_client_la_CPPFLAGS += -I%D%/h -I%D%/.. \
     $(AM_CPPFLAGS)  
 
-%C%_libocdjclient_la_LDFLAGS += -Wl,-fuse-ld=gold -z noexecstack -z relro -rdynamic \
+%C%_libocdaji_client_la_LDFLAGS += -Wl,-fuse-ld=gold -z noexecstack -z relro -rdynamic \
     -fopenmp \
     -static-libgcc 
 
@@ -53,7 +53,7 @@ JCLIENT_SRC = \
     %D%/aji/aji.h %D%/aji/c_aji.h \
     %D%/aji/c_jtag_client_gnuaji.h  \
     %D%/jtagservice.h %D%/jtagservice.c \
-    %D%/jclient.c 
+    %D%/aji_client.c 
 
 #if IS_WIN32
 JCLIENT_SRC += %D%/aji/jtag_client_gnuaji_win64.h %D%/aji/c_jtag_client_gnuaji_win64.h

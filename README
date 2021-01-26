@@ -5,11 +5,11 @@ it with jtagd, or jtagserv.exe distributed with Quartus
 
 It also assume you are reading this file because you 
 want to or need to recompile OpenOCD with the driver
-to access jtagd/jtagserv.exe, i.e. jclient.
+to access jtagd/jtagserv.exe, i.e. aji_client.
 
 PREREQUISITE:
 
-You need to compile and install libjclient, which
+You need to compile and install libaji_client, which
 should had been distributed together with this
 source code.
 
@@ -19,7 +19,7 @@ COMPILATION STEPS:
 Linux:
 
 (1) Create directory lib64 as need be.
-Copy libjclient.so and libjclient.so.*,
+Copy libaji_client.so and libaji_client.so.*,
 and libSafeString.so and libSafeString.so.* to
 src. Take care not to copy
 any *.la file.
@@ -27,7 +27,7 @@ any *.la file.
 (2) Run :
       
   ./bootstrap
-  ./configure --enable-jclient
+  ./configure --enable-aji_client
   make
 
 (3) You should now be able to run openocd using the
@@ -40,7 +40,7 @@ the command:
 
   openocd
 
-to work, provided you copy libSafeString.so and libjclient.* to the
+to work, provided you copy libSafeString.so and libaji_client.* to the
 same directory as openocd
       
 
@@ -50,7 +50,7 @@ Windows:
 Only compilation using MinGW64-64bit is supported
 
 (1) Create directory win64 as need be. 
-Copy libjclient.dll to src/jtag/jclient/win64. 
+Copy libaji_client.dll to src/jtag/aji_client/win64. 
 Take care not to copy any *.la files
 
 (2) Run 
@@ -59,7 +59,7 @@ Take care not to copy any *.la files
   export CFLAGS="$CFLAGS -Wno-error"
   ./bootstrap
   ./configure --disable-doxygen-pdf \
-     --enable-jclient --enable-ftdi --enable-jlink --enable-ulink \
+     --enable-aji_client --enable-ftdi --enable-jlink --enable-ulink \
      --build=x86_64-w64-mingw32 --host=x86_64-w64-mingw32
   make
   cp /opt/x86_64-w64-mingw32/bin/libwinpthread-1.dll ./src
@@ -74,6 +74,6 @@ the command:
 
   openocd.exe
 
-to work, provided you copy libSafeString.so and libjclient.* to the
+to work, provided you copy libSafeString.so and libaji_client.* to the
 same directory as openocd
 

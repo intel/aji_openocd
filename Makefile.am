@@ -90,13 +90,13 @@ $(THE_MANUAL): %.pdf: %.tex
 
 TCL_PATH = tcl
 ## command to find paths of script files, relative to TCL_PATH
-## old, In this version, we do not gurantee openocd can run with non jclient driver 
+## old, In this version, we do not gurantee openocd can run with non aji_client driver 
 ## so removing all not-usable cfg and the tcl files powering them.
 ## Also, leaving those cfg files give the wrong impression that Intel supports those
 ## boards.
 #TCL_FILES = find $(srcdir)/$(TCL_PATH) -name '*.cfg' -o -name '*.tcl' -o -name '*.txt' | \
 #		sed -e 's,^$(srcdir)/$(TCL_PATH),,'
-TCL_FILES = find $(srcdir)/$(TCL_PATH) -name '*_jclient.cfg' -o -name '*.tcl' -o -name '*.txt' | \
+TCL_FILES = find $(srcdir)/$(TCL_PATH) -name '*_aji_client.cfg' -o -name '*.tcl' -o -name '*.txt' | \
         grep -v 'chip\|cpu\|target' | \
  		sed -e 's,^$(srcdir)/$(TCL_PATH),,'
 

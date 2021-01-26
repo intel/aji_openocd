@@ -8,11 +8,11 @@ CLEANFILES += %D%/minidriver_imp.h
 
 if MINIDRIVER
 
-if JCLIENT
-include %D%/jclient/Makefile.am
-JTAG_MINIDRIVER_DIR = %D%/jclient
-%C%_libjtag_la_LIBADD += $(top_builddir)/%D%/jclient/libocdjclient.la
-MINIDRIVER_IMP_DIR = %D%/jclient
+if AJI_CLIENT
+include %D%/aji_client/Makefile.am
+JTAG_MINIDRIVER_DIR = %D%/aji_client
+%C%_libjtag_la_LIBADD += $(top_builddir)/%D%/aji_client/libocdaji_client.la
+MINIDRIVER_IMP_DIR = %D%/aji_client
 endif
 if ZY1000
 JTAG_SRCS += %D%/zy1000/zy1000.c

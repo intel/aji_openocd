@@ -156,7 +156,7 @@ struct jtag_tap {
 	/* private pointer to support none-jtag specific functions */
 	void *priv;
 
-#ifdef BUILD_JCLIENT
+#ifdef BUILD_AJI_CLIENT
 	char* hardware;
 #endif
 };

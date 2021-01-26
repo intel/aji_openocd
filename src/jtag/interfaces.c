@@ -40,8 +40,8 @@
  * that contain an adapter_driver structure that can added to this list.
  */
 
-#if BUILD_JCLIENT == 1
-extern struct adapter_driver jclient_adapter_driver;
+#if BUILD_AJI_CLIENT == 1
+extern struct adapter_driver aji_client_adapter_driver;
 #elif BUILD_ZY1000 == 1
 extern struct adapter_driver zy1000_adapter_driver;
 #elif defined(BUILD_MINIDRIVER_DUMMY)
@@ -162,8 +162,8 @@ extern struct adapter_driver rshim_dap_adapter_driver;
  * or some number of standard driver interfaces, never both.
  */
 struct adapter_driver *adapter_drivers[] = {
-#if BUILD_JCLIENT == 1
-        &jclient_adapter_driver,
+#if BUILD_AJI_CLIENT == 1
+        &aji_client_adapter_driver,
 #elif BUILD_ZY1000 == 1
 		&zy1000_adapter_driver,
 #elif defined(BUILD_MINIDRIVER_DUMMY)

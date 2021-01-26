@@ -32,8 +32,8 @@ else
 %C%_openocd_LDADD += -ljim
 endif
 
-if JCLIENT
-# %C%_openocd_LDADD += -ljclient
+if AJI_CLIENT
+# %C%_openocd_LDADD += -laji_client
 if IS_WIN32
 #%C%_openocd_LDFLAGS +=  -L%D% 
 %C%_openocd_LDADD += -lshlwapi -lssp

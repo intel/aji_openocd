@@ -26,7 +26,7 @@
 
 
 //NOTE: File is MIT-licensed because it is just a modification of aji_sys.h
-//    from jclient.
+//    from aji_client.
 
 //# START_MODULE_HEADER/////////////////////////////////////////////////////////
 //#

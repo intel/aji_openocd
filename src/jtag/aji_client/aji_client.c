@@ -34,7 +34,7 @@
 
 extern void jtag_tap_add(struct jtag_tap *t);
 
-// for "jclient hardware" command
+// for "aji_client hardware" command
 #define HARDWARE_OPT_EXPECTED_ID 1
 
 #define IDCODE_SOCVHPS (0x4BA00477)
@@ -69,15 +69,15 @@ static struct jtagservice_record jtagservice;
  *      as global/static instance where it is automatically initialized to all zero
  *      (or zero equivalent such as NULL). Initialization is guaranteed by C99.
  */
-struct jclient_parameters {
+struct aji_client_parameters {
     char* hardware_name;
     char* hardware_id; //<AJI compliant hardware descriptor. @see aji_find_hardware
 };
-typedef struct jclient_parameters jclient_parameters;
+typedef struct aji_client_parameters aji_client_parameters;
 
-jclient_parameters jclient_config;
+aji_client_parameters aji_client_config;
 
-AJI_ERROR jclient_parameters_free(jclient_parameters *me) {
+AJI_ERROR aji_client_parameters_free(aji_client_parameters *me) {
     if (me->hardware_id) {
         free(me->hardware_id);
         me->hardware_id = NULL;
@@ -207,7 +207,7 @@ static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
 /**
  * @pre jtagservice is filled with device inforamtion. That should
  *      already been done during adapter initialization via 
- *      @c jclient_init() function.
+ *      @c aji_client_init() function.
  */
 int jtag_examine_chain(void)
 {
@@ -381,9 +381,9 @@ static AJI_ERROR select_cable(void)
     DWORD MYJTAGTIMEOUT = 250; //ms
     DWORD TRIES = 4 * 60; 
     for (DWORD i = 0; i < TRIES; i++) {
-        if (jclient_config.hardware_id != NULL) {
+        if (aji_client_config.hardware_id != NULL) {
             if(havent_shown_banner) {
-                LOG_INFO("Attempting to find '%s'", jclient_config.hardware_id);
+                LOG_INFO("Attempting to find '%s'", aji_client_config.hardware_id);
                 havent_shown_banner = false;
             }
             jtagservice.hardware_count = 1;
@@ -398,7 +398,7 @@ static AJI_ERROR select_cable(void)
             }
 
             status = c_aji_find_hardware_a(
-                jclient_config.hardware_id,
+                aji_client_config.hardware_id,
                 &(jtagservice.hardware_list[0]),
                 MYJTAGTIMEOUT
             );
@@ -431,7 +431,7 @@ static AJI_ERROR select_cable(void)
                     0
                 );
             } //end if (AJI_TOO_MANY_DEVICES)
-        } //end if (jclient_config.hardware_id != NULL)
+        } //end if (aji_client_config.hardware_id != NULL)
 
         if (status != AJI_TIMEOUT)
             break;
@@ -457,7 +457,7 @@ static AJI_ERROR select_cable(void)
         return AJI_BAD_HARDWARE;
     }
 
-    if (jclient_config.hardware_id == NULL) {
+    if (aji_client_config.hardware_id == NULL) {
         LOG_INFO("At present, The first hardware cable will be used"
             " [%lu cable(s) detected]",
             (unsigned long)jtagservice.hardware_count
@@ -691,7 +691,7 @@ AJI_ERROR reacquire_open_id(void)
  * Returns ERROR_OK if JTAG Server found.
  * TODO: Write a TCL Command that allows me to specify the jtagserver config file
  */
-static int jclient_init(void)
+static int aji_client_init(void)
 {
     char *quartus_jtag_client_config = getenv("QUARTUS_JTAG_CLIENT_CONFIG");
     if (quartus_jtag_client_config != NULL) {
@@ -711,7 +711,7 @@ static int jclient_init(void)
             status, c_aji_error_decode(status)
         );
         jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
-        jclient_parameters_free(&jclient_config);
+        aji_client_parameters_free(&aji_client_config);
         return ERROR_JTAG_INIT_FAILED;
     }
 
@@ -721,7 +721,7 @@ static int jclient_init(void)
             status, c_aji_error_decode(status)
         );
         jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
-        jclient_parameters_free(&jclient_config);
+        aji_client_parameters_free(&aji_client_config);
         return ERROR_JTAG_INIT_FAILED;
     }
     
@@ -739,10 +739,10 @@ static int jclient_init(void)
     return ERROR_OK;
 }
 
-static int jclient_quit(void)
+static int aji_client_quit(void)
 {
     jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
-    jclient_parameters_free(&jclient_config);
+    aji_client_parameters_free(&aji_client_config);
 
 
     c_jtag_client_gnuaji_free();
@@ -1213,7 +1213,7 @@ int interface_add_tms_seq(unsigned num_bits, const uint8_t *seq, enum tap_state 
 	return ERROR_OK;
 }
 
-COMMAND_HANDLER(jclient_handle_jclient_hardware_command)
+COMMAND_HANDLER(aji_client_handle_aji_client_hardware_command)
 {
     if (CMD_ARGC == 1) {
         int count = strlen(CMD_ARGV[0]);
@@ -1223,10 +1223,10 @@ COMMAND_HANDLER(jclient_handle_jclient_hardware_command)
             return ERROR_COMMAND_SYNTAX_ERROR;
         }
 
-        jclient_config.hardware_id = calloc(count + 1, sizeof(char));
-        strncpy(jclient_config.hardware_id, CMD_ARGV[0], count);
+        aji_client_config.hardware_id = calloc(count + 1, sizeof(char));
+        strncpy(aji_client_config.hardware_id, CMD_ARGV[0], count);
     } else {
-        command_print(CMD, "Need exactly one argument for 'jclient hardware'.");
+        command_print(CMD, "Need exactly one argument for 'aji_client hardware'.");
         return ERROR_COMMAND_SYNTAX_ERROR;
     }
     return ERROR_OK;
@@ -1244,22 +1244,22 @@ int jim_newtap_hardware(Jim_Nvp* n, Jim_GetOptInfo* goi, struct jtag_tap* pTap)
 
     LOG_INFO("Finding hardware. Expecting %s, candidate hardware %s",
         hardware_name, 
-        jclient_config.hardware_name
+        aji_client_config.hardware_name
     );
     /* Currently only expecting and supporting one hardware */
-    int namelen = strlen(jclient_config.hardware_name);
+    int namelen = strlen(aji_client_config.hardware_name);
     if (strncmp(hardware_name,
-                jclient_config.hardware_name, 
+                aji_client_config.hardware_name, 
                 len < namelen ? len :  namelen
     )) {
         Jim_SetResultFormatted(
             goi->interp, 
             "%s: Unknown hardware %s. Expecting %s", 
-            n->name, hardware_name, jclient_config.hardware_name);
+            n->name, hardware_name, aji_client_config.hardware_name);
 
         //For reason unknwon, not seeing the above error message
         LOG_ERROR("%s: Unknown hardware %s. Expecting %s",
-            n->name, hardware_name, jclient_config.hardware_name);
+            n->name, hardware_name, aji_client_config.hardware_name);
         free((char*)hardware_name);
         return JIM_ERR;
     }
@@ -1279,26 +1279,26 @@ static int jim_hardware_cmd(Jim_GetOptInfo* goi)
         return JIM_ERR;
     }
 
-    Jim_GetOpt_String(goi, (const char**) (&jclient_config.hardware_name), NULL);
-    Jim_GetOpt_String(goi, (const char**) (&jclient_config.hardware_id),   NULL);
+    Jim_GetOpt_String(goi, (const char**) (&aji_client_config.hardware_name), NULL);
+    Jim_GetOpt_String(goi, (const char**) (&aji_client_config.hardware_id),   NULL);
     LOG_DEBUG("Creating New hardware, Name: %s, ID %s",
-        jclient_config.hardware_name,
-        jclient_config.hardware_id
+        aji_client_config.hardware_name,
+        aji_client_config.hardware_id
     );
 
     return JIM_OK;
 }
 
-int jclient_jim_jclient_hardware_command(Jim_Interp* interp, int argc, Jim_Obj* const* argv)
+int aji_client_jim_aji_client_hardware_command(Jim_Interp* interp, int argc, Jim_Obj* const* argv)
 {
     Jim_GetOptInfo goi;
     Jim_GetOpt_Setup(&goi, interp, argc - 1, argv + 1);
     return jim_hardware_cmd(&goi);
 }
-static const struct command_registration jclient_subcommand_handlers[] = {
+static const struct command_registration aji_client_subcommand_handlers[] = {
     {
         .name = "hardware",
-        .jim_handler = &jclient_jim_jclient_hardware_command,
+        .jim_handler = &aji_client_jim_aji_client_hardware_command,
         .mode = COMMAND_CONFIG,
         .help = "select the hardware",
         .usage = "<name> <type>[<port>]",
@@ -1306,35 +1306,35 @@ static const struct command_registration jclient_subcommand_handlers[] = {
     COMMAND_REGISTRATION_DONE
 };
 
-static const struct command_registration jclient_command_handlers[] = {
+static const struct command_registration aji_client_command_handlers[] = {
     {
-        .name = "jclient",
+        .name = "aji_client",
         .mode = COMMAND_CONFIG,
-        .help = "Perform jclient management",
+        .help = "Perform aji_client management",
         .usage = "",
-        .chain = jclient_subcommand_handlers,
+        .chain = aji_client_subcommand_handlers,
     },
     COMMAND_REGISTRATION_DONE
 };
 
 
-static struct jtag_interface jclient_interface = {
+static struct jtag_interface aji_client_interface = {
 	.execute_queue = NULL,
 };
 
-struct adapter_driver jclient_adapter_driver = {
-	.name = "jclient",
+struct adapter_driver aji_client_adapter_driver = {
+	.name = "aji_client",
 	.transports = jtag_only,
-	.commands = jclient_command_handlers,
+	.commands = aji_client_command_handlers,
 
-	.init = jclient_init,
-	.quit = jclient_quit,
+	.init = aji_client_init,
+	.quit = aji_client_quit,
 	.speed = NULL,
 	.khz = NULL,
 	.speed_div = NULL,
 	.power_dropout = NULL,
 	.srst_asserted = NULL,
 
-	.jtag_ops = &jclient_interface,
+	.jtag_ops = &aji_client_interface,
 };
 

@@ -472,7 +472,7 @@ static int jim_newtap_expected_id(Jim_Nvp *n, Jim_GetOptInfo *goi,
 #define NTAP_OPT_VERSION   6
 //#define NTAP_OPT_CHAIN_POSITION   7
 
-#if BUILD_JCLIENT
+#if BUILD_AJI_CLIENT
 #define NTAP_OPT_HARDWARE 101
 #endif
 
@@ -522,7 +522,7 @@ static int jim_newtap_ir_param(Jim_Nvp *n, Jim_GetOptInfo *goi,
 	return JIM_OK;
 }
 
-#if BUILD_JCLIENT
+#if BUILD_AJI_CLIENT
 extern int jim_newtap_hardware(Jim_Nvp* n, Jim_GetOptInfo* goi, struct jtag_tap* pTap);
 #endif
 
@@ -541,7 +541,7 @@ static int jim_newtap_cmd(Jim_GetOptInfo *goi)
 		{ .name = "-disable",       .value = NTAP_OPT_DISABLED },
 		{ .name = "-expected-id",       .value = NTAP_OPT_EXPECTED_ID },
 		{ .name = "-ignore-version",       .value = NTAP_OPT_VERSION },
-#if BUILD_JCLIENT
+#if BUILD_AJI_CLIENT
         {.name = "-hardware",       .value = NTAP_OPT_HARDWARE },
 #endif
 		{ .name = NULL,       .value = -1 },
@@ -629,7 +629,7 @@ static int jim_newtap_cmd(Jim_GetOptInfo *goi)
 		    case NTAP_OPT_VERSION:
 			    pTap->ignore_version = true;
 			    break;
-#if BUILD_JCLIENT
+#if BUILD_AJI_CLIENT
 			case NTAP_OPT_HARDWARE:
 				e = jim_newtap_hardware(n, goi, pTap);
 				if (JIM_OK != e) {
