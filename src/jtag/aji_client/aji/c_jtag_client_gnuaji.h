@@ -70,10 +70,6 @@ AJI_ERROR c_aji_open_device(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_OPEN_
 AJI_ERROR c_aji_open_device_a(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_OPEN_ID* open_id, const AJI_CLAIM2* claims, DWORD claim_n, const char* application_name);
 AJI_ERROR c_aji_close_device(AJI_OPEN_ID open_id);
 AJI_ERROR c_aji_open_entire_device_chain(AJI_CHAIN_ID chain_id, AJI_OPEN_ID* open_id, AJI_CHAIN_TYPE style, const char* application_name);
-AJI_ERROR c_aji_open_node(AJI_CHAIN_ID chain_id, DWORD tap_position, DWORD idcode, AJI_OPEN_ID* node_id, const AJI_CLAIM* claims, DWORD claim_n, const char* application_name);
-AJI_ERROR c_aji_open_node_a(AJI_CHAIN_ID chain_id, DWORD tap_position, DWORD node_position, DWORD idcode, AJI_OPEN_ID* node_id, const AJI_CLAIM* claims, DWORD claim_n, const char* application_name);
-AJI_ERROR c_aji_open_node_b(AJI_CHAIN_ID chain_id, DWORD tap_position, const AJI_HIER_ID* hier_id, AJI_OPEN_ID* node_id, const AJI_CLAIM2* claims, DWORD claim_n, const char* application_name);
-
 
 AJI_ERROR c_aji_lock(AJI_OPEN_ID open_id, DWORD timeout, AJI_PACK_STYLE pack_style);
 AJI_ERROR c_aji_unlock_lock_chain(AJI_OPEN_ID unlock_id, AJI_CHAIN_ID lock_id);
@@ -90,7 +86,6 @@ AJI_ERROR c_aji_run_test_idle_a(AJI_OPEN_ID open_id, DWORD num_clocks, DWORD fla
 
 AJI_ERROR c_aji_access_ir(AJI_OPEN_ID open_id, DWORD instruction, DWORD* captured_ir, DWORD flags);
 AJI_ERROR c_aji_access_ir_a(AJI_OPEN_ID open_id, DWORD length_ir, const BYTE* write_bits, BYTE* read_bits, DWORD flags);
-AJI_ERROR c_aji_access_ir_multiple(DWORD num_devices, const AJI_OPEN_ID* open_id, const DWORD* instructions, DWORD* captured_irs);
 AJI_ERROR c_aji_access_dr(AJI_OPEN_ID open_id, DWORD length_dr, DWORD flags, DWORD write_offset, DWORD write_length, const BYTE* write_bits, DWORD read_offset, DWORD read_length, BYTE* read_bits);
 AJI_ERROR c_aji_access_dr_a(AJI_OPEN_ID open_id, DWORD length_dr, DWORD flags, DWORD write_offset, DWORD write_length, const BYTE* write_bits, DWORD read_offset, DWORD read_length, BYTE* read_bits, DWORD batch);
 AJI_ERROR c_aji_access_overlay(AJI_OPEN_ID node_id, DWORD overlay,  DWORD* captured_overlay);

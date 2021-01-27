@@ -366,58 +366,6 @@ AJI_ERROR c_aji_open_entire_device_chain(AJI_CHAIN_ID chain_id, AJI_OPEN_ID * op
     return (pfn)(chain_id, open_id, style, application_name);
 }
 
-#define FNAME_AJI_OPEN_NODE__MINGW64 "_Z13aji_open_nodeP9AJI_CHAINmmPP8AJI_OPENPK9AJI_CLAIMmPKc"
-AJI_ERROR c_aji_open_node(    AJI_CHAIN_ID chain_id,
-                              DWORD tap_position,
-                              DWORD idcode,
-                              AJI_OPEN_ID* node_id,
-                              const AJI_CLAIM* claims,
-                              DWORD claim_n,
-                              const char* application_name) {
-    assert(c_jtag_client_lib != NULL);
-    typedef AJI_ERROR(*ProdFn)(AJI_CHAIN_ID, DWORD, DWORD, AJI_OPEN_ID*, const AJI_CLAIM*, DWORD, const char*);
-    ProdFn pfn = (ProdFn)(void*)GetProcAddress(c_jtag_client_lib, FNAME_AJI_OPEN_NODE__MINGW64);
-    if (pfn == NULL) {
-        return AJI_FAILURE;
-    }
-    return (pfn)(chain_id, tap_position, idcode, node_id, claims, claim_n, application_name);
-}
-
-#define FNAME_AJI_OPEN_NODE_A__MINGW64 "_Z13aji_open_nodeP9AJI_CHAINmmmPP8AJI_OPENPK9AJI_CLAIMmPKc"
-AJI_ERROR c_aji_open_node_a(  AJI_CHAIN_ID chain_id,
-                              DWORD tap_position, 
-                              DWORD node_position, 
-                              DWORD idcode, 
-                              AJI_OPEN_ID *node_id, 
-                              const AJI_CLAIM *claims, 
-                              DWORD claim_n, 
-                              const char *application_name) {
-    assert(c_jtag_client_lib != NULL);
-    typedef AJI_ERROR(*ProdFn)(AJI_CHAIN_ID, DWORD, DWORD, DWORD, AJI_OPEN_ID*, const AJI_CLAIM*, DWORD, const char*);
-    ProdFn pfn = (ProdFn)(void*)GetProcAddress(c_jtag_client_lib, FNAME_AJI_OPEN_NODE_A__MINGW64);
-    if (pfn == NULL) {
-        return AJI_FAILURE;
-    }
-    return (pfn)(chain_id, tap_position, node_position, idcode, node_id, claims, claim_n, application_name);
-}
-
-#define FNAME_AJI_OPEN_NODE_B__MINGW64 "_Z13aji_open_nodeP9AJI_CHAINmPK11AJI_HIER_IDPP8AJI_OPENPK10AJI_CLAIM2mPKc"
-AJI_ERROR c_aji_open_node_b(  AJI_CHAIN_ID chain_id,
-                              DWORD tap_position, 
-                              const AJI_HIER_ID *hier_id, 
-                              AJI_OPEN_ID *node_id,  
-                              const AJI_CLAIM2 *claims, 
-                              DWORD claim_n, 
-                              const char* application_name) {
-    assert(c_jtag_client_lib != NULL);
-    typedef AJI_ERROR(*ProdFn)(AJI_CHAIN_ID, DWORD, const AJI_HIER_ID*, AJI_OPEN_ID*, const AJI_CLAIM2*, DWORD, const char*);
-    ProdFn pfn = (ProdFn)(void*)GetProcAddress(c_jtag_client_lib, FNAME_AJI_OPEN_NODE_B__MINGW64);
-    if (pfn == NULL) {
-        return AJI_FAILURE;
-    }
-    return (pfn)(chain_id, tap_position, hier_id, node_id, claims, claim_n, application_name);
-}
-
 #define FNAME_AJI_TEST_LOGIC_RESET__MINGW64 "_Z20aji_test_logic_resetP8AJI_OPEN"
 AJI_ERROR c_aji_test_logic_reset(AJI_OPEN_ID open_id) {
     assert(c_jtag_client_lib != NULL);
@@ -482,17 +430,6 @@ AJI_ERROR c_aji_access_ir_a(AJI_OPEN_ID open_id, DWORD length_ir, const BYTE * w
         return AJI_FAILURE;
     }
     return (pfn)(open_id, length_ir, write_bits, read_bits, flags);
-}
-
-#define FNAME_AJI_ACCESS_IR_MULTIPLE__MINGW64 "_Z22aji_access_ir_multiplemPKP8AJI_OPENPKmPm"
-AJI_ERROR c_aji_access_ir_multiple(DWORD num_devices, const AJI_OPEN_ID * open_id, const DWORD * instructions, DWORD * captured_irs) {
-    assert(c_jtag_client_lib != NULL);
-    typedef AJI_ERROR(*ProdFn)(DWORD, const AJI_OPEN_ID*, const DWORD*, DWORD*);
-    ProdFn pfn = (ProdFn) (void*)GetProcAddress(c_jtag_client_lib, FNAME_AJI_ACCESS_IR_MULTIPLE__MINGW64);
-    if (pfn == NULL) {
-        return AJI_FAILURE;
-    }
-    return (pfn)(num_devices, open_id, instructions, captured_irs);
 }
 
 #define FNAME_AJI_ACCESS_DR__MINGW64 "_Z13aji_access_drP8AJI_OPENmmmmPKhmmPh"
