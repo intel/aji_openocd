@@ -54,7 +54,7 @@ local TARGET="${2}"
 
 
 if [[ ! -e ${TARGET} ]]; then
-if [[ '' == "$(file ${TARGET} | grep 'broken symbolic link to')${SOURCE}" ]]; then
+if [[ '' != "$(file ${TARGET} | grep 'broken symbolic link to')${SOURCE}" ]]; then
 file ${TARGET}
   echo "ERROR: Target ${TARGET} is a broken symbolic link to ${SOURCE}"
   echo "       Please remove manually"
