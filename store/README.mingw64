@@ -22,7 +22,8 @@ export CFLAGS="$CFLAGS -Wno-error"
 ./bootstrap
 ./configure --disable-doxygen-pdf \
    --enable-aji_client --enable-ftdi --enable-jlink --enable-ulink \
-   --build=x86_64-w64-mingw32 --host=x86_64-w64-mingw32
+   --build=x86_64-w64-mingw32 --host=x86_64-w64-mingw32 \
+   --prefix=$(pwd)/tmp
 make -j8  #Assuming you have a 4-cores processor.
 cp ../libusb/MinGW64/dll/libusb-1.0.dll ./src
 cp /opt/x86_64-w64-mingw32/bin/libwinpthread-1.dll ./src
