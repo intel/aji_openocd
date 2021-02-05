@@ -14,21 +14,50 @@ else
 %C%_libocdaji_client_la_CPPFLAGS += -DPORT=UNIX -DSYS=LINUX
 endif
 
+# Compile: For configuring AJI Client
 %C%_libocdaji_client_la_CPPFLAGS += \
-    -DMODE_64_BIT \
-    \
-    -D_FORTIFY_SOURCE=2  -O1 \
-    -D_GNU_SOURCE -D_REENTRANT \
-    \
-    -Wall \
+    -DMODE_64_BIT 
+
+# Compile: For optimizing AJI Client
+%C%_libocdaji_client_la_CPPFLAGS += \
+    -O1 \
+    -D_GNU_SOURCE -D_REENTRANT
+
+# Compile: For optimizing AJI Client
+%C%_libocdaji_client_la_CPPFLAGS += \
     -Wno-error=coverage-mismatch -fPIC -ggdb1 -mmmx -msse \
     -fno-strict-aliasing -finline -fno-inline-functions -fno-builtin -momit-leaf-frame-pointer -fomit-frame-pointer \
     -funwind-tables -Wno-system-headers -Wno-extra -Wno-switch -Wno-unused-function -Wno-unknown-pragmas \
     -Wno-comment -Wno-parentheses -Wno-strict-overflow -Werror -Wno-error=deprecated-declarations -fopenmp \
     -Wno-misleading-indentation \
     -Wno-deprecated -Wno-attributes -Wno-unused-but-set-variable -Wno-nonnull-compare -Wno-unused-const-variable \
-    -flifetime-dse=1 -frecord-gcc-switches -fstack-protector-strong \
-    -Wformat-security -fPIE -fPIC  -Werror=delete-incomplete
+    -flifetime-dse=1 -frecord-gcc-switches\
+    -Werror=delete-incomplete
+
+#Compile: Intel security policy - strongly recommended
+%C%_libocdaji_client_la_CPPFLAGS  += \
+    -Wformat -Wformat-security -Werror=format-security \
+    -D_FORTIFY_SOURCE=2 \
+    -fstack-protector-strong \
+    -fPIE \
+    -fPIC -shared
+
+#Compile: Intel security policy - recommended
+%C%_libocdaji_client_la_CPPFLAGS  += \
+    -fstack-clash-protection \
+    -Wall 
+
+#Compile: Intel security policy - Spectre2 - recommended
+%C%_libocdaji_client_la_CPPFLAGS  += \
+    -mindirect-branch-register \
+    -mindirect-branch=thunk \
+    -mfunction-return=thunk
+
+##Link:  Intel security policy - strongly recommended
+%C%_libocdaji_client_la_LDFLAGS += \
+     -Wl,--dynamicbase,--export-dynamic \
+     -Wl,--nxcompat
+
 
 if !IS_WIN32
 %C%_libocdaji_client_la_CPPFLAGS += -Wformat
@@ -38,7 +67,6 @@ endif
 
 include %D%/aji/Makefile.am
 %C%_libocdaji_client_la_LIBADD += $(top_builddir)/%D%/aji/libocdcaji.la
-
 
 %C%_libocdaji_client_la_SOURCES += $(JCLIENT_SRC)
 
@@ -56,10 +84,29 @@ JCLIENT_SRC = \
     %D%/aji_client.c 
 
 #if IS_WIN32
+
+##(windows) Link:  Intel security policy - strongly recommended
+%C%_libocdaji_client_la_LDFLAGS += \
+     -Wl,--dynamicbase,--export-dynamic \
+     -Wl,--nxcompat
+
 JCLIENT_SRC += %D%/aji/jtag_client_gnuaji_win64.h %D%/aji/c_jtag_client_gnuaji_win64.h
+
 #else
+
+##(linux) Link:  Intel security policy - strongly recommended
+%C%_libocdaji_client_la_LDFLAGS += \
+    -z relro \
+    -z now \
+    -z noexecstack \
+    \
+    -pie \
+    \
+    -rdynamic
+
 JCLIENT_SRC += %D%/aji/jtag_client_gnuaji_lib64.h %D%/aji/c_jtag_client_gnuaji_lib64.h
 #endif
 
-#@TODO During installation, copy all the dependent libraries
-#      to its final location
+#@TODO During installation, copy all the external  dependent libraries 
+#  libaji_client.so and libsafestring.so (linux only)
+#  to its final location
