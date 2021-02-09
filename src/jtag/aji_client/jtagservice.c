@@ -339,12 +339,7 @@ AJI_ERROR jtagservice_init_common(jtagservice_record* me, DWORD timeout) {
     return status;
 }
 AJI_ERROR  jtagservice_free(jtagservice_record *me, DWORD timeout) 
-{   
-    if(me->in_use_hardware_chain_id) {
-        c_aji_unlock_chain(me->in_use_hardware_chain_id); //TODO: Make all lock/unlock self-contained then remove this
-        me->in_use_hardware_chain_id = NULL;
-    }
-
+{
     AJI_ERROR retval = AJI_NO_ERROR;
     AJI_ERROR status = AJI_NO_ERROR;
     status = jtagservice_free_tap(me, timeout);
