@@ -1,11 +1,15 @@
 [Note: Original OpenOCD README had been moved to README.openocd]
 
 This README assumes you want to compile OpenOCD and use
-it with jtagd, or jtagserv.exe distributed with Quartus
+it with jtagd, or jtagserv.exe distributed with Quartus.
 
 It also assume you are reading this file because you 
 want to or need to recompile OpenOCD with the driver
 to access jtagd/jtagserv.exe, i.e. aji_client.
+
+As conditional compilation was used when compiling
+OpenOCD with aji_client driver, you will not be able
+to use the compiled openocd with other drivers at all.
 
 PREREQUISITE:
 
