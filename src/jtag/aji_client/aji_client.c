@@ -447,7 +447,7 @@ static AJI_ERROR select_cable(void)
 
     if(AJI_NO_ERROR != status) {
         LOG_ERROR("Failed to query server for hardware cable information. "
-                  " Return Status is %i (%s)\n", 
+                  " Return Status is %i (%s)", 
                   status, c_aji_error_decode(status)
         );
         return status;
