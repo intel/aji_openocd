@@ -388,7 +388,7 @@ AJI_ERROR  jtagservice_free_tap(jtagservice_record* me, const DWORD timeout)
 }
 
 AJI_ERROR  jtagservice_free_cable(jtagservice_record* me, const DWORD timeout)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   
     if(me->in_use_hardware_chain_id) {
         c_aji_unlock_chain(me->in_use_hardware_chain_id); //TODO: Make all lock/unlock self-contained then remove this
         me->in_use_hardware_chain_id = NULL;
@@ -412,8 +412,7 @@ AJI_ERROR  jtagservice_free_cable(jtagservice_record* me, const DWORD timeout)
 }
 
 AJI_ERROR  jtagservice_free_common(jtagservice_record* me, const DWORD timeout)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
-
+{   
     if (me->claims_count) {
         for (DWORD i = 0; i < me->claims_count; ++i) {
             if (0 != me->claims[i].claims_n) {
