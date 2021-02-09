@@ -23,8 +23,8 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>. *
  ***************************************************************************/
 
-#ifndef OPENOCD_JTAG_JCLIENT_JTAG_MINIDRIVER_H
-#define OPENOCD_JTAG_JCLIENT_JTAG_MINIDRIVER_H
+#ifndef OPENOCD_JTAG_CLIENT_JTAG_MINIDRIVER_H
+#define OPENOCD_JTAG_CLIENT_JTAG_MINIDRIVER_H
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -32,5 +32,5 @@
 
 /* Currently Empty. Required file for build system */
 
-#endif /* OPENOCD_JTAG_JCLIENT_MINIDRIVER_IMP_H */
+#endif /* OPENOCD_JTAG_CLIENT_MINIDRIVER_IMP_H */
 
