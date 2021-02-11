@@ -529,7 +529,7 @@ int jtagservice_query_main(void) {
                
                 LOG_INFO("            Number of SLD nodes (hier_id_n)=%lu,\n", (unsigned long) hier_id_n); //hier_id_n = 0 and status=AJI_NO_ERROR if no SLD_HUB
                 for(DWORD k=0; k<hier_id_n; ++k) { //With ARRIA10, this loop is entered for the FPGA Tap, if it has SLD nodes.
-                    printf("            (B%lu) ", k);
+                    printf("            (B%lu) ", (unsigned long) k);
                     jtagservice_sld_node_printf(&(hier_ids[k]), &(hub_infos[k]));
                     printf("\n");
                 } //end for k (hier_id_n)
@@ -667,8 +667,8 @@ void jtagservice_sld_node_printf(const AJI_HIER_ID* hier_id, const AJI_HUB_INFO*
         for (int m = 0; m <= hier_id->position_n; ++m) {
             printf(" (Hub %d) bridge_idcode=%08lX, hub_id_code=%08lX", 
                 m, 
-                m == 0 ? 0 : (hub_infos->bridge_idcode[m]), 
-                (hub_infos->hub_idcode[m])
+                (unsigned long) ( m == 0 ? 0 : hub_infos->bridge_idcode[m]), 
+                (unsigned long) (hub_infos->hub_idcode[m])
             );
         } //end for m (bridge)
     }
