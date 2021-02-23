@@ -65,8 +65,10 @@ static struct jtagservice_record jtagservice;
 
 /**
  * Store user configuration/request.
- * @pre Function must not require any initialization. It is intended to be used
- *      as global/static instance where it is automatically initialized to all zero
+ * @pre At present, function must not require any initialization. It is used before
+ *      aji_client_init() is called and I have yet to find a good place to put
+ *      the initilaization code if I need it. As it is a
+ *      global/static instance, it is automatically initialized to all zero
  *      (or zero equivalent such as NULL). Initialization is guaranteed by C99.
  */
 struct aji_client_parameters {
@@ -81,6 +83,10 @@ AJI_ERROR aji_client_parameters_free(aji_client_parameters *me) {
     if (me->hardware_id) {
         free(me->hardware_id);
         me->hardware_id = NULL;
+    }
+    if (me->hardware_name) {
+        free(me->hardware_name);
+        me->hardware_name = NULL;
     }
     return AJI_NO_ERROR;
 }
@@ -692,7 +698,7 @@ AJI_ERROR reacquire_open_id(void)
  * TODO: Write a TCL Command that allows me to specify the jtagserver config file
  */
 static int aji_client_init(void)
-{
+{fprintf(stderr,"B\n");
     char *quartus_jtag_client_config = getenv("QUARTUS_JTAG_CLIENT_CONFIG");
     if (quartus_jtag_client_config != NULL) {
         LOG_INFO("Configuration file, set via QUARTUS_JTAG_CLIENT_CONFIG, is '%s'", 
@@ -1213,25 +1219,6 @@ int interface_add_tms_seq(unsigned num_bits, const uint8_t *seq, enum tap_state 
 	return ERROR_OK;
 }
 
-COMMAND_HANDLER(aji_client_handle_aji_client_hardware_command)
-{
-    if (CMD_ARGC == 1) {
-        int count = strlen(CMD_ARGV[0]);
-
-        if (count < 1) {
-            command_print(CMD, "Invalid argument: %s.", CMD_ARGV[0]);
-            return ERROR_COMMAND_SYNTAX_ERROR;
-        }
-
-        aji_client_config.hardware_id = calloc(count + 1, sizeof(char));
-        strncpy(aji_client_config.hardware_id, CMD_ARGV[0], count);
-    } else {
-        command_print(CMD, "Need exactly one argument for 'aji_client hardware'.");
-        return ERROR_COMMAND_SYNTAX_ERROR;
-    }
-    return ERROR_OK;
-}
-
 int jim_newtap_hardware(Jim_Nvp* n, Jim_GetOptInfo* goi, struct jtag_tap* pTap) 
 {
     const char* hardware_name = NULL;
@@ -1264,14 +1251,14 @@ int jim_newtap_hardware(Jim_Nvp* n, Jim_GetOptInfo* goi, struct jtag_tap* pTap)
         return JIM_ERR;
     }
 
-    pTap->hardware = (char*)hardware_name;
+    pTap->hardware = strndup(hardware_name, len);
 
     return JIM_OK;
 }
 
 static int jim_hardware_cmd(Jim_GetOptInfo* goi)
 {
-    /*
+   /*
      * we expect NAME + ID
      * */
     if (goi->argc < 2) {
@@ -1279,8 +1266,12 @@ static int jim_hardware_cmd(Jim_GetOptInfo* goi)
         return JIM_ERR;
     }
 
-    Jim_GetOpt_String(goi, (const char**) (&aji_client_config.hardware_name), NULL);
-    Jim_GetOpt_String(goi, (const char**) (&aji_client_config.hardware_id),   NULL);
+    int size=0;
+    const char *tmp = NULL;
+    Jim_GetOpt_String(goi, &tmp, &size);
+    aji_client_config.hardware_name = strndup(tmp, size);
+    Jim_GetOpt_String(goi, &tmp, &size);
+    aji_client_config.hardware_id = strndup(tmp, size);
     LOG_DEBUG("Creating New hardware, Name: %s, ID %s",
         aji_client_config.hardware_name,
         aji_client_config.hardware_id
