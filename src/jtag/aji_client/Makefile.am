@@ -35,21 +35,17 @@ endif
     -flifetime-dse=1 -frecord-gcc-switches \
     -Werror=delete-incomplete
 
-##Compile: Intel security policy - strongly recommended
+# Compile: Others
 %C%_libocdaji_client_la_CPPFLAGS  += \
     -Wformat -Wformat-security -Werror=format-security \
     -D_FORTIFY_SOURCE=2 \
     -fstack-protector-strong \
     -fPIE \
-    -fPIC 
-
-#Compile: Intel security policy - recommended
-%C%_libocdaji_client_la_CPPFLAGS  += \
+    -fPIC \
+    \
     -fstack-clash-protection \
-    -Wall 
-
-#Compile: Intel security policy - Spectre2 - recommended
-%C%_libocdaji_client_la_CPPFLAGS  += \
+    -Wall \
+    \
     -mindirect-branch-register \
     -mindirect-branch=thunk \
     -mfunction-return=thunk
@@ -76,17 +72,17 @@ include %D%/aji/Makefile.am
     %D%/jtagservice.h %D%/jtagservice.c \
     %D%/aji_client.c 
 
-#if IS_WIN32
-##(windows) Link:  Intel security policy - strongly recommended
+if IS_WIN32
+#(windows) Link: others
 %C%_libocdaji_client_la_LDFLAGS += \
      -Wl,--dynamicbase,--export-dynamic \
      -Wl,--nxcompat
 
 %C%_libocdaji_client_la_SOURCES += %D%/aji/jtag_client_gnuaji_win64.h %D%/aji/c_jtag_client_gnuaji_win64.h
 
-#else
+else
 
-##(linux) Link:  Intel security policy - strongly recommended
+#(linux) Link: others
 %C%_libocdaji_client_la_LDFLAGS += \
     -z relro \
     -z now \
@@ -97,7 +93,5 @@ include %D%/aji/Makefile.am
     -rdynamic
 
 %C%_libocdaji_client_la_SOURCES += %D%/aji/jtag_client_gnuaji_lib64.h %D%/aji/c_jtag_client_gnuaji_lib64.h
-#endif
+endif
 
-#@TODO During installation, copy all the dependent libraries
-#      to its final location
