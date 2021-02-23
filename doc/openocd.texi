@@ -3250,7 +3250,7 @@ hosted by the server
 
 @example
 adapter driver aji_client
-aji_client hardware ubii2arria10 \{USB-BlasterII on localhost:1309\}
+aji_client hardware ubii2arria10 @{USB-BlasterII on localhost:1309@}
 @end example
 
 @end deffn
