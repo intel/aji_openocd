@@ -41,7 +41,6 @@ endif
 %C%_libocdcaji_la_CPPFLAGS  += \
     -Wformat -Wformat-security -Werror=format-security \
     -D_FORTIFY_SOURCE=2 \
-    -fstack-protector-strong \
     -fPIE \
     -fPIC \
     \

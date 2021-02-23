@@ -90,7 +90,6 @@ else
 
 #(linux) Link: others
 %C%_libocdaji_client_la_LDFLAGS += \
-    -fstack-protector-strong \
     -z relro \
     -z now \
     -z noexecstack \
