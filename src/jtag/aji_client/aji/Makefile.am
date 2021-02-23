@@ -1,7 +1,5 @@
 noinst_LTLIBRARIES += %D%/libocdcaji.la
 
-%C%_libocdcaji_la_SOURCES =
-%C%_libocdcaji_la_CPPFLAGS =
 %C%_libocdcaji_la_SOURCES = 
 %C%_libocdcaji_la_CPPFLAGS =
 %C%_libocdcaji_la_LDFLAGS = 
