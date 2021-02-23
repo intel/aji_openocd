@@ -60,6 +60,10 @@ endif
     %D%/c_jtag_client_gnuaji.c
 
 if IS_WIN32
+#(windows) compile: others
+%C%_libocdcaji_la_CPPFLAGS  += \
+    -fno-stack-protector
+
 #(windows) Link: others
 %C%_libocdcaji_la_LDFLAGS += \
      -Wl,--dynamicbase,--export-dynamic \
@@ -68,6 +72,10 @@ if IS_WIN32
 %C%_libocdcaji_la_SOURCES  += %D%/c_jtag_client_gnuaji_win64.h %D%/c_jtag_client_gnuaji_win64.c
 
 else
+#(linux) compile: others
+%C%_libocdcaji_la_CPPFLAGS  += \
+    -fstack-protector-strong
+
 #(linux) Link: others
 %C%_libocdcaji_la_LDFLAGS += \
     -z relro \

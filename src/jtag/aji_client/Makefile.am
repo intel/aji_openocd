@@ -39,7 +39,6 @@ endif
 %C%_libocdaji_client_la_CPPFLAGS  += \
     -Wformat -Wformat-security -Werror=format-security \
     -D_FORTIFY_SOURCE=2 \
-    -fstack-protector-strong \
     -fPIE \
     -fPIC \
     \
@@ -73,6 +72,10 @@ include %D%/aji/Makefile.am
     %D%/aji_client.c 
 
 if IS_WIN32
+#(windows) compile: others
+%C%_libocdaji_client_la_CPPFLAGS  += \
+    -fno-stack-protector
+
 #(windows) Link: others
 %C%_libocdaji_client_la_LDFLAGS += \
      -Wl,--dynamicbase,--export-dynamic \
@@ -81,9 +84,13 @@ if IS_WIN32
 %C%_libocdaji_client_la_SOURCES += %D%/aji/jtag_client_gnuaji_win64.h %D%/aji/c_jtag_client_gnuaji_win64.h
 
 else
+#(linux) compile: others
+%C%_libocdaji_client_la_CPPFLAGS  += \
+    -fstack-protector-strong
 
 #(linux) Link: others
 %C%_libocdaji_client_la_LDFLAGS += \
+    -fstack-protector-strong \
     -z relro \
     -z now \
     -z noexecstack \
