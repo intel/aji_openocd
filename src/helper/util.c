@@ -27,7 +27,7 @@
 static int util_Jim_Command_ms(Jim_Interp *interp,
 	int argc,
 	Jim_Obj * const *argv)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   
 	if (argc != 1) {
 		Jim_WrongNumArgs(interp, 1, argv, "ls ?dir?");
 		return JIM_ERR;
@@ -54,6 +54,6 @@ static const struct command_registration util_command_handlers[] = {
 };
 
 int util_init(struct command_context *cmd_ctx)
-{   LOG_DEBUG("***> IN %s(%d): %s\n", __FILE__, __LINE__, __FUNCTION__);
+{   
 	return register_commands(cmd_ctx, NULL, util_command_handlers);
 }

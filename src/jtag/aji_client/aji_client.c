@@ -698,7 +698,7 @@ AJI_ERROR reacquire_open_id(void)
  * TODO: Write a TCL Command that allows me to specify the jtagserver config file
  */
 static int aji_client_init(void)
-{fprintf(stderr,"B\n");
+{
     char *quartus_jtag_client_config = getenv("QUARTUS_JTAG_CLIENT_CONFIG");
     if (quartus_jtag_client_config != NULL) {
         LOG_INFO("Configuration file, set via QUARTUS_JTAG_CLIENT_CONFIG, is '%s'", 
