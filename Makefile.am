@@ -35,9 +35,20 @@ AM_CFLAGS = $(GCC_WARNINGS)
 AM_CPPFLAGS = $(HOST_CPPFLAGS)\
 			  -I$(top_srcdir)/src \
 			  -I$(top_builddir)/src \
-			  -I$(top_srcdir)/src/helper \
-			  -DPKGDATADIR=\"$(pkgdatadir)\" \
-			  -DBINDIR=\"$(bindir)\"
+			  -I$(top_srcdir)/src/helper 
+
+##  INTEL SECURITY POLICY (A).
+##  PKGDATADIR and BINDIR will be copied to client
+##  machines and no longer valid. Should not depend
+##  on them
+##  If you want it enabled, uncomment below
+##  do a global replace of 
+##    #if 0 //{ INTEL SECURITY POLICY (A)"
+##  to
+##    #if 1 //{ NO INTEL SECURITY POLICY (A)"
+#
+#AM_CPPFLAGS += -DPKGDATADIR=\"$(pkgdatadir)\" \
+#			  -DBINDIR=\"$(bindir)\"
 
 if INTERNAL_JIMTCL
 AM_CPPFLAGS += -I$(top_srcdir)/jimtcl \
