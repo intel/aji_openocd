@@ -128,7 +128,6 @@ static char *find_exe_path(void)
 		/* Strip executable file name, leaving path */
 		*strrchr(exepath, '/') = '\0';
 	} else {
-#if 0 //{ INTEL SECURITY POLICY (A). See Makefile.am for reasoning
 		LOG_WARNING("Could not determine executable path, using configured BINDIR.");
 		LOG_DEBUG("BINDIR = %s", BINDIR);
 #ifdef HAVE_REALPATH
@@ -136,12 +135,11 @@ static char *find_exe_path(void)
 #else
 		exepath = strdup(BINDIR);
 #endif
-#endif // INTEL SECURITY POLICY (A)
 	}
+
 	return exepath;
 }
-#if 0 //{ INTEL SECURITY POLICY (A). See Makefile.am for reasoning
-      //{ function not used if INTEL SECURITY POLICY (A) is in force
+
 static char *find_relative_path(const char *from, const char *to)
 {   
 	size_t i;
@@ -179,11 +177,17 @@ static char *find_relative_path(const char *from, const char *to)
 
 	return relpath;
 }
-#endif //{ INTEL SECURITY POLICY (A)
 
 static void add_default_dirs(void)
 {   
 	char *path;
+	char *exepath = find_exe_path();
+	char *bin2data = find_relative_path(BINDIR, PKGDATADIR);
+
+	LOG_DEBUG("bindir=%s", BINDIR);
+	LOG_DEBUG("pkgdatadir=%s", PKGDATADIR);
+	LOG_DEBUG("exepath=%s", exepath);
+	LOG_DEBUG("bin2data=%s", bin2data);
 
 	/*
 	 * The directory containing OpenOCD-supplied scripts should be
@@ -217,38 +221,20 @@ static void add_default_dirs(void)
 	}
 #endif
 
-	char* exepath = find_exe_path();
-	if (exepath) {
-#if 0
-		char* bin2data = find_relative_path(BINDIR, PKGDATADIR);
-#else
-		char* bin2data = "../share/openocd";
-#endif
+	path = alloc_printf("%s/%s/%s", exepath, bin2data, "site");
+	if (path) {
+		add_script_search_dir(path);
+		free(path);
+	}
 
-#if 0 //{ INTEL SECURITY POLICY (A). See Makefile.am for reasoning
-		LOG_DEBUG("bindir=%s", BINDIR);
-		LOG_DEBUG("pkgdatadir=%s", PKGDATADIR);
-#endif //{ INTEL SECURITY POLICY (A)
-		LOG_DEBUG("exepath=%s", exepath);
-		LOG_DEBUG("bin2data=%s", bin2data);
+	path = alloc_printf("%s/%s/%s", exepath, bin2data, "scripts");
+	if (path) {
+		add_script_search_dir(path);
+		free(path);
+	}
 
-		path = alloc_printf("%s/%s/%s", exepath, bin2data, "site");
-		if (path) {
-			add_script_search_dir(path);
-			free(path);
-		}
-
-		path = alloc_printf("%s/%s/%s", exepath, bin2data, "scripts");
-		if (path) {
-			add_script_search_dir(path);
-			free(path);
-		}
-
-		free(exepath);
-#if 0
-		free(bin2data);
-#endif
-	} //end if(exepath)
+	free(exepath);
+	free(bin2data);
 }
 
 int parse_cmdline_args(struct command_context *cmd_ctx, int argc, char *argv[])
