@@ -42,15 +42,29 @@ echo "Progress: Preparing for protex ..."
 if [ -d ${FILENAME} ]; then
 	pushd ${FILENAME}
 fi
-rm -fr contrib doc testing store .git* .p4* tmp* autom4te.cache
-rm -f AUTHORS* BUGS COPYING ChangeLog Doxyfile.in \
-      HACKING NEWS* NEWTAPS README* TODO \
-	  config_subdir.m4 guess-rev.sh uncrustify.cfg \
-	  .travis.yml INSTALL aclocal.m4  \
+
+find . -name '.deps' -exec rm -fr {} \;
+find . -name '.git*' -exec rm -fr {} \;
+find . -name '.p4*' -exec rm -fr {} \;
+find . -name 'Makefile.in' -exec rm -f {} \;
+find . -name '.indent.pro' -exec rm -f {} \;
+find . -name '.project' -exec rm -f {} \;
+find . -name '.travis.yml' -exec rm -f {} \;
+rm -fr contrib doc testing store 
+for search in  'BUGS' 'COPYING' 'ChangeLog' 'Doxyfile.in' \
+      HACKING  NEWTAPS  TODO \
+      config_subdir.m4 guess-rev.sh uncrustify.cfg \
+	  INSTALL aclocal.m4  \
 	  compile config.guess config.h.in config.sub \
 	  configure depcomp install-sh ltmain.sh mdate-sh \
-	  missing texinfo.tex 
-find . -name 'Makefile.in' -exec rm -f {} \;
+	  missing texinfo.tex stamp-h1; do
+	find . -name $search -exec rm -f {} \;
+done
+for search in 'AUTHORS'  'NEWS' 'README' autom4te.cache; do
+	find . -name $search'*'  -exec rm -fr {} \;
+done
+rm -fr src/jtag/drivers/libjaylink/build-aux/
+
 
 echo "Progress: tarball to   $(basename ${OUTTARBALL}) ..."
 tar -jcf ${OUTTARBALL} *
