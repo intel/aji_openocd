@@ -1,0 +1,83 @@
+[Note: Original OpenOCD README had been moved to README.openocd]
+
+This README assumes you want to compile OpenOCD and use
+it with jtagd, or jtagserv.exe distributed with Quartus.
+
+It also assume you are reading this file because you 
+want to or need to recompile OpenOCD with the driver
+to access jtagd/jtagserv.exe, i.e. aji_client.
+
+As conditional compilation was used when compiling
+OpenOCD with aji_client driver, you will not be able
+to use the compiled openocd with other drivers at all.
+
+PREREQUISITE:
+
+You need to compile and install libaji_client, which
+should had been distributed together with this
+source code.
+
+
+COMPILATION STEPS:
+
+Linux:
+
+(1) Create directory lib64 as need be.
+Copy libaji_client.so and libaji_client.so.*,
+and libSafeString.so and libSafeString.so.* to
+src. Take care not to copy
+any *.la file.
+
+(2) Run :
+      
+  ./bootstrap
+  ./configure --enable-aji_client
+  make
+
+(3) You should now be able to run openocd using the
+following instructions:
+
+  src/openocd
+
+(4) If you run "make install", then normally we can expect 
+the command:
+
+  openocd
+
+to work, provided you copy libSafeString.so and libaji_client.* to the
+same directory as openocd
+      
+
+
+Windows:
+
+Only compilation using MinGW64-64bit is supported
+
+(1) Create directory win64 as need be. 
+Copy libaji_client.dll to src/jtag/aji_client/win64. 
+Take care not to copy any *.la files
+
+(2) Run 
+  
+  export CPPFLAGS="$CPPFLAGS -D__USE_MINGW_ANSI_STDIO=1 -Wno-error"; 
+  export CFLAGS="$CFLAGS -Wno-error"
+  ./bootstrap
+  ./configure --disable-doxygen-pdf \
+     --enable-aji_client --enable-ftdi --enable-jlink --enable-ulink \
+     --build=x86_64-w64-mingw32 --host=x86_64-w64-mingw32
+  make
+  cp /opt/x86_64-w64-mingw32/bin/libwinpthread-1.dll ./src
+
+(3) You should now be able to run openocd using the
+following instructions:
+
+  src/openocd.exe
+
+(4) If you run "make install", then normally we can expect 
+the command:
+
+  openocd.exe
+
+to work, provided you copy libSafeString.so and libaji_client.* to the
+same directory as openocd
+
