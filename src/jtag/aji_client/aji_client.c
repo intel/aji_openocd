@@ -1037,34 +1037,34 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
  assert(active_index == jtagservice.in_use_device_tap_position);  //At present, it should be the same because we cannot access other taps
 
     if (jtag_tap_on_all_vtaps_list(active)) {
-    DWORD tap_index = 0;
-    jtagservice_device_index_by_idcode(
-        ((struct vjtag_tap*)active)->parent->idcode,
-        jtagservice.device_list,
-        jtagservice.device_count,
-        &tap_index
-    ); //Not checking return status because it should pass
+        DWORD tap_index = 0;
+        jtagservice_device_index_by_idcode(
+            ((struct vjtag_tap*)active)->parent->idcode,
+            jtagservice.device_list,
+            jtagservice.device_count,
+            &tap_index
+        ); //Not checking return status because it should pass
     
         DWORD sld_index = 0;
-    jtagservice_hier_id_index_by_idcode(
-        active->idcode,
-        jtagservice.hier_ids[tap_index],
-        jtagservice.hier_id_n[tap_index],
-        &sld_index
-    ); //Not checking return status because it should pass
+        jtagservice_hier_id_index_by_idcode(
+            active->idcode,
+            jtagservice.hier_ids[tap_index],
+            jtagservice.hier_id_n[tap_index],
+            &sld_index
+        ); //Not checking return status because it should pass
     
-    if (    jtagservice.is_sld == false
-         || jtagservice.in_use_device_tap_position != tap_index
-         || jtagservice.in_use_hier_id_node_position != sld_index
-    ) {
-        status = jtagservice_activate_virtual_tap(&jtagservice, 0, tap_index, sld_index);
-        if (AJI_NO_ERROR != status) {
-            LOG_ERROR("IR - Cannot activate virtual tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
-                active->dotted_name, (unsigned long)active->expected_ids[0],
-                status, c_aji_error_decode(status)
+        if (    jtagservice.is_sld == false
+             || jtagservice.in_use_device_tap_position != tap_index
+             || jtagservice.in_use_hier_id_node_position != sld_index
+        ) {
+            status = jtagservice_activate_virtual_tap(&jtagservice, 0, tap_index, sld_index);
+            if (AJI_NO_ERROR != status) {
+                LOG_ERROR("IR - Cannot activate virtual tap %s (0x%08l" PRIX32 "). Return status is %d (%s)",
+                    active->dotted_name, (unsigned long)active->expected_ids[0],
+                    status, c_aji_error_decode(status)
                  );
 assert(0); //deliberately assert() to be able to see where the error is, if it occurs
-            return ERROR_FAIL;
+                return ERROR_FAIL;
             }
         } //end if jtagservice.is_sld
     } //end if if(jtag_tap_on_all_vtaps_list(active))
