@@ -258,6 +258,9 @@ AJI_ERROR jtagservice_activate_jtag_tap (
     const DWORD hardware_index,
     const DWORD tap_index
 ) {
+    assert(tap_index < me->device_count);
+    assert(hardware_index == 0);
+
     AJI_ERROR status = AJI_NO_ERROR;
     if (!me->device_type_list[tap_index]) {
         LOG_ERROR("Unknown device type tap #%lu idcode=0x%lu",
@@ -333,6 +336,11 @@ jtagservice_record * me,
     const DWORD hardware_index,
     const DWORD tap_index,
     const DWORD node_index     ) {
+
+    assert(tap_index < me->device_count);
+    assert(node_index < me->hier_id_n[tap_index]);
+    assert(hardware_index == 0);
+
     AJI_ERROR status = AJI_NO_ERROR;
     if (!me->hier_id_type_list[tap_index][node_index]) {
         LOG_WARNING(
