@@ -649,7 +649,7 @@ static AJI_ERROR select_tap(void)
         IDCODE_SOCVHPS,
         IDCODE_FE310_G002
     );
-    LOG_INFO("Will Search through %lx TAP devices", (unsigned long)jtagservice.device_count);
+    LOG_INFO("Will search through %lx TAP devices", (unsigned long)jtagservice.device_count);
     
     //SLD discovery
     bool sld_discovery_failed = false;
@@ -1028,13 +1028,18 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active, const struct scan_field 
         }
     }
     if (active_index == jtagservice.device_count) {
-        LOG_ERROR("IR - Cannot find requested tap 0x%08lX for IR instruction", 
-		  (unsigned long) active->idcode
+//        LOG_ERROR("IR - Cannot find requested tap 0x%08lX for IR instruction", 
+//		  (unsigned long) active->idcode
+//        );
+//        return ERROR_FAIL;
+        LOG_DEBUG("IR - Assuming  tap 0x%08lX is for  virtual tap",
+            (unsigned long)active->idcode
         );
-        return ERROR_FAIL;
+active_index = jtagservice.in_use_device_tap_position; //reset active_index to SOCVHPS/FE310
     }
-
- assert(active_index == jtagservice.in_use_device_tap_position);  //At present, it should be the same because we cannot access other taps
+    else {
+assert(active_index == jtagservice.in_use_device_tap_position);  //At present, it should be the same because we cannot access other taps
+    }
 
     if (jtag_tap_on_all_vtaps_list(active)) {
         DWORD tap_index = 0;
@@ -1254,12 +1259,18 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int num_fields,
         }
     }
     if (active_index == jtagservice.device_count) {
-        LOG_ERROR("DR - Cannot find requested tap 0x%08lX for DR instruction", 
-		  (unsigned long) active->idcode
+//        LOG_ERROR("DR - Cannot find requested tap 0x%08lX for DR instruction", 
+//		  (unsigned long) active->idcode
+//        );
+//        return ERROR_FAIL;
+        LOG_DEBUG("DR - Assuming requested tap 0x%08lX is a virtual tap",
+            (unsigned long)active->idcode
         );
-        return ERROR_FAIL;
+active_index = jtagservice.in_use_device_tap_position; //reset active_index to SOCVHPS/FE310
     }
+    else {
 assert(active_index == jtagservice.in_use_device_tap_position);  //At present, it should be the same because we cannot access other taps
+    }
 
     /* Right now, we can only do ARMVHPS or FE310-G002 */
     uint32_t idcode = active->idcode;
