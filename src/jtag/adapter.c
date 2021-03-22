@@ -496,7 +496,6 @@ COMMAND_HANDLER(handle_adapter_reset_de_assert)
 	return adapter_resets((trst == VALUE_DEASSERT) ? TRST_DEASSERT : TRST_ASSERT,
 						  (srst == VALUE_DEASSERT) ? SRST_DEASSERT : SRST_ASSERT);
 }
-
 #ifndef HAVE_JTAG_MINIDRIVER_H
 #ifdef HAVE_LIBUSB_GET_PORT_NUMBERS
 COMMAND_HANDLER(handle_usb_location_command)
@@ -522,7 +521,7 @@ static const struct command_registration adapter_usb_command_handlers[] = {
 #endif /* HAVE_LIBUSB_GET_PORT_NUMBERS */
 	COMMAND_REGISTRATION_DONE
 };
-#endif /* MINIDRIVER */
+#endif /* HAVE_JTAG_MINIDRIVER_H */
 
 static const struct command_registration adapter_srst_command_handlers[] = {
 	{
@@ -596,7 +595,7 @@ static const struct command_registration adapter_command_handlers[] = {
 		.usage = "",
 		.chain = adapter_usb_command_handlers,
 	},
-#endif /* MINIDRIVER */
+#endif /* HAVE_JTAG_MINIDRIVER_H */
 	{
 		.name = "assert",
 		.handler = handle_adapter_reset_de_assert,

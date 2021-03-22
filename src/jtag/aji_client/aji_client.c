@@ -118,6 +118,10 @@ static char *hexdump(const uint8_t *buf, const unsigned int size)
 // Bits that have to be implemented for ARM
 //=================================
 
+// Copied from ../minidummy/minidummy.c The file was available in v0.10. 
+// Discovered that it is removed when merging with commit
+// 6448f70e0940d051eb4847231480e4805e99966a. 
+
 /**
  * This is an inner loop of the open loop DCC write of data to ARM target
  * \note It is a direct copy from \see embededdedice.c

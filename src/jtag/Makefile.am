@@ -14,16 +14,6 @@ JTAG_MINIDRIVER_DIR = %D%/aji_client
 %C%_libjtag_la_LIBADD += $(top_builddir)/%D%/aji_client/libocdaji_client.la
 MINIDRIVER_IMP_DIR = %D%/aji_client
 endif
-if ZY1000
-JTAG_SRCS += %D%/zy1000/zy1000.c
-JTAG_MINIDRIVER_DIR = %D%/zy1000
-MINIDRIVER_IMP_DIR = %D%/minidriver
-endif
-if MINIDRIVER_DUMMY
-JTAG_SRCS += %D%/minidummy/minidummy.c
-JTAG_MINIDRIVER_DIR = %D%/minidummy
-MINIDRIVER_IMP_DIR = %D%/minidriver
-endif
 
 
 
@@ -52,11 +42,9 @@ include %D%/drivers/Makefile.am
 %C%_libjtag_la_LIBADD += $(top_builddir)/%D%/drivers/libocdjtagdrivers.la
 
 endif
-# endif // MINIDRIVER
 
 %D%/minidriver_imp.h: $(MINIDRIVER_IMP_DIR)/minidriver_imp.h
 	cp $< $@
-
 
 %C%_libjtag_la_SOURCES = \
 	%D%/adapter.c \
@@ -71,8 +59,6 @@ endif
 	%D%/interfaces.h \
 	%D%/minidriver.h \
 	%D%/jtag.h \
-	%D%/minidriver/minidriver_imp.h \
-	%D%/minidummy/jtag_minidriver.h \
 	%D%/swd.h \
 	%D%/swim.h \
 	%D%/tcl.h \

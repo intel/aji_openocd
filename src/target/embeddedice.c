@@ -663,3 +663,4 @@ void embeddedice_write_dcc(struct jtag_tap *tap,
 #else
 /* provided by minidriver */
 #endif
+

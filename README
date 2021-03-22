@@ -80,4 +80,3 @@ the command:
 
 to work, provided you copy libSafeString.so and libaji_client.* to the
 same directory as openocd
-

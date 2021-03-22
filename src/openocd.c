@@ -30,7 +30,6 @@
 #include <jtag/driver.h>
 #include <jtag/jtag.h>
 #include <transport/transport.h>
-#include <helper/ioutil.h>
 #include <helper/util.h>
 #include <helper/configuration.h>
 #include <flash/nor/core.h>
@@ -38,9 +37,12 @@
 #include <pld/pld.h>
 #include <target/arm_cti.h>
 #include <target/arm_adi_v5.h>
+#include <target/arm_tpiu_swo.h>
+#include <rtt/rtt.h>
 
 #include <server/server.h>
 #include <server/gdb_server.h>
+#include <server/rtt_server.h>
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
@@ -166,6 +168,10 @@ COMMAND_HANDLER(handle_init_command)
 		return ERROR_FAIL;
 	command_context_mode(CMD_CTX, COMMAND_EXEC);
 
+	/* in COMMAND_EXEC, after target_examine(), only tpiu or only swo */
+	if (command_run_line(CMD_CTX, "tpiu init") != ERROR_OK)
+		return ERROR_FAIL;
+
 	/* initialize telnet subsystem */
 	gdb_target_add_all(all_targets);
 
@@ -225,10 +231,7 @@ static int openocd_register_commands(struct command_context *cmd_ctx)
 
 struct command_context *global_cmd_ctx;
 
-/* NB! this fn can be invoked outside this file for non PC hosted builds
- * NB! do not change to 'static'!!!!
- */
-struct command_context *setup_command_handler(Jim_Interp *interp)
+static struct command_context *setup_command_handler(Jim_Interp *interp)
 {
 	log_init();
 	LOG_DEBUG("log_init: complete");
@@ -242,6 +245,7 @@ struct command_context *setup_command_handler(Jim_Interp *interp)
 		&server_register_commands,
 		&gdb_register_commands,
 		&log_register_commands,
+		&rtt_server_register_commands,
 		&transport_register_commands,
 		&interface_register_commands,
 		&target_register_commands,
@@ -250,6 +254,7 @@ struct command_context *setup_command_handler(Jim_Interp *interp)
 		&pld_register_commands,
 		&cti_register_commands,
 		&dap_register_commands,
+		&arm_tpiu_swo_register_commands,
 		NULL
 	};
 	for (unsigned i = 0; NULL != command_registrants[i]; i++) {
@@ -329,7 +334,7 @@ int openocd_main(int argc, char *argv[])
 	if (util_init(cmd_ctx) != ERROR_OK)
 		return EXIT_FAILURE;
 
-	if (ioutil_init(cmd_ctx) != ERROR_OK)
+	if (rtt_init() != ERROR_OK)
 		return EXIT_FAILURE;
 
 	LOG_OUTPUT("For bug reports, read\n\t"
@@ -346,6 +351,7 @@ int openocd_main(int argc, char *argv[])
 
 	flash_free_all_banks();
 	gdb_service_free();
+	arm_tpiu_swo_cleanup_all();
 	server_free();
 
 	unregister_all_commands(cmd_ctx, NULL);
@@ -361,6 +367,7 @@ int openocd_main(int argc, char *argv[])
 	/* Shutdown commandline interface */
 	command_exit(cmd_ctx);
 
+	rtt_exit();
 	free_config();
 
 	if (ERROR_FAIL == ret)
