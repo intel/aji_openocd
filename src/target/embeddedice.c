@@ -645,6 +645,7 @@ int embeddedice_handshake(struct arm_jtag *jtag_info, int hsbit, uint32_t timeou
 	return ERROR_TARGET_TIMEOUT;
 }
 
+#ifndef HAVE_JTAG_MINIDRIVER_H
 /**
  * This is an inner loop of the open loop DCC write of data to target
  */
@@ -659,3 +660,6 @@ void embeddedice_write_dcc(struct jtag_tap *tap,
 		buffer += 4;
 	}
 }
+#else
+/* provided by minidriver */
+#endif

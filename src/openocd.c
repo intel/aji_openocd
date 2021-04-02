@@ -119,7 +119,6 @@ COMMAND_HANDLER(handle_noinit_command)
 /* OpenOCD can't really handle failure of this command. Patches welcome! :-) */
 COMMAND_HANDLER(handle_init_command)
 {
-
 	if (CMD_ARGC != 0)
 		return ERROR_COMMAND_SYNTAX_ERROR;
 
@@ -140,8 +139,6 @@ COMMAND_HANDLER(handle_init_command)
 		return retval;
 	}
 
-	LOG_DEBUG("Debug Adapter init complete");
-
 	/* "transport init" verifies the expected devices are present;
 	 * for JTAG, it checks the list of configured TAPs against
 	 * what's discoverable, possibly with help from the platform's
@@ -157,7 +154,6 @@ COMMAND_HANDLER(handle_init_command)
 	if (ERROR_OK != retval)
 		return ERROR_FAIL;
 
-	LOG_DEBUG("Examining targets...");
 	if (target_examine() != ERROR_OK)
 		LOG_DEBUG("target examination failed");
 

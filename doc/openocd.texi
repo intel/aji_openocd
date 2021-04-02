@@ -419,7 +419,7 @@ product. The driver can be configured to search for any VID/PID pair
 @item @b{USB-JTAG} Kolja Waschk's USB Blaster-compatible adapter
 @* Link: @url{http://ixo-jtag.sourceforge.net/}
 @item @b{Altera USB-Blaster}
-@* Link: @url{http://www.altera.com/literature/ug/ug_usb_blstr.pdf}
+@* Link: @url{https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/ug/ug_usb_blstr.pdf}
 @end itemize
 
 @section USB J-Link based
@@ -3262,6 +3262,26 @@ This value is only used with the standard variant.
 @end deffn
 
 
+@deffn {Interface Driver} {aji_client}
+USB-Blaster2 connected to an instance of Intel JTAG Server
+(jtagd in linux, and jtagserv.exe demon in windows). This
+driver communicates with the server instance.
+
+@deffn {Config Command} {aji_client hardware} name identifier
+@i{name} is a user-assigned name to identify the
+USB-Blaster2 referenced to by @i{identifier}.
+@i{identifier} is the identification string
+returned by @t{jquery} that uniquely identify the USB-Blaster2
+hosted by the server
+@end deffn
+
+@example
+adapter driver aji_client
+aji_client hardware ubii2arria10 @{USB-BlasterII on localhost:1309@}
+@end example
+@end deffn
+
+
 @deffn {Interface Driver} {jtag_dpi}
 SystemVerilog Direct Programming Interface (DPI) compatible driver for
 JTAG devices in emulation. The driver acts as a client for the SystemVerilog
@@ -4519,7 +4539,7 @@ allowing access to physical memory addresses independently of CPU cores.
 The current implementation supports three JTAG TAP cores:
 @itemize @minus
 @item @code{OpenCores TAP} (See: @url{http://opencores.org/project@comma{}jtag})
-@item @code{Altera Virtual JTAG TAP} (See: @url{http://www.altera.com/literature/ug/ug_virtualjtag.pdf})
+@item @code{Altera Virtual JTAG TAP} (See: @url{https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/ug/ug_virtualjtag.pdf})
 @item @code{Xilinx BSCAN_* virtual JTAG interface} (See: @url{http://www.xilinx.com/support/documentation/sw_manuals/xilinx14_2/spartan6_hdl.pdf})
 @end itemize
 And two debug interfaces cores:

@@ -110,6 +110,9 @@ m4_define([ADAPTER_SYM], [m4_argn([3], $1)])
 m4_define([ADAPTER_VAR], [enable_[]ADAPTER_ARG($1)])
 m4_define([ADAPTER_OPT], [m4_translit(ADAPTER_ARG($1), [_], [-])])
 
+m4_define([AJI_CLIENT_ADAPTERS],
+	[[[aji_client], [Intel AJI Client for SOCVHPS], [AJI_CLIENT]]])
+
 m4_define([USB1_ADAPTERS],
 	[[[ftdi], [MPSSE mode of FTDI based devices], [FTDI]],
 	[[stlink], [ST-Link Programmer], [HLADAPTER_STLINK]],
@@ -283,6 +286,10 @@ AC_ARG_ENABLE([amtjtagaccel],
   AS_HELP_STRING([--enable-amtjtagaccel], [Enable building the Amontec JTAG-Accelerator driver]),
   [build_amtjtagaccel=$enableval], [build_amtjtagaccel=no])
 
+AC_ARG_ENABLE([aji_client],
+  AS_HELP_STRING([--enable-aji_client], [Enable aji_client interface]),
+  [build_aji_client=$enableval], [build_aji_client=no])
+
 AS_CASE(["${host_cpu}"],
   [arm*|aarch64], [
     AC_ARG_ENABLE([bcm2835gpio],
@@ -359,6 +366,18 @@ AC_ARG_ENABLE([internal-libjaylink],
   AS_HELP_STRING([--disable-internal-libjaylink],
   [Disable building internal libjaylink]),
   [use_internal_libjaylink=$enableval], [use_internal_libjaylink=yes])
+
+build_minidriver=no
+AC_MSG_CHECKING([whether to enable AJI_CLIENT minidriver])
+AS_IF([test "x$build_aji_client" = "xyes"], [
+  AS_IF([test "x$build_minidriver" = "xyes"], [
+    AC_MSG_ERROR([Multiple minidriver options have been enabled.])
+  ])
+  AC_DEFINE([HAVE_JTAG_MINIDRIVER_H], [1],
+      [Define to 1 if you have the <jtag_minidriver.h> header file.])
+  build_minidriver=yes
+])
+AC_MSG_RESULT([$build_aji_client])
 
 AC_ARG_ENABLE([remote-bitbang],
   AS_HELP_STRING([--enable-remote-bitbang], [Enable building support for the Remote Bitbang jtag driver]),
@@ -476,6 +495,12 @@ AS_IF([test "x$build_ep93xx" = "xyes"], [
   AC_DEFINE([BUILD_EP93XX], [0], [0 if you don't want ep93xx.])
 ])
 
+AS_IF([test "x$build_aji_client" = "xyes"], [
+  AC_DEFINE([BUILD_AJI_CLIENT], [1], [1 if you want AJI_CLIENT.])
+], [
+  AC_DEFINE([BUILD_AJI_CLIENT], [0], [0 if you don't want AJI_CLIENT.])
+])
+
 AS_IF([test "x$build_at91rm9200" = "xyes"], [
   build_bitbang=yes
   AC_DEFINE([BUILD_AT91RM9200], [1], [1 if you want at91rm9200.])
@@ -569,6 +594,25 @@ AS_IF([test "x$build_xlnx_pcie_xvc" = "xyes"], [
   AC_DEFINE([BUILD_XLNX_PCIE_XVC], [0], [0 if you don't want Xilinx XVC/PCIe driver.])
 ])
 
+AS_IF([test "x$build_target64" = "xyes"], [
+  AC_DEFINE([BUILD_TARGET64], [1], [1 if you want 64-bit addresses.])
+], [
+  AC_DEFINE([BUILD_TARGET64], [0], [0 if you don't want 64-bit addresses.])
+])
+
+AC_CHECK_FILE([src/jtag/aji_client/aji_client.c],[
+    use_aji_client=yes
+    AS_IF([test "x$build_aji_client" = "xyes"], [
+		ADAPTER_VAR([AJI_CLIENT_ADAPTERS])=yes
+	], [
+		ADAPTER_VAR([AJI_CLIENT_ADAPTERS])=no
+	])
+    AC_DEFINE([HAVE_AJI_CLIENT],[1], [Defined if you have libjtag_client.so])
+    ], [
+    use_aji_client=no
+    ADAPTER_VAR([AJI_CLIENT_ADAPTERS])=no
+    ])
+
 PKG_CHECK_MODULES([LIBUSB1], [libusb-1.0], [
 	use_libusb1=yes
 	AC_DEFINE([HAVE_LIBUSB1], [1], [Define if you have libusb-1.x])
@@ -630,6 +674,9 @@ PKG_CHECK_MODULES([LIBJAYLINK], [libjaylink >= 0.2],
 
 m4_define([PROCESS_ADAPTERS], [
   m4_foreach([adapter], [$1], [
+	AS_IF([test "x$build_aji_client" = "xyes"], [
+		ADAPTER_VAR([adapter])=no
+	])
 	AS_IF([test $2], [
 		AS_IF([test "x$ADAPTER_VAR([adapter])" != "xno"], [
 			AC_DEFINE([BUILD_]ADAPTER_SYM([adapter]), [1], [1 if you want the ]ADAPTER_DESC([adapter]).)
@@ -691,6 +738,7 @@ AM_CONDITIONAL([PARPORT], [test "x$build_parport" = "xyes"])
 AM_CONDITIONAL([DUMMY], [test "x$build_dummy" = "xyes"])
 AM_CONDITIONAL([GIVEIO], [test "x$parport_use_giveio" = "xyes"])
 AM_CONDITIONAL([EP93XX], [test "x$build_ep93xx" = "xyes"])
+AM_CONDITIONAL([AJI_CLIENT], [test "x$build_aji_client" = "xyes" -a "x$use_aji_client" = "xyes"])
 AM_CONDITIONAL([AT91RM9200], [test "x$build_at91rm9200" = "xyes"])
 AM_CONDITIONAL([BCM2835GPIO], [test "x$build_bcm2835gpio" = "xyes"])
 AM_CONDITIONAL([IMX_GPIO], [test "x$build_imx_gpio" = "xyes"])
@@ -698,6 +746,7 @@ AM_CONDITIONAL([BITBANG], [test "x$build_bitbang" = "xyes"])
 AM_CONDITIONAL([JTAG_VPI], [test "x$build_jtag_vpi" = "xyes" -o "x$build_jtag_vpi" = "xyes"])
 AM_CONDITIONAL([JTAG_DPI], [test "x$build_jtag_dpi" = "xyes" -o "x$build_jtag_dpi" = "xyes"])
 AM_CONDITIONAL([USB_BLASTER_DRIVER], [test "x$enable_usb_blaster" != "xno" -o "x$enable_usb_blaster_2" != "xno"])
+AM_CONDITIONAL([AJI_CLIENT_DRIVER], [test "x$build_aji_client" != "xno" -a "x$use_aji_client" != "xno"])
 AM_CONDITIONAL([AMTJTAGACCEL], [test "x$build_amtjtagaccel" = "xyes"])
 AM_CONDITIONAL([GW16012], [test "x$build_gw16012" = "xyes"])
 AM_CONDITIONAL([REMOTE_BITBANG], [test "x$build_remote_bitbang" = "xyes"])
@@ -717,7 +766,7 @@ AM_CONDITIONAL([USE_HIDAPI], [test "x$use_hidapi" = "xyes"])
 AM_CONDITIONAL([USE_LIBJAYLINK], [test "x$use_libjaylink" = "xyes"])
 AM_CONDITIONAL([RSHIM], [test "x$build_rshim" = "xyes"])
 AM_CONDITIONAL([HAVE_CAPSTONE], [test "x$enable_capstone" != "xno"])
-
+AM_CONDITIONAL([MINIDRIVER], [test "x$build_minidriver" = "xyes"])
 AM_CONDITIONAL([INTERNAL_JIMTCL], [test "x$use_internal_jimtcl" = "xyes"])
 AM_CONDITIONAL([INTERNAL_LIBJAYLINK], [test "x$use_internal_libjaylink" = "xyes"])
 
@@ -783,7 +832,9 @@ echo
 echo
 echo OpenOCD configuration summary
 echo --------------------------------------------------
-m4_foreach([adapter], [USB1_ADAPTERS, USB0_ADAPTERS,
+m4_foreach([adapter], [
+    AJI_CLIENT_ADAPTERS,
+    USB1_ADAPTERS, USB0_ADAPTERS,
 	HIDAPI_ADAPTERS, HIDAPI_USB1_ADAPTERS, LIBFTDI_ADAPTERS,
 	LIBFTDI_USB1_ADAPTERS,
 	LIBGPIOD_ADAPTERS,

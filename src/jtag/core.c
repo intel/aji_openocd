@@ -1,4 +1,7 @@
 /***************************************************************************
+ *   Copyright (C) 2021 Cinly Ooi                                          *
+ *   cinly.ooi@intel.com                                                   *
+ *                                                                         *
  *   Copyright (C) 2009 Zachary T Welch                                    *
  *   zw@superlucidity.net                                                  *
  *                                                                         *
@@ -951,6 +954,12 @@ int default_interface_jtag_execute_queue(void)
 	}
 
 	int result = jtag->jtag_ops->execute_queue();
+#if !BUILD_AJI_CLIENT
+	/* Only build this if we use a regular driver with a command queue.
+	 * Otherwise jtag_command_queue won't be found at compile/link time. Its
+	 * definition is in jtag/commands.c, which is only built/linked by
+	 * jtag/Makefile.am if MINIDRIVER_DUMMY || !MINIDRIVER, but those variables
+	 * aren't accessible here. */
 
 	struct jtag_command *cmd = jtag_command_queue;
 	while (debug_level >= LOG_LVL_DEBUG_IO && cmd) {
@@ -1010,6 +1019,7 @@ int default_interface_jtag_execute_queue(void)
 		}
 		cmd = cmd->next;
 	}
+#endif // !BUILD_AJI_CLIENT
 
 	return result;
 }
@@ -1081,6 +1091,15 @@ void jtag_sleep(uint32_t us)
 
 /* a larger IR length than we ever expect to autoprobe */
 #define JTAG_IRLEN_MAX          60
+
+#if BUILD_AJI_CLIENT
+/* Minijtagserv should define its own jtag_examine_chain(). All jtag_examine_*()
+ * in this file are there to support jtag_examine_chain(). As such aji_client
+ * need not define them.
+ */
+extern int jtag_examine_chain(void);
+
+#else /* BUILD_AJI_CLIENT */
 
 static int jtag_examine_chain_execute(uint8_t *idcode_buffer, unsigned num_idcode)
 {
@@ -1320,7 +1339,14 @@ out:
 	free(idcode_buffer);
 	return retval;
 }
+#endif /* BUILD_AJI_CLIENT */
 
+#if BUILD_AJI_CLIENT
+/* Minijtagserv should define its own jtag_validate_ircapture(void)
+ */
+extern int jtag_validate_ircapture(void);
+
+#else /* BUILD_AJI_CLIENT */
 /*
  * Validate the date loaded by entry to the Capture-IR state, to help
  * find errors related to scan chain configuration (wrong IR lengths)
@@ -1444,7 +1470,12 @@ done:
 	}
 	return retval;
 }
+#endif /* BUILD_AJI_CLIENT */
 
+/**
+ * Initilaize JTAG Tap.
+ * @note Will not fill in \c chip, \c tapname and \c dottedname.
+ */
 void jtag_tap_init(struct jtag_tap *tap)
 {
 	unsigned ir_len_bits;
@@ -1471,6 +1502,11 @@ void jtag_tap_init(struct jtag_tap *tap)
 
 	/* register the reset callback for the TAP */
 	jtag_register_event_callback(&jtag_reset_callback, tap);
+
+#ifdef BUILD_AJI_CLIENT
+	tap->hardware = NULL;
+#endif
+
 	jtag_tap_add(tap);
 
 	LOG_DEBUG("Created Tap: %s @ abs position %d, "
@@ -1482,6 +1518,12 @@ void jtag_tap_init(struct jtag_tap *tap)
 
 void jtag_tap_free(struct jtag_tap *tap)
 {
+#ifdef BUILD_AJI_CLIENT
+	if (tap->hardware) {
+		free(tap->hardware);
+	}
+#endif
+
 	jtag_unregister_event_callback(&jtag_reset_callback, tap);
 
 	struct jtag_tap_event_action *jteap = tap->event_action;
