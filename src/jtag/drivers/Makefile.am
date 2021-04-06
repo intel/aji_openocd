@@ -1,4 +1,8 @@
 noinst_LTLIBRARIES += %D%/libocdjtagdrivers.la
+%C%_libocdjtagdrivers_la_LDFLAGS =
+
+%C%_libocdjtagdrivers_la_LDLIBS =
+
 %C%_libocdjtagdrivers_la_LIBADD =
 
 %C%_libocdjtagdrivers_la_SOURCES = \

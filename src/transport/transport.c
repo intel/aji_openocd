@@ -239,7 +239,6 @@ COMMAND_HANDLER(handle_transport_init)
 		}
 		return ERROR_FAIL;
 	}
-
 	return session->init(CMD_CTX);
 }
 
