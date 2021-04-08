@@ -143,6 +143,7 @@ AJI_ERROR c_aji_get_hardware(DWORD * hardware_count, AJI_HARDWARE * hardware_lis
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(DWORD*, AJI_HARDWARE*, DWORD);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_GET_HARDWARE__LINUX64); //extra (void*) cast to prevent warning re casting from AJI_ERROR aji_get_hardware(*)
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -155,6 +156,7 @@ AJI_ERROR c_aji_get_hardware2(DWORD * hardware_count, AJI_HARDWARE * hardware_li
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(DWORD*, AJI_HARDWARE*, char**, DWORD);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib,FNAME_AJI_GET_HARDWARE2__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -167,6 +169,7 @@ AJI_ERROR c_aji_find_hardware(DWORD persistent_id, AJI_HARDWARE * hardware, DWOR
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(DWORD, AJI_HARDWARE*, DWORD);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_FIND_HARDWARE__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -179,6 +182,7 @@ AJI_ERROR c_aji_find_hardware_a(const char * hw_name, AJI_HARDWARE * hardware, D
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(const char*, AJI_HARDWARE*, DWORD);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_FIND_HARDWARE_A__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -191,6 +195,7 @@ AJI_ERROR c_aji_read_device_chain(AJI_CHAIN_ID chain_id, DWORD * device_count, A
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(AJI_CHAIN_ID, DWORD*, AJI_DEVICE*, _Bool);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_READ_DEVICE_CHAIN__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -208,6 +213,7 @@ AJI_ERROR AJI_API c_aji_get_nodes(
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR(*ProdFn)(AJI_CHAIN_ID, DWORD, DWORD*, DWORD*);
     ProdFn pfn = (ProdFn)(void*)dlsym(c_jtag_client_lib, FNAME_AJI_GET_NODES__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -225,6 +231,7 @@ AJI_ERROR AJI_API c_aji_get_nodes_a(
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR(*ProdFn)(AJI_CHAIN_ID, DWORD, DWORD*, DWORD*, DWORD*);
     ProdFn pfn = (ProdFn)(void*)dlsym(c_jtag_client_lib, FNAME_AJI_GET_NODES_A__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -243,6 +250,7 @@ AJI_ERROR AJI_API c_aji_get_nodes_b(
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR(*ProdFn)(AJI_CHAIN_ID, DWORD, AJI_HIER_ID*, DWORD*, AJI_HUB_INFO*);
     ProdFn pfn = (ProdFn)(void*)dlsym(c_jtag_client_lib, FNAME_AJI_GET_NODES_B__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -268,6 +276,7 @@ AJI_ERROR c_aji_unlock_lock_chain(AJI_OPEN_ID unlock_id, AJI_CHAIN_ID lock_id) {
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(AJI_OPEN_ID, AJI_CHAIN_ID);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_UNLOCK_LOCK_CHAIN__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -280,6 +289,7 @@ AJI_ERROR c_aji_unlock(AJI_OPEN_ID open_id) {
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(AJI_OPEN_ID);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_UNLOCK__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -292,6 +302,7 @@ AJI_ERROR c_aji_lock_chain(AJI_CHAIN_ID chain_id, DWORD timeout) {
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(AJI_CHAIN_ID, DWORD);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_LOCK_CHAIN__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -304,6 +315,7 @@ AJI_ERROR c_aji_unlock_chain(AJI_CHAIN_ID chain_id) {
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(AJI_CHAIN_ID);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_UNLOCK_CHAIN__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -316,6 +328,7 @@ AJI_ERROR c_aji_unlock_chain_lock(AJI_CHAIN_ID unlock_id, AJI_OPEN_ID lock_id, A
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR(*ProdFn)(AJI_CHAIN_ID, AJI_OPEN_ID, AJI_PACK_STYLE);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_UNLOCK_CHAIN_LOCK__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -328,6 +341,7 @@ AJI_API AJI_ERROR c_aji_flush(AJI_OPEN_ID open_id) {
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR(*ProdFn)(AJI_OPEN_ID);
     ProdFn pfn = (ProdFn)(void*)dlsym(c_jtag_client_lib, FNAME_AJI_FLUSH__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -340,6 +354,7 @@ AJI_ERROR c_aji_open_device(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_OPEN_
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(AJI_CHAIN_ID, DWORD, AJI_OPEN_ID*, const AJI_CLAIM*, DWORD, const char*);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_OPEN_DEVICE__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -352,6 +367,7 @@ AJI_ERROR c_aji_open_device_a(AJI_CHAIN_ID chain_id, DWORD tap_position, AJI_OPE
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(AJI_CHAIN_ID, DWORD, AJI_OPEN_ID*, const AJI_CLAIM2*, DWORD, const char*);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_OPEN_DEVICE__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -364,6 +380,7 @@ AJI_ERROR c_aji_close_device(AJI_OPEN_ID open_id) {
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(AJI_OPEN_ID);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_CLOSE_DEVICE__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -376,11 +393,71 @@ AJI_ERROR c_aji_open_entire_device_chain(AJI_CHAIN_ID chain_id, AJI_OPEN_ID * op
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(AJI_CHAIN_ID, AJI_OPEN_ID*, const AJI_CHAIN_TYPE, const char*);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_OPEN_ENTIRE_DEVICE_CHAIN__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
     return (pfn)(chain_id, open_id, style, application_name);
 }
+
+#define FNAME_AJI_OPEN_NODE__LINUX64 "_Z13aji_open_nodeP9AJI_CHAINjjPP8AJI_OPENPK9AJI_CLAIMjPKc"
+AJI_ERROR AJI_API c_aji_open_node             (AJI_CHAIN_ID         chain_id,
+                                               DWORD                tap_position,
+                                               DWORD                idcode,
+                                               AJI_OPEN_ID        * node_id,
+                                               const AJI_CLAIM    * claims,
+                                               DWORD                claim_n,
+                                               const char         * application_name){
+    assert(c_safestring_lib != NULL);
+    assert(c_jtag_client_lib != NULL);
+    typedef AJI_ERROR(*ProdFn)(AJI_CHAIN_ID, DWORD, DWORD, AJI_OPEN_ID*, const AJI_CLAIM*, DWORD, const char*);
+    ProdFn pfn = (ProdFn)(void*)dlsym(c_jtag_client_lib, FNAME_AJI_OPEN_NODE__LINUX64);
+    assert(pfn != NULL);
+    if (pfn == NULL) {
+        return AJI_FAILURE;
+    }
+    return (pfn)(chain_id, tap_position, idcode, node_id, claims, claim_n, application_name);
+}
+
+#define FNAME_AJI_OPEN_NODE_A__LINUX64 "_Z13aji_open_nodeP9AJI_CHAINjjjPP8AJI_OPENPK9AJI_CLAIMjPKc"
+AJI_ERROR AJI_API c_aji_open_node_a           (AJI_CHAIN_ID         chain_id,
+                                               DWORD                tap_position,
+                                               DWORD                node_position,
+                                               DWORD                idcode,
+                                               AJI_OPEN_ID        * node_id,
+                                               const AJI_CLAIM    * claims,
+                                               DWORD                claim_n,
+                                               const char         * application_name){
+    assert(c_safestring_lib != NULL);
+    assert(c_jtag_client_lib != NULL);
+    typedef AJI_ERROR(*ProdFn)(AJI_CHAIN_ID, DWORD, DWORD, DWORD, AJI_OPEN_ID*, const AJI_CLAIM*, DWORD, const char*);
+    ProdFn pfn = (ProdFn)(void*)dlsym(c_jtag_client_lib, FNAME_AJI_OPEN_NODE_A__LINUX64);
+    assert(pfn != NULL);
+    if (pfn == NULL) {
+        return AJI_FAILURE;
+    }
+    return (pfn)(chain_id, tap_position, node_position, idcode, node_id, claims, claim_n, application_name);
+}
+
+#define FNAME_AJI_OPEN_NODE_B__LINUX64 "_Z13aji_open_nodeP9AJI_CHAINjPK11AJI_HIER_IDPP8AJI_OPENPK10AJI_CLAIM2jPKc"
+AJI_ERROR AJI_API c_aji_open_node_b           (AJI_CHAIN_ID         chain_id,
+                                               DWORD                tap_position,
+                                               const AJI_HIER_ID  * hier_id,
+                                               AJI_OPEN_ID        * node_id,
+                                               const AJI_CLAIM2   * claims,
+                                               DWORD                claim_n,
+                                               const char         * application_name){
+    assert(c_safestring_lib != NULL);
+    assert(c_jtag_client_lib != NULL);
+    typedef AJI_ERROR(*ProdFn)(AJI_CHAIN_ID, DWORD, const AJI_HIER_ID*, AJI_OPEN_ID*, const AJI_CLAIM2*, DWORD, const char*);
+    ProdFn pfn = (ProdFn)(void*)dlsym(c_jtag_client_lib, FNAME_AJI_OPEN_NODE_B__LINUX64);
+    assert(pfn != NULL);
+    if (pfn == NULL) {
+        return AJI_FAILURE;
+    }
+    return (pfn)(chain_id, tap_position, hier_id, node_id, claims, claim_n, application_name);
+}
+
 
 #define FNAME_AJI_TEST_LOGIC_RESET__LINUX64 "_Z20aji_test_logic_resetP8AJI_OPEN"
 AJI_ERROR c_aji_test_logic_reset(AJI_OPEN_ID open_id) {
@@ -388,7 +465,8 @@ AJI_ERROR c_aji_test_logic_reset(AJI_OPEN_ID open_id) {
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(AJI_OPEN_ID*);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_TEST_LOGIC_RESET__LINUX64);
-    if (pfn == NULL) { fprintf(stderr,"*****************************oops\n");
+    assert(pfn != NULL);
+    if (pfn == NULL) {
         return AJI_FAILURE;
     }
     return (pfn)(open_id);
@@ -400,6 +478,7 @@ AJI_ERROR c_aji_delay(AJI_OPEN_ID open_id, DWORD timeout_microseconds) {
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR (*ProdFn)(AJI_OPEN_ID, DWORD);
     ProdFn pfn = (ProdFn) (void*) dlsym(c_jtag_client_lib, FNAME_AJI_DELAY__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -412,6 +491,7 @@ AJI_ERROR c_aji_run_test_idle(AJI_OPEN_ID open_id, DWORD num_clocks) {
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR(*ProdFn)(AJI_OPEN_ID, DWORD);
     ProdFn pfn = (ProdFn) (void*)dlsym(c_jtag_client_lib, FNAME_AJI_RUN_TEST_IDLE__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -424,6 +504,7 @@ AJI_ERROR c_aji_run_test_idle_a(AJI_OPEN_ID open_id, DWORD num_clocks, DWORD fla
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR(*ProdFn)(AJI_OPEN_ID, DWORD, DWORD);
     ProdFn pfn = (ProdFn) (void*)dlsym(c_jtag_client_lib, FNAME_AJI_RUN_TEST_IDLE_A__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -436,6 +517,7 @@ AJI_ERROR c_aji_access_ir(AJI_OPEN_ID open_id, DWORD instruction, DWORD * captur
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR(*ProdFn)(AJI_OPEN_ID, DWORD, DWORD*, DWORD);
     ProdFn pfn = (ProdFn) (void*)dlsym(c_jtag_client_lib, FNAME_AJI_ACCESS_IR__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -448,6 +530,7 @@ AJI_ERROR c_aji_access_ir_a(AJI_OPEN_ID open_id, DWORD length_ir, const BYTE * w
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR(*ProdFn)(AJI_OPEN_ID, DWORD, const BYTE*, BYTE*, DWORD);
     ProdFn pfn = (ProdFn) (void*)dlsym(c_jtag_client_lib, FNAME_AJI_ACCESS_IR_A__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -460,6 +543,7 @@ AJI_ERROR c_aji_access_dr(AJI_OPEN_ID open_id, DWORD length_dr, DWORD flags, DWO
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR(*ProdFn)(AJI_OPEN_ID, DWORD, DWORD, DWORD, DWORD, const BYTE*, DWORD, DWORD, BYTE*);
     ProdFn pfn = (ProdFn) (void*)dlsym(c_jtag_client_lib, FNAME_AJI_ACCESS_DR__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -472,6 +556,7 @@ AJI_ERROR c_aji_access_dr_a(AJI_OPEN_ID open_id, DWORD length_dr, DWORD flags, D
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR(*ProdFn)(AJI_OPEN_ID, DWORD, DWORD, DWORD, DWORD, const BYTE*, DWORD, DWORD, BYTE*, DWORD);
     ProdFn pfn = (ProdFn) (void*)dlsym(c_jtag_client_lib, FNAME_AJI_ACCESS_DR__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
@@ -485,6 +570,7 @@ AJI_API AJI_ERROR c_aji_access_overlay(AJI_OPEN_ID node_id, DWORD overlay, DWORD
     assert(c_jtag_client_lib != NULL);
     typedef AJI_ERROR(*ProdFn)(AJI_OPEN_ID, DWORD, DWORD*);
     ProdFn pfn = (ProdFn)(void*)dlsym(c_jtag_client_lib, FNAME_AJI_ACCESS_OVERLAY__LINUX64);
+    assert(pfn != NULL);
     if (pfn == NULL) {
         return AJI_FAILURE;
     }
