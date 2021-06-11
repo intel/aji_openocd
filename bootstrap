@@ -38,6 +38,23 @@ else
     echo "Setting up submodules"
     git submodule init
     git submodule update
+
+# Not a very elegent way of detecting that a patch was not apply
+# before applying it but it does the job  
+grep -- 'CFLAGS = @CFLAGS@ @CCOPTS@ @CPPFLAGS@ -fPIE' jimtcl/Makefile.in >/dev/null || 
+patch --forward --directory jimtcl --strip 1 -s <<- EOF
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -36,7 +36,7 @@ SHOBJ_LDFLAGS ?= @SHOBJ_LDFLAGS@
+ @else
+ SHOBJ_LDFLAGS ?= @SHOBJ_LDFLAGS_R@
+ @endif
+-CFLAGS = @CFLAGS@ @CCOPTS@ @CPPFLAGS@
++CFLAGS = @CFLAGS@ @CCOPTS@ @CPPFLAGS@ -fPIE
+ CXXFLAGS = @CXXFLAGS@ @CXXOPTS@
+ LDFLAGS = @LDFLAGS@
+ LDLIBS += @LDLIBS@
+EOF
 fi
 
 if [ -x src/jtag/drivers/libjaylink/autogen.sh ]; then
