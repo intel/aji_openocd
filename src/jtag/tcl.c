@@ -12,6 +12,9 @@
  *   Copyright (C) 2009 Zachary T Welch                                    *
  *   zw@superlucidity.net                                                  *
  *                                                                         *
+ *   Copyright (C) 2021 Cinly Ooi                                          *
+ *   cinly.ooi@intel.com                                                   *
+ *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
  *   the Free Software Foundation; either version 2 of the License, or     *
@@ -62,6 +65,11 @@ struct jtag_tap *jtag_tap_by_jim_obj(Jim_Interp *interp, Jim_Obj *o)
 {
 	const char *cp = Jim_GetString(o, NULL);
 	struct jtag_tap *t = cp ? jtag_tap_by_string(cp) : NULL;
+
+	if (NULL == t) {
+		t = cp ? (struct jtag_tap*) vjtag_tap_by_string(cp) : NULL;
+	}
+
 	if (NULL == cp)
 		cp = "(unknown)";
 	if (NULL == t)
@@ -98,7 +106,7 @@ static int Jim_Command_drscan(Jim_Interp *interp, int argc, Jim_Obj *const *args
 	 * ... repeat num bits and hex string ...
 	 *
 	 * .. optionally:
-	*     args[N-2] = "-endstate"
+	 *     args[N-2] = "-endstate"
 	 *     args[N-1] = statename
 	 */
 	if ((argc < 4) || ((argc % 2) != 0)) {
@@ -469,6 +477,7 @@ static int jim_newtap_expected_id(struct jim_nvp *n, struct jim_getopt_info *goi
 #define NTAP_OPT_DISABLED  4
 #define NTAP_OPT_EXPECTED_ID 5
 #define NTAP_OPT_VERSION   6
+#define NTAP_OPT_CHAIN_POSITION   7
 
 static int jim_newtap_ir_param(struct jim_nvp *n, struct jim_getopt_info *goi,
 	struct jtag_tap *pTap)
@@ -947,6 +956,9 @@ void jtag_notify_event(enum jtag_event event)
 
 	for (tap = jtag_all_taps(); tap; tap = tap->next_tap)
 		jtag_tap_handle_event(tap, event);
+
+	for (tap = (struct jtag_tap*) vjtag_all_taps(); tap; tap = tap->next_tap)
+		jtag_tap_handle_event(tap, event);
 }
 
 
@@ -1374,3 +1386,153 @@ int jtag_register_commands(struct command_context *cmd_ctx)
 {
 	return register_commands(cmd_ctx, NULL, jtag_command_handlers);
 }
+
+
+/*
+ * for virtual JTAG
+ */
+
+static int jim_vjtag_create_cmd(struct jim_getopt_info* goi)
+{
+	struct vjtag_tap* pTap;
+	int e;
+	struct jim_nvp* n;
+	const struct jim_nvp opts[] = {
+		{.name = "-chain-position",  .value = NTAP_OPT_CHAIN_POSITION },
+		{.name = "-expected-id",     .value = NTAP_OPT_EXPECTED_ID },
+		{.name = "-ignore-version",  .value = NTAP_OPT_VERSION },
+		{.name = NULL,               .value = -1 },
+	};
+
+	pTap = calloc(1, sizeof(struct vjtag_tap));
+	if (!pTap) {
+		Jim_SetResultFormatted(goi->interp, "no memory");
+		return JIM_ERR;
+	}
+
+	/*
+	 * we expect NAME + OPTIONS
+	 * */
+	if (goi->argc < 2) {
+		Jim_SetResultFormatted(goi->interp, "Missing NAME OPTIONS ....");
+		free(pTap);
+		return JIM_ERR;
+	}
+
+	const char* tmp;
+	jim_getopt_string(goi, &tmp, NULL);
+	pTap->dotted_name = strdup(tmp);
+
+	LOG_DEBUG("Creating New Virtual Tap, Dotted Name: %s, %d params",
+		pTap->dotted_name, goi->argc);
+
+	struct jtag_tap* parent = NULL;
+	while (goi->argc) {
+		e = jim_getopt_nvp(goi, opts, &n);
+		if (e != JIM_OK) {
+			jim_getopt_nvp_unknown(goi, opts, 0);
+			free(pTap);
+			return e;
+		}
+		LOG_DEBUG("Processing option: %s", n->name);
+		switch (n->value) {
+		case NTAP_OPT_EXPECTED_ID:
+			e = jim_newtap_expected_id(n, goi, (struct jtag_tap*)pTap);
+			if (JIM_OK != e) {
+				free(pTap);
+				return e;
+			}
+			break;
+		case NTAP_OPT_CHAIN_POSITION: {
+			Jim_Obj* o_t;
+			e = jim_getopt_obj(goi, &o_t);
+			if (e != JIM_OK)
+				return e;
+			parent = jtag_tap_by_jim_obj(goi->interp, o_t);
+			if (parent == NULL) {
+				Jim_SetResultString(goi->interp, "-chain-position is invalid", -1);
+				return JIM_ERR;
+			}
+			break;
+		}
+		case NTAP_OPT_VERSION:
+			pTap->ignore_version = true;
+			break;
+		}	/* switch (n->value) */
+	}	/* while (goi->argc) */
+
+	if (NULL == parent) {
+		Jim_SetResultString(goi->interp, "-chain-position is invalid or not declared", -1);
+		free(pTap);
+		return JIM_ERR;
+	}
+
+	if (1 != pTap->expected_ids_cnt) {
+		Jim_SetResultFormatted(goi->interp, "Expected one -expect_id <idcode> but got %d", pTap->expected_ids_cnt);
+		free(pTap);
+		return JIM_ERR;
+	}
+
+	pTap->parent = parent;
+	pTap->idcode = pTap->expected_ids[0]; //} @TODO This should be checked and assigned by jtag_examine_chain
+	pTap->hasidcode = true;               //} and not assigned blindly here.
+
+	int len = strlen(parent->chip);
+	pTap->chip = calloc(len + 1, sizeof(char));
+	strncpy(parent->chip, pTap->chip, len);
+
+	len = strlen(parent->tapname);
+	pTap->tapname = calloc(len + 1, sizeof(char));
+	strncpy(parent->tapname, pTap->tapname, strlen(parent->tapname));
+
+	pTap->disabled_after_reset = false;           /* } vtag cannot be disabled */
+	pTap->enabled = !pTap->disabled_after_reset;  /* } */
+	pTap->ir_length = parent->ir_length;
+	pTap->ir_capture_value = parent->ir_capture_value;
+	pTap->ir_capture_mask = parent->ir_capture_mask;
+	pTap->idcode = 0;         /* } to be set by jtag_examine_chain */
+	pTap->hasidcode = false;  /* }  */
+	pTap->bypass = false; /* BYPASS does not valid in vJTAG. */
+
+	vjtag_tap_init(pTap);
+	return JIM_OK;
+}
+
+int jim_vjtag_create(Jim_Interp* interp, int argc, Jim_Obj* const* argv)
+{
+	struct jim_getopt_info goi;
+	jim_getopt_setup(&goi, interp, argc - 1, argv + 1);
+	return jim_vjtag_create_cmd(&goi);
+}
+
+static const struct command_registration vjtag_subcommand_handlers[] = {
+	{
+		.name = "create",
+		.mode = COMMAND_CONFIG,
+		.jim_handler = jim_vjtag_create,
+		.help = "Create a new virtual TAP instance on tapname, "
+			"and appends it to the scan chain.",
+		.usage = "name '-chain-position' tapname '-expected_id' idcode "
+			"['-ignore-version'] ",
+	},
+	COMMAND_REGISTRATION_DONE
+}; //end vjtag_subcommand_handlers
+
+static const struct command_registration vjtag_command_handlers[] = {
+
+	{
+		.name = "vjtag",
+		.mode = COMMAND_ANY,
+		.help = "perform jtag tap actions",
+		.usage = "",
+
+		.chain = vjtag_subcommand_handlers,
+	},
+	COMMAND_REGISTRATION_DONE
+}; //end vjtag_command_handlers
+
+int vjtag_register_commands(struct command_context* cmd_ctx)
+{
+	return register_commands(cmd_ctx, NULL, vjtag_command_handlers);
+}
+

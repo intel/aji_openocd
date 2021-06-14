@@ -33,6 +33,10 @@ endif
 # common flags used in openocd build
 AM_CFLAGS = $(GCC_WARNINGS)
 
+# To enable the use of unnamed struct in gcc <=9.2.0
+# Not needed for C11 compliant compiler.
+AM_CFLAGS += -fms-extensions
+
 AM_CPPFLAGS = $(HOST_CPPFLAGS)\
 			  -I$(top_srcdir)/src \
 			  -I$(top_builddir)/src \

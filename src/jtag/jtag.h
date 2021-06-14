@@ -5,6 +5,9 @@
 *   Copyright (C) 2007-2010 Øyvind Harboe                                 *
 *   oyvind.harboe@zylin.com                                               *
 *                                                                         *
+*   Copyright (C) 2021 Cinly Ooi                                          *
+*   cinly.ooi@intel.com                                                   *
+*                                                                         *
 *   This program is free software; you can redistribute it and/or modify  *
 *   it under the terms of the GNU General Public License as published by  *
 *   the Free Software Foundation; either version 2 of the License, or     *
@@ -628,5 +631,43 @@ void jtag_poll_set_enabled(bool value);
 #include <jtag/minidriver.h>
 
 int jim_jtag_newtap(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
+
+
+/**
+ * Virtual JTAG suitable for SLD. 
+ */
+struct vjtag_tap {
+	/* Must be first element, to make vjtag_tap useable wherever 
+	 * #jtag_tap can be used. See #jim_vjtag_create_cmd() for 
+	 * reinterpretation of some #jtag_tap parameters
+	 *
+	 * @note that vjtag_tap->next which is inheritted from @jtag_tap,
+	 *       will be a #jtag_tap pointer that  needs to be recasted
+	 *		 back to #vjtag_tap
+	 *
+	 *
+	 * On gcc 9.3.0, we get a warning
+	 *
+	 *./src/jtag/jtag.h:XXX:YY: warning: declaration does not declare anything
+	 * XXX |  struct jtag_tap; //< TAP parameters.
+	 *     | 
+	 * This is a false warning. "stuct jtag" is an anonymous struct which
+	 * is legal under C11 standard. The resulting executable is still
+	 * working as it is.
+	 *
+	 * Equally unfortunately, I don't know how to disable the warning               ^ 
+	 */
+	struct jtag_tap; //< TAP parameters. \note Ignore "warning: declaration does not declare anything"
+	struct jtag_tap *parent; //< The physical jtag it is based on.
+}; //end vjtag_tap
+
+int  vjtag_register_commands(struct command_context* cmd_ctx);
+void vjtag_tap_init(struct vjtag_tap* tap);
+void vjtag_tap_free(struct vjtag_tap* tap);
+
+struct vjtag_tap* vjtag_all_taps(void);
+void   vjtag_tap_add(struct vjtag_tap* t);
+struct vjtag_tap* vjtag_tap_by_string(const char* dotted_name);
+bool   jtag_tap_on_all_vtaps_list(struct jtag_tap* tap);
 
 #endif /* OPENOCD_JTAG_JTAG_H */
