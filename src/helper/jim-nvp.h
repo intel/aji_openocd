@@ -216,7 +216,7 @@ struct jim_getopt_info {
  * \code
  *     struct jim_getopt_info  goi;
  *
- *     Jim_GetOptSetup(&goi, interp, argc, argv);
+ *     jim_getopt_setup(&goi, interp, argc, argv);
  * \endcode
  */
 
