@@ -478,6 +478,7 @@ static int jim_newtap_expected_id(struct jim_nvp *n, struct jim_getopt_info *goi
 #define NTAP_OPT_EXPECTED_ID 5
 #define NTAP_OPT_VERSION   6
 #define NTAP_OPT_CHAIN_POSITION   7
+#define NTAP_OPT_HARDWARE 101
 
 static int jim_newtap_ir_param(struct jim_nvp *n, struct jim_getopt_info *goi,
 	struct jtag_tap *pTap)
@@ -525,6 +526,49 @@ static int jim_newtap_ir_param(struct jim_nvp *n, struct jim_getopt_info *goi,
 	return JIM_OK;
 }
 
+static int jim_newtap_hardware(struct jim_nvp* n, struct jim_getopt_info* goi, struct jtag_tap* pTap)
+{
+    const char* hardware_name = NULL;
+    int len = 0;
+    jim_getopt_string(goi, &hardware_name, &len);
+    if (len == 0) {
+        Jim_SetResultFormatted(goi->interp, "%s: Missing argument.", n->name);
+        return JIM_ERR;
+    }
+
+    LOG_INFO("Looking for the hardware that containing this TAP. Expecting %s.",
+        hardware_name
+    );
+    /* Currently only expecting and supporting one hardware */
+	struct jtag_hardware *hw = jtag_all_hardwares();
+	if(hw == NULL) {
+		LOG_WARNING("Ignoring hardware association request to %s for TAP %s"
+					"Reason is you have yet to explicitly define any JTAG hardware",
+					hardware_name,
+					pTap->dotted_name
+		);
+		return JIM_OK;
+	}
+
+	int namelen = strlen(hw->name);
+	if (strncmp(hardware_name, hw->name, len < namelen ? len : namelen)) {
+		Jim_SetResultFormatted(
+		    goi->interp,
+		    "%s: Unknown hardware %s. Expecting %s",
+		    n->name, hardware_name, hw->name);
+
+ 		//For reason Unknown, not seeing the above error message
+		LOG_ERROR("%s: Unknown hardware %s. Expecting %s",
+		    n->name, hardware_name, hw->name);
+		free((char*)hardware_name);
+		return JIM_ERR;
+	}
+
+	pTap->hardware = strndup(hardware_name, len);
+
+	return JIM_OK;
+}
+
 static int jim_newtap_cmd(struct jim_getopt_info *goi)
 {
 	struct jtag_tap *pTap;
@@ -540,6 +584,7 @@ static int jim_newtap_cmd(struct jim_getopt_info *goi)
 		{ .name = "-disable",       .value = NTAP_OPT_DISABLED },
 		{ .name = "-expected-id",       .value = NTAP_OPT_EXPECTED_ID },
 		{ .name = "-ignore-version",       .value = NTAP_OPT_VERSION },
+		{.name = "-hardware",       .value = NTAP_OPT_HARDWARE },
 		{ .name = NULL,       .value = -1 },
 	};
 
@@ -624,6 +669,14 @@ static int jim_newtap_cmd(struct jim_getopt_info *goi)
 			    break;
 		    case NTAP_OPT_VERSION:
 			    pTap->ignore_version = true;
+			    break;
+		    case NTAP_OPT_HARDWARE:
+			    e = jim_newtap_hardware(n, goi, pTap);
+			    if (JIM_OK != e) {
+				   free(cp);
+				   free(pTap);
+				   return e;
+			    }
 			    break;
 		}	/* switch (n->value) */
 	}	/* while (goi->argc) */
@@ -1534,5 +1587,71 @@ static const struct command_registration vjtag_command_handlers[] = {
 int vjtag_register_commands(struct command_context* cmd_ctx)
 {
 	return register_commands(cmd_ctx, NULL, vjtag_command_handlers);
+}
+
+
+/*
+ * For JTAG Hardware
+ *
+ */
+
+static int jim_hardware_cmd(struct jim_getopt_info* goi)
+{
+	if (goi->argc < 2) {
+		Jim_SetResultFormatted(goi->interp, "Missing NAME ID");
+		return JIM_ERR;
+	}
+
+	struct jtag_hardware *hw;
+	hw = calloc(1, sizeof(struct jtag_hardware));
+	if(hw == NULL) {
+		LOG_ERROR("Insufficient memory");
+		return JIM_ERR;
+	}
+
+	int size = 0;
+	const char* tmp = NULL;
+	jim_getopt_string(goi, &tmp, &size);
+	hw->name = strndup(tmp, size);
+	jim_getopt_string(goi, &tmp, &size);
+	hw->address = strndup(tmp, size);
+
+	if(hw->name == NULL || hw->address == NULL) {
+		LOG_ERROR("Insufficient memory");
+		if(hw->name) { free(hw->name); }
+		if(hw->address) { free(hw->address); }
+		return JIM_ERR;
+	}
+
+	jtag_hardware_add(hw);
+
+	LOG_DEBUG("Creating New hardware, Name: %s, Address %s",
+		hw->name,
+		hw->address
+	);
+	return JIM_OK;
+}
+
+
+int jtag_hardware_command(Jim_Interp* interp, int argc, Jim_Obj* const* argv)
+{
+	struct jim_getopt_info goi;
+	jim_getopt_setup(&goi, interp, argc - 1, argv + 1);
+	return jim_hardware_cmd(&goi);
+}
+static const struct command_registration jtag_hardware_subcommand_handlers[] = {
+	{
+		.name = "hardware",
+		.jim_handler = &jtag_hardware_command,
+		.mode = COMMAND_CONFIG,
+		.help = "select the hardware",
+		.usage = "<name> <type>[<port>]",
+	},
+	COMMAND_REGISTRATION_DONE
+};
+
+int jtag_hardware_register_commands(struct command_context* cmd_ctx)
+{
+	return register_commands(cmd_ctx, NULL, jtag_hardware_subcommand_handlers);
 }
 

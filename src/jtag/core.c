@@ -1515,6 +1515,8 @@ void jtag_tap_init_only(struct jtag_tap *tap)
 
 	/* register the reset callback for the TAP */
 	jtag_register_event_callback(&jtag_reset_callback, tap);
+
+	tap->hardware = NULL;
 }
 
 /**
@@ -1535,6 +1537,10 @@ void jtag_tap_init(struct jtag_tap *tap)
 
 void jtag_tap_free(struct jtag_tap *tap)
 {
+	if(tap->hardware) {
+		free(tap->hardware);
+	}
+
 	jtag_unregister_event_callback(&jtag_reset_callback, tap);
 
 	struct jtag_tap_event_action *jteap = tap->event_action;
@@ -2197,7 +2203,7 @@ void vjtag_tap_add(struct vjtag_tap* t)
 /**
  * Initilaize Virtual JTAG Tap.
  * @note Will not fill in @chip, @tapname and @dottedname.
- * @sideeffect Register @tap to master list of jtags.
+ * @post Register @tap to master list of jtags.
  */
 void vjtag_tap_init(struct vjtag_tap* tap) 
 {
@@ -2222,4 +2228,89 @@ struct vjtag_tap* vjtag_tap_by_string(const char* dotted_name)
 bool jtag_tap_on_all_vtaps_list(struct jtag_tap* tap)
 {
 	return jtag_tap_on_list((struct jtag_tap*) __vjtag_all_taps, tap);
+}
+
+
+
+/*
+ * JTAG hardware
+ *
+ */
+static struct jtag_hardware* __jtag_all_hardwares;
+
+struct jtag_hardware* jtag_all_hardwares(void)
+{
+	return __jtag_all_hardwares;
+};
+
+/**
+ * Append a new hardware to the chain of all hardwares.
+ *
+ * @param hardware The JTAG hardware to add. Expecting
+ *                      \c id and \c address to be filled
+ * @post  \c hardware->position will be updated
+ */
+void jtag_hardware_add(struct jtag_hardware* hardware)
+{
+	unsigned hw_count = 0;
+	struct jtag_hardware **hw = &__jtag_all_hardwares;
+	while (*hw != NULL) {
+		hw_count++;
+		hw = &(*hw)->next_hardware;
+	}
+	*hw = hardware;
+	hardware->position = hw_count;
+
+}
+
+/**
+ * Initilaize JTAG Hardware.
+ *
+ * @param hardware The JTAG hardware to add. Must have
+ *         id and address field filled in. 
+ *         @jtag_hardware_free() will use free() to
+ *         free the memory used by them.
+ */
+void jtag_hardware_init(struct jtag_hardware* hardware) 
+{
+	assert(hardware->name != NULL);
+	assert(hardware->address != NULL);
+	hardware->position = UINT_MAX;
+}
+
+void jtag_hardware_free(struct jtag_hardware* hardware)
+{
+	if(hardware->name) {
+		free(hardware->name);
+		hardware->name = NULL;
+	}
+	if(hardware->address) {
+		free(hardware->address);
+		hardware->address = NULL;
+	}
+}
+
+struct jtag_hardware* jtag_hardware_by_string(const char* name)
+{
+	struct jtag_hardware *t = jtag_all_hardwares();
+
+	while (t) {
+		if (0 == strcmp(t->name, name))
+			return t;
+		t = t->next_hardware;
+	}
+
+	return t;
+}
+
+bool jtag_hardware_on_all_hardwares_list(struct jtag_hardware* hardware)
+{
+	struct jtag_hardware* hw = jtag_all_hardwares();
+	while (hw) {
+		if (hw == hardware) {
+			return true;
+		}
+		hw = hw->next_hardware;
+	}
+	return false;
 }
