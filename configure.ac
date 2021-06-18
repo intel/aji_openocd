@@ -151,6 +151,9 @@ m4_define([PCIE_ADAPTERS],
 m4_define([SERIAL_PORT_ADAPTERS],
 	[[[buspirate], [Bus Pirate], [BUS_PIRATE]]])
 
+m4_define([AJI_CLIENT_ADAPTERS],
+	[[[aji_client], [Intel AJI Client Driver], [AJI_CLIENT]]])
+
 m4_define([OPTIONAL_LIBRARIES],
 	[[[capstone], [Use Capstone disassembly framework], []]])
 
@@ -250,10 +253,11 @@ AC_ARG_ADAPTERS([
   HIDAPI_ADAPTERS,
   HIDAPI_USB1_ADAPTERS,
   LIBFTDI_ADAPTERS,
-  LIBFTDI_USB1_ADAPTERS
+  LIBFTDI_USB1_ADAPTERS,
   LIBGPIOD_ADAPTERS,
   SERIAL_PORT_ADAPTERS,
-  LIBJAYLINK_ADAPTERS
+  LIBJAYLINK_ADAPTERS,
+  AJI_CLIENT_ADAPTERS
   ],[auto])
 
 AC_ARG_ENABLE([parport],
@@ -354,6 +358,11 @@ AC_ARG_ENABLE([internal-libjaylink],
   AS_HELP_STRING([--disable-internal-libjaylink],
   [Disable building internal libjaylink]),
   [use_internal_libjaylink=$enableval], [use_internal_libjaylink=yes])
+
+AC_ARG_ENABLE([internal-libaji_client],
+  AS_HELP_STRING([--disable-internal-libaji_client],
+  [Disable building internal lib_aji_client]),
+  [use_internal_libaji_client=$enableval], [use_internal_libaji_client=yes])
 
 AC_ARG_ENABLE([remote-bitbang],
   AS_HELP_STRING([--enable-remote-bitbang], [Enable building support for the Remote Bitbang jtag driver]),
@@ -650,6 +659,7 @@ PROCESS_ADAPTERS([LIBFTDI_ADAPTERS], ["x$use_libftdi" = "xyes"], [libftdi])
 PROCESS_ADAPTERS([LIBFTDI_USB1_ADAPTERS], ["x$use_libftdi" = "xyes" -a "x$use_libusb1" = "xyes"], [libftdi and libusb-1.x])
 PROCESS_ADAPTERS([LIBGPIOD_ADAPTERS], ["x$use_libgpiod" = "xyes"], [libgpiod])
 PROCESS_ADAPTERS([LIBJAYLINK_ADAPTERS], ["x$use_internal_libjaylink" = "xyes" -o "x$use_libjaylink" = "xyes"], [libjaylink-0.2])
+PROCESS_ADAPTERS([AJI_CLIENT_ADAPTERS], ["x$use_internal_libaji_client" = "xyes" -o "x$use_aji_client" = "xyes"], [aji_client])
 
 AS_IF([test "x$enable_linuxgpiod" != "xno"], [
   build_bitbang=yes
@@ -673,6 +683,17 @@ AS_IF([test "x$enable_jlink" != "xno"], [
 		[--enable-subproject-build])
     ], [
       AC_MSG_ERROR([Internal libjaylink not found, run either 'git submodule init' and 'git submodule update' or disable internal libjaylink with --disable-internal-libjaylink.])
+    ])
+  ])
+])
+
+AS_IF([test "x$enable_aji_client" != "xno"], [
+  AS_IF([test "x$use_internal_liblibaji_client" = "xyes"], [
+    AS_IF([test -f "$srcdir/src/jtag/drivers/aji_client/configure.ac"], [
+      AX_CONFIG_SUBDIR_OPTION([src/jtag/drivers/aji_client],
+		[--enable-subproject-build])
+    ], [
+      AC_MSG_ERROR([Internal libaji_client not found, run either 'git submodule init' and 'git submodule update' or disable internal libaji_client with --disable-internal-libaji_client.])
     ])
   ])
 ])
@@ -710,11 +731,14 @@ AM_CONDITIONAL([USE_LIBFTDI], [test "x$use_libftdi" = "xyes"])
 AM_CONDITIONAL([USE_LIBGPIOD], [test "x$use_libgpiod" = "xyes"])
 AM_CONDITIONAL([USE_HIDAPI], [test "x$use_hidapi" = "xyes"])
 AM_CONDITIONAL([USE_LIBJAYLINK], [test "x$use_libjaylink" = "xyes"])
+AM_CONDITIONAL([USE_LIBAJI_CLIENT], [test "x$use_libaji_client" = "xyes"])
+AM_CONDITIONAL([AJI_CLIENT], [test "x$enable_aji_client" != "xno"])
 AM_CONDITIONAL([RSHIM], [test "x$build_rshim" = "xyes"])
 AM_CONDITIONAL([HAVE_CAPSTONE], [test "x$enable_capstone" != "xno"])
 
 AM_CONDITIONAL([INTERNAL_JIMTCL], [test "x$use_internal_jimtcl" = "xyes"])
 AM_CONDITIONAL([INTERNAL_LIBJAYLINK], [test "x$use_internal_libjaylink" = "xyes"])
+AM_CONDITIONAL([INTERNAL_LIBAJI_CLIENT], [test "x$use_internal_libaji_client" = "xyes"])
 
 # Look for environ alternatives.  Possibility #1: is environ in unistd.h or stdlib.h?
 AC_MSG_CHECKING([for environ in unistd.h and stdlib.h])
@@ -785,6 +809,7 @@ m4_foreach([adapter], [USB1_ADAPTERS,
 	LIBFTDI_USB1_ADAPTERS,
 	LIBGPIOD_ADAPTERS,
 	LIBJAYLINK_ADAPTERS, PCIE_ADAPTERS, SERIAL_PORT_ADAPTERS,
+	AJI_CLIENT_ADAPTERS,
 	OPTIONAL_LIBRARIES],
 	[s=m4_format(["%-40s"], ADAPTER_DESC([adapter]))
 	AS_CASE([$ADAPTER_VAR([adapter])],

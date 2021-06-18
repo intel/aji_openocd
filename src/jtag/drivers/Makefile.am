@@ -58,6 +58,11 @@ DIST_SUBDIRS += %D%/libjaylink
 endif
 endif
 
+if AJI_CLIENT
+%C%_libocdjtagdrivers_la_LIBADD += %D%/aji_client/libocdaji_client.la
+include %D%/aji_client/Makefile.am
+endif
+
 if BITBANG
 DRIVERFILES += %D%/bitbang.c
 endif
