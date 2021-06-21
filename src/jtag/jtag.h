@@ -678,6 +678,12 @@ bool   jtag_tap_on_all_vtaps_list(struct jtag_tap* tap);
 /**
  * JTAG hardware
  */
+
+/**
+ * Create a new JTAT hardware with jimtcl
+ */
+int jim_hardware_newhardware(Jim_Interp* interp, int argc, Jim_Obj* const* argv);
+
 struct jtag_hardware {
 	char *name; //< Hardware cable identifier. Must be unique for the openocd instance.
     char *address; //< The identifier used by aji_client to identify this hardware.
@@ -685,7 +691,7 @@ struct jtag_hardware {
 	struct jtag_hardware *next_hardware; //< Pointer to the next hardware
 }; //ennd jtag_hardware
 
-int  jtag_hardware_register_commands(struct command_context* cmd_ctx);
+int  hardware_register_commands(struct command_context* cmd_ctx);
 void jtag_hardware_init(struct jtag_hardware* tap);
 void jtag_hardware_free(struct jtag_hardware* tap);
 

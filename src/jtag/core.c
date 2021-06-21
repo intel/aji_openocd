@@ -2030,6 +2030,11 @@ static int jtag_select(struct command_context *ctx)
 	 * That works with only C code ... no Tcl glue required.
 	 */
 
+	retval = hardware_register_commands(ctx);
+
+	if (retval != ERROR_OK)
+		return retval;
+
 	retval = jtag_register_commands(ctx);
 
 	if (retval != ERROR_OK)

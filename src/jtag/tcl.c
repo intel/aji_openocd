@@ -1633,16 +1633,15 @@ static int jim_hardware_cmd(struct jim_getopt_info* goi)
 }
 
 
-int jtag_hardware_command(Jim_Interp* interp, int argc, Jim_Obj* const* argv)
-{
-	struct jim_getopt_info goi;
+int jim_hardware_newhardware(Jim_Interp* interp, int argc, Jim_Obj* const* argv)
+{	struct jim_getopt_info goi;
 	jim_getopt_setup(&goi, interp, argc - 1, argv + 1);
 	return jim_hardware_cmd(&goi);
 }
-static const struct command_registration jtag_hardware_subcommand_handlers[] = {
+static const struct command_registration hardware_subcommand_handlers[] = {
 	{
 		.name = "hardware",
-		.jim_handler = &jtag_hardware_command,
+		.jim_handler = &jim_hardware_newhardware,
 		.mode = COMMAND_CONFIG,
 		.help = "select the hardware",
 		.usage = "<name> <type>[<port>]",
@@ -1650,8 +1649,8 @@ static const struct command_registration jtag_hardware_subcommand_handlers[] = {
 	COMMAND_REGISTRATION_DONE
 };
 
-int jtag_hardware_register_commands(struct command_context* cmd_ctx)
+int hardware_register_commands(struct command_context* cmd_ctx)
 {
-	return register_commands(cmd_ctx, NULL, jtag_hardware_subcommand_handlers);
+	return register_commands(cmd_ctx, NULL, hardware_subcommand_handlers);
 }
 
