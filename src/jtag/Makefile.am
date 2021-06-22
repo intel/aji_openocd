@@ -32,6 +32,7 @@ include %D%/drivers/Makefile.am
 	%D%/swd.h \
 	%D%/swim.h \
 	%D%/tcl.h \
+	%D%/jtagcore_overwrite.h \
 	$(JTAG_SRCS)
 
 STARTUP_TCL_SRCS += %D%/startup.tcl

@@ -44,6 +44,9 @@
 #include <strings.h>
 #endif
 
+#include "jtagcore_overwrite.h"
+
+
 /* SVF and XSVF are higher level JTAG command sets (for boundary scan) */
 #include "svf/svf.h"
 #include "xsvf/xsvf.h"
@@ -184,6 +187,18 @@ void jtag_poll_set_enabled(bool value)
 {
 	jtag_poll = value;
 }
+
+/************/
+
+/*
+ * JTAG Core function overwrite
+ */
+struct jtagcore_overwrite jtagcore_ovewrite_record;
+struct jtagcore_overwrite* jtagcore_get_overwrite_record(void)
+{
+	return &jtagcore_ovewrite_record;
+}
+
 
 /************/
 
@@ -1255,6 +1270,12 @@ static bool jtag_examine_chain_match_tap(const struct jtag_tap *tap)
  */
 static int jtag_examine_chain(void)
 {
+	struct jtagcore_overwrite* record = jtagcore_get_overwrite_record();
+	if(record->jtag_examine_chain) {
+		LOG_DEBUG("Running overwrite routine for jtag_examine_chain()");
+		return record->jtag_examine_chain();
+	}
+
 	int retval;
 	unsigned max_taps = jtag_tap_count();
 
@@ -1371,6 +1392,12 @@ out:
  */
 static int jtag_validate_ircapture(void)
 {
+	struct jtagcore_overwrite* record = jtagcore_get_overwrite_record();
+	if(record->jtag_validate_ircapture) {
+		LOG_DEBUG("Running overwrite routine for jtag_validate_ircapture()");
+		return record->jtag_validate_ircapture();
+	}
+
 	struct jtag_tap *tap;
 	int total_ir_length = 0;
 	uint8_t *ir_test = NULL;
@@ -2319,3 +2346,5 @@ bool jtag_hardware_on_all_hardwares_list(struct jtag_hardware* hardware)
 	}
 	return false;
 }
+
+
