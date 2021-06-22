@@ -60,6 +60,12 @@ include %D%/aji/Makefile.am
     -fopenmp \
     -static-libgcc 
 
+%C%_libocdaji_client_la_SOURCES += \
+    %D%/aji/aji.h %D%/aji/c_aji.h \
+    %D%/aji/c_jtag_client_gnuaji.h  \
+    %D%/jtagservice.h %D%/jtagservice.c \
+    %D%/aji_client.c 
+
 if IS_WIN32
 ## (windows) compile: others
 %C%_libocdaji_client_la_CPPFLAGS  += \
@@ -69,6 +75,8 @@ if IS_WIN32
 %C%_libocdaji_client_la_LDFLAGS += \
      -Wl,--dynamicbase,--export-dynamic \
      -Wl,--nxcompat
+
+%C%_libocdaji_client_la_SOURCES += %D%/aji/jtag_client_gnuaji_win64.h %D%/aji/c_jtag_client_gnuaji_win64.h
 
 else
 ## (linux) compile: others
@@ -85,5 +93,6 @@ else
     \
     -rdynamic
 
+%C%_libocdaji_client_la_SOURCES += %D%/aji/jtag_client_gnuaji_lib64.h %D%/aji/c_jtag_client_gnuaji_lib64.h
 endif
 

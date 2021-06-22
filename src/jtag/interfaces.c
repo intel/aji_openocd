@@ -147,6 +147,9 @@ extern struct adapter_driver stlink_dap_adapter_driver;
 #if BUILD_RSHIM == 1
 extern struct adapter_driver rshim_dap_adapter_driver;
 #endif
+#if BUILD_AJI_CLIENT == 1
+extern struct adapter_driver aji_client_adapter_driver;
+#endif
 
 /**
  * The list of built-in JTAG interfaces, containing entries for those
@@ -257,6 +260,9 @@ struct adapter_driver *adapter_drivers[] = {
 #endif
 #if BUILD_RSHIM == 1
 		&rshim_dap_adapter_driver,
+#endif
+#if BUILD_AJI_CLIENT == 1
+		& aji_client_adapter_driver,
 #endif
 		NULL,
 	};

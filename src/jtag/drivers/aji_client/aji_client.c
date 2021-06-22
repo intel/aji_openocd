@@ -28,6 +28,7 @@
 #include <helper/jep106.h>
 
 #include "jtag/commands.h"
+#include "jtag/jtagcore_overwrite.h"
 #include "log.h"
 #include "server/server.h"
 
@@ -246,11 +247,13 @@ static bool vjtag_examine_chain_match_tap(struct vjtag_tap* vtap) {
 
 
 /**
+ * Overwrite JTAG Core's jtag_examine_chain function
+ * 
  * @pre jtagservice is filled with device inforamtion. That should
  *      already been done during adapter initialization via
  *      @c aji_client_init() function.
  */
-int jtag_examine_chain(void)
+int aji_client_jtag_examine_chain(void)
 {
 	int retval = ERROR_OK;
 
@@ -326,12 +329,14 @@ int jtag_examine_chain(void)
 
 
 /*
+ * Overwrite JTAG Core's jtag_validate_ircapture function
+ * 
  * No need to validate irlen because we are trusting AJI to provide us with
  * the correct value. However, need to produce a message telling
  * the user to add new tap points if the TAP point were autodetected.
  * On exit the scan chain is reset.
  */
-int jtag_validate_ircapture(void)
+int aji_client_jtag_validate_ircapture(void)
 {
 	for (struct jtag_tap* tap = jtag_tap_next_enabled(NULL);
 		tap != NULL;
@@ -918,11 +923,21 @@ static int aji_client_init(void)
 	// to tell the targets which state we think our TAP interface is at.
 	tap_set_state(TAP_RESET);
 
+	//overwrites JTAGCORE
+	struct jtagcore_overwrite* record = jtagcore_get_overwrite_record();
+	record->jtag_examine_chain = aji_client_jtag_examine_chain;
+	record->jtag_validate_ircapture = aji_client_jtag_validate_ircapture;
+
 	return ERROR_OK;
+
 }
 
 static int aji_client_quit(void)
 {
+	struct jtagcore_overwrite* record = jtagcore_get_overwrite_record();
+	record->jtag_examine_chain = NULL;
+	record->jtag_validate_ircapture = NULL;
+
 	jtagservice_free(&jtagservice, JTAGSERVICE_TIMEOUT_MS);
 	aji_client_parameters_free(&aji_client_config);
 
