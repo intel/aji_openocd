@@ -89,6 +89,10 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active,
 			/* if TAP is listed in input fields, copy the value */
 			tap->bypass = 0;
 
+			scan->tap = tap;
+			scan->tap_fields = field;
+			scan->tap_num_fields = 1;
+
 			jtag_scan_field_clone(field, in_fields);
 		} else {
 			/* if a TAP isn't listed in input fields, set it to BYPASS */
@@ -154,6 +158,10 @@ int interface_jtag_add_dr_scan(struct jtag_tap *active, int in_num_fields,
 			/* remember initial position for assert() */
 			struct scan_field *start_field = field;
 #endif /* NDEBUG */
+
+			scan->tap = tap;
+			scan->tap_fields = field;
+			scan->tap_num_fields = in_num_fields;
 
 			for (int j = 0; j < in_num_fields; j++) {
 				jtag_scan_field_clone(field, in_fields + j);

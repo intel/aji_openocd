@@ -52,6 +52,13 @@ struct scan_command {
 	struct scan_field *fields;
 	/** state in which JTAG commands should finish */
 	tap_state_t end_state;
+
+	/** JTAG TAP for which this scan command is targeted at */
+	struct jtag_tap *tap;
+	/** pointer to <tt>scan_field</tt>s for \c tap in \c fields */
+	struct scan_field *tap_fields;
+	/** number of fields for \c tap */
+	int    tap_num_fields;
 };
 
 struct statemove_command {
