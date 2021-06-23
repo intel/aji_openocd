@@ -880,14 +880,37 @@ static int aji_client_quit(void)
 // jtag operations
 //-----------------
 
+/**
+ * Find the next tap used in a jtag_command sequence
+ *
+ * \param cmds The list of commands to search
+ * \param next_tap On output,the next tap if found. 
+ *                 if not, no modification to the input value, 
+ */
+static void find_next_active_tap(
+				const struct jtag_command *cmds, 
+					  struct jtag_tap **next_tap ) 
+{
+	for(const struct jtag_command *candidate = cmds; 
+								   candidate != NULL; 
+								   candidate = candidate->next) {
+		if(candidate->type == JTAG_SCAN) {
+			(*next_tap) = candidate->cmd.scan->tap;
+			return;
+		}
+	}
+}
 
 int aji_client_execute_queue(void)
 {
 	struct jtag_command *cmd;
 	int ret = ERROR_OK;
 
+	struct jtag_tap *active = NULL;
 	for (cmd = jtag_command_queue; ret == ERROR_OK && cmd != NULL;
 	     cmd = cmd->next) {
+
+		find_next_active_tap(cmd, &active);
 
 		switch (cmd->type) {
 		case JTAG_RESET:
