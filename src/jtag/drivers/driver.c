@@ -62,6 +62,10 @@ static void jtag_callback_queue_reset(void)
 int interface_jtag_add_ir_scan(struct jtag_tap *active,
 		const struct scan_field *in_fields, tap_state_t state)
 {
+	if(jtag_tap_on_all_vtaps_list(active)) {
+		LOG_ERROR("Not yet handle virtual JTAG in IR Scan (Tap = %s)", active->dotted_name);
+	}
+
 	size_t num_taps = jtag_tap_count_enabled();
 
 	struct jtag_command *cmd = cmd_queue_alloc(sizeof(struct jtag_command));
@@ -122,8 +126,11 @@ int interface_jtag_add_ir_scan(struct jtag_tap *active,
 int interface_jtag_add_dr_scan(struct jtag_tap *active, int in_num_fields,
 		const struct scan_field *in_fields, tap_state_t state)
 {
-	/* count devices in bypass */
+	if(jtag_tap_on_all_vtaps_list(active)) {
+		LOG_ERROR("Not yet handle virtual JTAG in IR Scan (Tap = %s)", active->dotted_name);
+	}
 
+	/* count devices in bypass */
 	size_t bypass_devices = 0;
 
 	for (struct jtag_tap *tap = jtag_tap_next_enabled(NULL); tap != NULL; tap = jtag_tap_next_enabled(tap)) {
