@@ -56,7 +56,8 @@ AJI_ERROR jtagservice_free(const DWORD timeout);
 AJI_ERROR jtagservice_scan_for_cables(void);
 AJI_ERROR jtagservice_scan_for_taps(void);
 
-AJI_ERROR jtagservice_activate_tap(const struct jtag_tap* const tap);
+AJI_ERROR jtagservice_lock(const struct jtag_tap* const tap);
+AJI_ERROR jtagservice_unlock(void);
 
 
 
@@ -123,10 +124,6 @@ void jtagservice_display_sld_nodes(void);
 void jtagservice_sld_node_printf(
 	const AJI_HIER_ID* hier_id, 
 	const AJI_HUB_INFO* hub_info);
-AJI_ERROR jtagservice_device_index_by_idcode(
-	const DWORD idcode,
-	const AJI_DEVICE* tap_list, const DWORD tap_count,
-	DWORD* tap_index);
 AJI_ERROR jtagservice_hier_id_index_by_idcode(
 	const DWORD idcode,
 	const AJI_HIER_ID *vtap_list, const DWORD vtap_count,
