@@ -680,7 +680,7 @@ bool   jtag_tap_on_all_vtaps_list(struct jtag_tap* tap);
  */
 
 /**
- * Create a new JTAT hardware with jimtcl
+ * Create a new JTAG hardware with jimtcl
  */
 int jim_hardware_newhardware(Jim_Interp* interp, int argc, Jim_Obj* const* argv);
 
