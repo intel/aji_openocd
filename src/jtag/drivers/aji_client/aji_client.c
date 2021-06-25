@@ -266,6 +266,11 @@ static int aji_client_read_buffer(
 	return jtag_read_buffer(read_buffer, &mock_cmd);
 }
 
+/**
+ * Handles IR and DR scans
+ *
+ * \pre @jtagservice_lock() locked the required TAP
+ */
 static int aji_client_scan(struct scan_command *const cmd)
 {
 	DWORD bit_count = 0;
@@ -455,6 +460,7 @@ else  { LOG_INFO("NOTFOUND tap = %s", jtag_tap_name(tap)); }
 			//	cmd->cmd.runtest->num_cycles,
 			//	cmd->cmd.runtest->end_state
 			//);
+			assert(0); //deliberately assert() to be able to see where the error is, if it occurs
 			break;
 		case JTAG_STABLECLOCKS:
 			LOG_ERROR("===> Not yet coded JTAG_STABLECLOCKS(num_cycles=%d)\n", 
@@ -477,6 +483,7 @@ else  { LOG_INFO("NOTFOUND tap = %s", jtag_tap_name(tap)); }
 				cmd->cmd.pathmove->path[cmd->cmd.pathmove->num_states-1]
 			);
 			//aji_client_path_move(cmd->cmd.pathmove);
+			assert(0); //deliberately assert() to be able to see where the error is, if it occurs
 			break;
 		case JTAG_TMS:
 			LOG_ERROR("===> Not yet coded JTAG_TMS(num_bits=%d)\n",
@@ -487,6 +494,7 @@ else  { LOG_INFO("NOTFOUND tap = %s", jtag_tap_name(tap)); }
 		case JTAG_SLEEP:
 			LOG_ERROR("===> Not yet coded JTAG_SLEEP(time=%d us)\n", cmd->cmd.sleep->us);
 			//aji_client_usleep(cmd->cmd.sleep->us);
+			assert(0); //deliberately assert() to be able to see where the error is, if it occurs
 			break;
 		case JTAG_SCAN:
 			LOG_INFO(
