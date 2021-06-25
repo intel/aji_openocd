@@ -191,6 +191,208 @@ int aji_client_goto_tlr(void)
 	*/
 }
 
+
+/**
+ * Build I/O buffers from \c cmd
+ *
+ * \param cmd The \c scan_command to extract data from
+ * \param bit_count On output, the number of data bits required by \c cmd.
+ * \param write_buffer On Output, a buffer of at least \c bit_count bits
+ *             containing the data to be written to the TAP pointed to by \c cmd.
+ *             If NULL, no data write  is needed.
+ *             caller to free the memory after use.
+ * \param read_buffer On Output, a buffer of at least \c bit_count bits
+ *             filled with zero to receive data from the TAP pointed to by \c cmd
+ *             If NULL, no data read is needed.
+ *             caller to free the memory after use.
+ *
+ * \return #ERROR_OK success
+ * \return #ERROR_FAIL if there is a problem
+ */
+static int aji_client_build_buffers(
+	const struct scan_command *const cmd,
+	DWORD *bit_count,
+	BYTE **write_buffer,
+	BYTE **read_buffer
+){
+	struct scan_command mock_cmd = {
+		.ir_scan = cmd->ir_scan,
+		.fields = cmd->tap_fields,
+		.num_fields = cmd->num_tap_fields
+	};
+	*bit_count = jtag_scan_size(&mock_cmd);
+
+	*write_buffer = NULL;
+	int req = jtag_build_buffer(&mock_cmd, write_buffer);
+	if(req) {
+		if(write_buffer == NULL) {
+			LOG_ERROR("Insufficient memory for write buffer");
+			return ERROR_FAIL;
+		}
+	} else {
+		free(*write_buffer);
+		*write_buffer = NULL;
+	}
+
+	*read_buffer = NULL;
+	req = 0;
+	for (int i = 0; i < cmd->num_tap_fields; i++) {
+		if (cmd->tap_fields[i].in_value) {
+			req += cmd->tap_fields[i].num_bits;
+		}
+	}
+	if(req) {
+		*read_buffer = calloc(1, DIV_ROUND_UP(*bit_count, 8));
+		if(read_buffer == NULL) {
+			LOG_ERROR("Insufficient memory for read buffer");
+			return ERROR_FAIL;
+		}
+	} else {
+		*read_buffer = NULL;
+	}
+
+	return ERROR_OK;
+}
+
+static int aji_client_read_buffer(
+	BYTE *read_buffer,
+	const struct scan_command *cmd
+){
+	struct scan_command mock_cmd = {
+		.ir_scan = cmd->ir_scan,
+		.fields = cmd->tap_fields,
+		.num_fields = cmd->num_tap_fields
+	};
+	return jtag_read_buffer(read_buffer, &mock_cmd);
+}
+
+static int aji_client_scan(struct scan_command *const cmd)
+{
+	DWORD bit_count = 0;
+	BYTE *write_buffer = NULL,
+		 *read_buffer = NULL;
+	char *log_buf = NULL;
+
+	aji_client_build_buffers(cmd, &bit_count, &write_buffer, &read_buffer);
+
+	if(write_buffer) {
+		log_buf = hexdump(write_buffer, DIV_ROUND_UP(bit_count, 8));
+		LOG_DEBUG_IO("%s(scan=%s%s, type=OUT, bits=%d, buf=[%s], end_state=%d)", __func__,
+			cmd->tap_is_sld ? "Virtual " : "",
+			cmd->ir_scan ? "IRSCAN" : "DRSCAN",
+			bit_count, log_buf, cmd->end_state
+		);
+		free(log_buf);
+	} else {
+		LOG_DEBUG_IO("%s(scan=%s%s, type=OUT, no write,  end_state=%d)", __func__,
+			cmd->tap_is_sld ? "Virtual " : "",
+			cmd->ir_scan ? "IRSCAN" : "DRSCAN",
+			cmd->end_state
+		);
+	}
+
+
+	AJI_ERROR status = AJI_NO_ERROR;
+	AJI_OPEN_ID open_id = jtagservice_get_in_use_tap_open_id();
+	if(cmd->ir_scan) {
+		//LIMITATION: Max IR length is 32 bit has it has to fit into a DWORD
+		//  since c_aji_access_ir, a.k.a. aji_access_ir(DWORD)
+		//  Cannot be relaxed even if c_aji_access_ir_a(), a.k.a. 
+		//  aji_access_ir(BYTE) version, is used because that function also
+		//  translate back to c_aji_access_ir()
+		//
+		//TODO: use c_aji_access_ir_a(), i.e. aji_acess_ir(BYTE) to avoid
+		//  having to translate  write_buffer -> instruction and
+		//  capture -> read_buffer explicitly
+
+		if(cmd->tap_is_sld) {
+			LOG_ERROR("Not yet handling Virtual JTAG yet in %s", __FUNCTION__);
+			return ERROR_FAIL;
+		}
+
+		DWORD instruction = 0;
+		for (DWORD i = 0; i < (bit_count + 7) / 8; i++) {
+			instruction |= write_buffer[i] << (i * 8);
+		}
+
+		DWORD capture = 0;
+		status = c_aji_access_ir(
+			open_id, instruction, read_buffer ? &capture : NULL, 0
+		);
+
+		if (read_buffer) {
+			for (DWORD i = 0; i < (bit_count + 7) / 8; i++) {
+				read_buffer[i] = (BYTE)(capture >> (i * 8));
+			}
+		}
+	} else {
+		c_aji_access_dr(
+				open_id, bit_count, AJI_DR_UNUSED_X,
+				0, write_buffer ? bit_count : 0, write_buffer,
+				0, read_buffer ? bit_count : 0, read_buffer
+		);
+	} //end else-if (cmd->ir_scan)
+
+	if(status != AJI_NO_ERROR) {
+		LOG_ERROR("Failure to access %s%s register. Return Status is %d (%s)",
+			cmd->tap_is_sld ? "Virtual " : "",
+			cmd->ir_scan? "IRSCAN" : "DRSCAN",
+			status, c_aji_error_decode(status)
+		);
+		if (write_buffer) 	{ free(write_buffer); }
+		if (read_buffer) 	{ free(read_buffer);  }
+		return ERROR_FAIL;
+	}
+
+
+	if(read_buffer) {
+		log_buf = hexdump(read_buffer, DIV_ROUND_UP(bit_count, 8));
+		LOG_DEBUG_IO("%s(scan=%s%s, type=IN, bits=%d, buf=[%s], end_state=%d)", __func__,
+			cmd->tap_is_sld ? "Virtual " : "",
+			cmd->ir_scan ? "IRSCAN" : "DRSCAN",
+			bit_count, log_buf, cmd->end_state
+		);
+		free(log_buf);
+	} else {
+		LOG_DEBUG_IO("%s(scan=%s%s, type=IN, no read,  end_state=%d)", __func__,
+			cmd->tap_is_sld ? "Virtual " : "",
+			cmd->ir_scan ? "IRSCAN" : "DRSCAN",
+			cmd->end_state
+		);
+	}
+
+	if(read_buffer) {
+		aji_client_read_buffer(read_buffer, cmd);
+	}
+
+
+	if (write_buffer) 	{ free(write_buffer); }
+	if (read_buffer) 	{ free(read_buffer);  }
+
+
+
+	if (TAP_IDLE != cmd->end_state) {
+		LOG_WARNING("%s%s not yet handle transition to state other than TAP_IDLE(%d)." \
+				    " Requested state is %s(%d)", 
+					cmd->tap_is_sld ? "Virtual " : "",
+					cmd->ir_scan? "IRSCAN" : "DRSCAN",
+					TAP_IDLE, tap_state_name(cmd->end_state), cmd->end_state
+		);
+		assert(0); //deliberately assert() to be able to see where the error is, if it occurs
+	}
+
+	//// Let jtagserv manages the JTAG state instead of setting it manually
+	/* status = c_aji_run_test_idle(open_id, 2);
+	 if (AJI_NO_ERROR != status) {
+		LOG_WARNING("Failed to go to TAP_IDLE after IR register write");
+	}
+	*/
+
+	tap_set_state(TAP_IDLE); //Faking move to TAP_IDLE
+
+	return ERROR_OK;
+}
+
 /**
  * Find the next tap used in a jtag_command sequence
  *
@@ -287,8 +489,8 @@ else  { LOG_INFO("NOTFOUND tap = %s", jtag_tap_name(tap)); }
 			//aji_client_usleep(cmd->cmd.sleep->us);
 			break;
 		case JTAG_SCAN:
-			LOG_ERROR(
-				"===> Not yet coded JTAG_SCAN(register=%s, num_fields=%d, end_state=0x%x"
+			LOG_INFO(
+				"===> JTAG_SCAN(register=%s, num_fields=%d, end_state=0x%x"
                 " tap=%p (%s), "
 				" num_tap_fields=%d, tap_fields=%p (>%p) )\n",
 				cmd->cmd.scan->ir_scan? "IR" : "DR", 
@@ -296,11 +498,11 @@ else  { LOG_INFO("NOTFOUND tap = %s", jtag_tap_name(tap)); }
 				cmd->cmd.scan->end_state,
 				cmd->cmd.scan->tap,
 				jtag_tap_name(cmd->cmd.scan->tap),
-				cmd->cmd.scan->tap_num_fields,
+				cmd->cmd.scan->num_tap_fields,
 				cmd->cmd.scan->tap_fields,
 				cmd->cmd.scan->fields
 			);
-			//ret = aji_client_scan(cmd->cmd.scan);
+			ret = aji_client_scan(cmd->cmd.scan);
 			break;
 		default:
 			LOG_ERROR("===> BUG: unknown JTAG command type 0x%X",
