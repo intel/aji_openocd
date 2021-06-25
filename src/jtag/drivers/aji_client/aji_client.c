@@ -139,6 +139,57 @@ static int aji_client_quit(void)
 //-----------------
 // jtag operations
 //-----------------
+/**
+ * Go to TLR (Test Logic Reset) State
+ *
+ * \pre @jtagservice_lock() locked the JTAG scan chain by locking
+ *      one of the TAP in the JTAG scan chain.
+ */
+int aji_client_goto_tlr(void)
+{
+	/*
+	 The code below are working, but disabled because
+	 (1) jtagserv.exe automatically managers the internal JTAG State.
+	 	 One of the thing it does is to cycle through the TLR state
+		 automatically. Making this function redundant
+	 (2) In testing, it is found that when another AJI Client is connected
+		 to the same JTAG Scan Chain, we will consistently take the
+		 "Ignore call to set TAPs to TLR state ..." path meaning
+		 we do not move the JTAG state machine to TLR. To have multiple
+		 AJI Clients connecting to the same JTAG Scan Chain is the norm
+		 for our user.
+	 */
+	LOG_DEBUG("No need to perform TLR request. The server manages JTAG states");
+	tap_set_state(TAP_RESET); //Lie to OpenOCD that TAP_RESET state was reached.
+	return ERROR_OK;
+
+	/*
+	 The code below are working, See previous comment on why it is redundant
+	 */
+	/*
+	AJI_ERROR status = AJI_NO_ERROR;
+
+	AJI_OPEN_ID open_id =jtagservice_get_in_use_tap_open_id();
+	assert(open_id); // i.e., not NULL
+	status = c_aji_test_logic_reset(open_id);
+	if (AJI_NO_ERROR == status) {
+		tap_set_state(TAP_RESET);
+	} else if (AJI_CHAIN_IN_USE == status) {
+		LOG_WARNING("Ignoring call to set TAPs to TLR state after IR scan."
+		" Someone else is using the scan chain."
+
+		);
+		tap_set_state(TAP_RESET); //Lie to OpenOCD that TAP_RESET state was reached.
+		status = AJI_NO_ERROR;
+	} else {
+		LOG_ERROR("Unexpected error setting TAPs to TLR state. Return status is %d (%s)",
+			status, c_aji_error_decode(status)
+		);
+	}
+
+	return status == AJI_NO_ERROR ? ERROR_OK : ERROR_FAIL;
+	*/
+}
 
 /**
  * Find the next tap used in a jtag_command sequence
@@ -166,11 +217,15 @@ int aji_client_execute_queue(void)
 	struct jtag_command *cmd;
 	int ret = ERROR_OK;
 
+	if(jtag_command_queue == NULL) {
+		return ERROR_OK;
+	}
 	struct jtag_tap *tap = NULL;
 	for (cmd = jtag_command_queue; ret == ERROR_OK && cmd != NULL;
 	     cmd = cmd->next) {
 
 		find_next_active_tap(cmd, &tap);
+		jtagservice_lock(tap);
 
 		switch (cmd->type) {
 		case JTAG_RESET:
@@ -201,7 +256,7 @@ int aji_client_execute_queue(void)
 					 cmd->cmd.statemove->end_state, 
 					 0
 			);
-			//aji_client_state_move(cmd->cmd.statemove->end_state, 0);
+			aji_client_goto_tlr();
 			break;
 		case JTAG_PATHMOVE:
 			LOG_INFO(
@@ -245,6 +300,7 @@ int aji_client_execute_queue(void)
 			break;
 		}
 	}
+	jtagservice_unlock();
 
 	return ret;
 }

@@ -296,6 +296,14 @@ static struct jtagservice_record jtagservice;
 //=====================================
 // JTAG TAP management service
 //=====================================
+AJI_OPEN_ID jtagservice_get_in_use_tap_open_id() 
+{
+	if(jtagservice.is_sld) {
+		LOG_ERROR("Haven't coded %s for SLD", __FUNCTION__);
+		return NULL;
+	}
+	return jtagservice.in_use_device_open_id;
+}
 
 static AJI_ERROR jtagservice_device_index_by_idcode(
 	const DWORD idcode,
