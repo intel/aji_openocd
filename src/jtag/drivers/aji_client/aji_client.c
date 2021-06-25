@@ -217,14 +217,23 @@ int aji_client_execute_queue(void)
 	struct jtag_command *cmd;
 	int ret = ERROR_OK;
 
+LOG_INFO("###########################################>>> execute queue start, queue=%p", jtag_command_queue);
 	if(jtag_command_queue == NULL) {
+LOG_INFO("###########################################>>> execute queue returned. Nothing to do, queue=%p", jtag_command_queue);
 		return ERROR_OK;
 	}
+
 	struct jtag_tap *tap = NULL;
 	for (cmd = jtag_command_queue; ret == ERROR_OK && cmd != NULL;
 	     cmd = cmd->next) {
 
 		find_next_active_tap(cmd, &tap);
+LOG_INFO("Active tap = %s (%p)", jtag_tap_name(tap), tap);
+struct jtag_tap *pt;
+pt = jtag_tap_next_enabled(NULL);
+for (; pt != NULL && pt != tap; pt = jtag_tap_next_enabled(pt)) {}
+if(pt) { LOG_INFO("Found tap = %s",  jtag_tap_name(tap)); }
+else  { LOG_INFO("NOTFOUND tap = %s", jtag_tap_name(tap)); }
 		jtagservice_lock(tap);
 
 		switch (cmd->type) {
@@ -236,7 +245,7 @@ int aji_client_execute_queue(void)
 			//aji_client_reset(cmd->cmd.reset->trst, cmd->cmd.reset->srst);
 			break;
 		case JTAG_RUNTEST:
-			LOG_ERROR("Not yet coded JTAG_RUNTEST(num_cycles=%d, end_state=0x%x)\n",
+			LOG_ERROR("===> Not yet coded JTAG_RUNTEST(num_cycles=%d, end_state=0x%x)\n",
 					  cmd->cmd.runtest->num_cycles, 
 					  cmd->cmd.runtest->end_state
 			);
@@ -246,13 +255,13 @@ int aji_client_execute_queue(void)
 			//);
 			break;
 		case JTAG_STABLECLOCKS:
-			LOG_ERROR("Not yet coded JTAG_STABLECLOCKS(num_cycles=%d)\n", 
+			LOG_ERROR("===> Not yet coded JTAG_STABLECLOCKS(num_cycles=%d)\n", 
 					  cmd->cmd.stableclocks->num_cycles
 			);
 			//aji_client_stableclocks(cmd->cmd.stableclocks->num_cycles);
 			break;
 		case JTAG_TLR_RESET:
-			LOG_INFO("JTAG_TLR_RESET(end_state=0x%x,skip_initial_bits=%d)\n", 
+			LOG_INFO("===> JTAG_TLR_RESET(end_state=0x%x,skip_initial_bits=%d)\n", 
 					 cmd->cmd.statemove->end_state, 
 					 0
 			);
@@ -260,7 +269,7 @@ int aji_client_execute_queue(void)
 			break;
 		case JTAG_PATHMOVE:
 			LOG_INFO(
-				"Ignoring JTAG_PATHMOVE(numstate=%d, first_state=0x%x, end_state=0x%x)\n",
+				"===> Ignoring JTAG_PATHMOVE(numstate=%d, first_state=0x%x, end_state=0x%x)\n",
 				cmd->cmd.pathmove->num_states, 
 				cmd->cmd.pathmove->path[0], 
 				cmd->cmd.pathmove->path[cmd->cmd.pathmove->num_states-1]
@@ -268,18 +277,18 @@ int aji_client_execute_queue(void)
 			//aji_client_path_move(cmd->cmd.pathmove);
 			break;
 		case JTAG_TMS:
-			LOG_ERROR("Not yet coded JTAG_TMS(num_bits=%d)\n",
+			LOG_ERROR("===> Not yet coded JTAG_TMS(num_bits=%d)\n",
 					  cmd->cmd.tms->num_bits
 			);
 			//aji_client_tms(cmd->cmd.tms);
 			break;
 		case JTAG_SLEEP:
-			LOG_ERROR("Not yet coded JTAG_SLEEP(time=%d us)\n", cmd->cmd.sleep->us);
+			LOG_ERROR("===> Not yet coded JTAG_SLEEP(time=%d us)\n", cmd->cmd.sleep->us);
 			//aji_client_usleep(cmd->cmd.sleep->us);
 			break;
 		case JTAG_SCAN:
 			LOG_ERROR(
-				"Not yet coded JTAG_SCAN(register=%s, num_fields=%d, end_state=0x%x"
+				"===> Not yet coded JTAG_SCAN(register=%s, num_fields=%d, end_state=0x%x"
                 " tap=%p (%s), "
 				" num_tap_fields=%d, tap_fields=%p (>%p) )\n",
 				cmd->cmd.scan->ir_scan? "IR" : "DR", 
@@ -294,13 +303,14 @@ int aji_client_execute_queue(void)
 			//ret = aji_client_scan(cmd->cmd.scan);
 			break;
 		default:
-			LOG_ERROR("BUG: unknown JTAG command type 0x%X",
+			LOG_ERROR("===> BUG: unknown JTAG command type 0x%X",
 				  cmd->type);
 			ret = ERROR_FAIL;
 			break;
 		}
 	}
 	jtagservice_unlock();
+LOG_INFO("###########################################>>> execute queue end");
 
 	return ret;
 }
