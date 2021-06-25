@@ -147,6 +147,10 @@ static int aji_client_quit(void)
  */
 int aji_client_goto_tlr(void)
 {
+
+	LOG_DEBUG_IO("(from %s to %s)", tap_state_name(tap_get_state()),
+		  tap_state_name(TAP_RESET));
+
 	/*
 	 The code below are working, but disabled because
 	 (1) jtagserv.exe automatically managers the internal JTAG State.
