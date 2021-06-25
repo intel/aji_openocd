@@ -294,9 +294,10 @@ static struct jtagservice_record jtagservice;
 
 
 //=====================================
-// JTAG TAP-related
+// JTAG TAP management service
 //=====================================
-AJI_ERROR jtagservice_device_index_by_idcode(
+
+static AJI_ERROR jtagservice_device_index_by_idcode(
 	const DWORD idcode,
 	DWORD* tap_index) 
 {
@@ -317,7 +318,7 @@ AJI_ERROR jtagservice_device_index_by_idcode(
 	return AJI_NO_ERROR;
 }
 
-AJI_ERROR jtagservice_hier_id_index_by_idcode(
+static AJI_ERROR jtagservice_hier_id_index_by_idcode(
 	const DWORD idcode,
 	const AJI_HIER_ID *hier_id_list, const DWORD hier_id_count,
 	DWORD* hier_index) {
@@ -337,7 +338,20 @@ AJI_ERROR jtagservice_hier_id_index_by_idcode(
 	return AJI_NO_ERROR;
 }
 
-AJI_ERROR jtagservice_validate_tap_index(const DWORD hardware_index, const DWORD tap_index){
+/**
+ * Check that \c tap_index is in range
+ *
+ * \param hardware_index Not yet used, set to zero
+ * \param tap_index The index number to check against
+ *
+ * \return #AJI_NO_ERROR \c tap_index is in range
+ * \return #AJI_FAILURE  \c tap_index is not in range. An entry will be logged via #LOG_ERROR
+ *
+ * \sa #jtagservice_validate_virtual_tap_index
+ *
+ * \note If you can, consider only testing for <tt>tap_index != UINT32_MAX</tt>
+ */
+static AJI_ERROR jtagservice_validate_tap_index(const DWORD hardware_index, const DWORD tap_index){
 	if(tap_index == UINT32_MAX) {
 		return AJI_NO_ERROR;
 	}
@@ -351,6 +365,21 @@ AJI_ERROR jtagservice_validate_tap_index(const DWORD hardware_index, const DWORD
 }
 
 
+/**
+ * Check that \c node_index is in range.
+ *
+ * \param hardware_index Not yet used, set to zero
+ * \param tap_index The index number to check against
+ * \param node_index The SLD node index to check against
+ *
+ * \return #AJI_NO_ERROR \c tap_index is in range
+ * \return #AJI_FAILURE  \c tap_index is not in range. An entry will be logged via #LOG_ERROR
+ *
+ * \sa #jtagservice_validate_tap_index
+ *
+ * \note If you can, consider testing for  <tt>tap_index != UINT32_MAX &7 node_index != UINT32_MAX</tt>
+ *       or just <tt>node_index != UINT32_MAX</tt> alone
+ */
 AJI_ERROR jtagservice_validate_virtual_tap_index(
 	const DWORD hardware_index,
 	const DWORD tap_index,
@@ -390,6 +419,12 @@ static AJI_ERROR jtagservice_update_active_tap_record(
 						const bool is_sld, 
 						const DWORD node_index) 
 {
+LOG_INFO("***> %s:%d:%s: BEGIN, tap_index=%lu is_sld=%s node_index=%lu", 
+			__FILE__, __LINE__, __FUNCTION__, 
+			(unsigned long) tap_index, 
+			is_sld? "yes" : "no", 
+			(unsigned long) node_index
+);
 	//TODO: consider not validating and assuming all parameter passed to 
     // this function is validated to prevent redundant validation
 	AJI_ERROR status = jtagservice_validate_tap_index(0, tap_index);
@@ -447,6 +482,7 @@ static AJI_ERROR jtagservice_update_active_tap_record(
  */
 AJI_ERROR jtagservice_unlock()
 {
+LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
 	if(UINT32_MAX == jtagservice.in_use_device_tap_position) {
 		return AJI_NO_ERROR; //nothing to unlock
 	}
@@ -477,6 +513,7 @@ static AJI_ERROR jtagservice_lock_jtag_tap (
 	const DWORD hardware_index,
 	const DWORD tap_index ) 
 {
+LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
 	assert(jtagservice.device_count != UINT32_MAX);
 	assert(tap_index < jtagservice.device_count);
 	assert(hardware_index == 0);
@@ -665,9 +702,29 @@ AJI_ERROR jtagservice_activate_virtual_tap(
 	return status;
 }
 
-
+/**
+ * Lock any TAP
+ * 
+ * Designed for situation where a JTAG operation is needed and no TAP has been specifed yet.
+ * Examples are JTAG state transition. These function calls do not specify a TAP as it 
+ * is not needed: The call affect the whole JTAG Scan Chain and in OpenOCD, there is only one 
+ * scan chain.
+ * 
+ * However, AJI operations required a TAP to be specified because AJI supports multiple scan
+ * chain and the TAP is used to identify the scan chain to operate on.
+ *
+ * In situation like this, one cannot just simply select any TAP. The reason is AJI requires
+ * us to setup #AJI_CLAIM  for the TAP to activate it, but not all TAPs' <tt>AJI_CLAIM</tt>s 
+ * are known. This function sidestep this by activating any TAP that can be activated, 
+ *
+ * \return #AJI_NO_ERROR Success.
+ * \return #AJI_FAILURE Cannot find any TAP that can be activated
+ * 
+ * \post If return \c AJI_NO_ERROR \c me is updated with information about the activated TAP.
+ */
 static AJI_ERROR jtagservice_lock_any_tap(void)
 {
+LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
 	if(jtagservice.in_use_device_tap_position != UINT32_MAX) {
 		return AJI_NO_ERROR; //already locked something, so just return
 	} 
@@ -707,6 +764,7 @@ static AJI_ERROR jtagservice_lock_any_tap(void)
  */
 AJI_ERROR jtagservice_lock(const struct jtag_tap* const tap)
 {
+LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
 	if(tap) {
 		DWORD tap_index = UINT32_MAX;
         jtagservice_device_index_by_idcode(
@@ -1528,6 +1586,34 @@ AJI_ERROR jtagservice_scan_for_taps(void)
 // misc
 //=====================================
 
+/**
+ * Print SLD Node information
+ * 
+ * \param hier_id The SLD node information
+ * \param hub_info Supplimentary hub information.
+ *        if you do not want it displayed
+ */
+void jtagservice_sld_node_printf(const AJI_HIER_ID* hier_id, const AJI_HUB_INFO* hub_infos)
+{
+	printf(" idcode=%08lX position_n=%lu position: ( ",
+		(unsigned long) hier_id->idcode,
+		(unsigned long) hier_id->position_n
+	);
+	if (hub_infos) {
+		for (int m = 0; m <= hier_id->position_n; ++m) {
+			printf("%d ", hier_id->positions[m]);
+		} //end for m
+		printf(")  hub_infos: ");
+		for (int m = 0; m <= hier_id->position_n; ++m) {
+			printf(" (Hub %d) bridge_idcode=%08lX, hub_id_code=%08lX", 
+				m, 
+				(unsigned long) ( m == 0 ? 0 : hub_infos->bridge_idcode[m]), 
+				(unsigned long) (hub_infos->hub_idcode[m])
+			);
+		} //end for m (bridge)
+	}
+}
+
 int jtagservice_query_main(void) {
 	LOG_INFO("Check inputs");
 	char *quartus_jtag_client_config = getenv("QUARTUS_JTAG_CLIENT_CONFIG");
@@ -1746,38 +1832,10 @@ int jtagservice_query_main(void) {
 	return 0;
 }
 
-/**
- * Print SLD Node information
- * 
- * \param hier_id The SLD node information
- * \param hub_info Supplimentary hub information.
- *        if you do not want it displayed
- */
-void jtagservice_sld_node_printf(const AJI_HIER_ID* hier_id, const AJI_HUB_INFO* hub_infos) {
-	printf(" idcode=%08lX position_n=%lu position: ( ",
-		(unsigned long) hier_id->idcode,
-		(unsigned long) hier_id->position_n
-	);
-	if (hub_infos) {
-		for (int m = 0; m <= hier_id->position_n; ++m) {
-			printf("%d ", hier_id->positions[m]);
-		} //end for m
-		printf(")  hub_infos: ");
-		for (int m = 0; m <= hier_id->position_n; ++m) {
-			printf(" (Hub %d) bridge_idcode=%08lX, hub_id_code=%08lX", 
-				m, 
-				(unsigned long) ( m == 0 ? 0 : hub_infos->bridge_idcode[m]), 
-				(unsigned long) (hub_infos->hub_idcode[m])
-			);
-		} //end for m (bridge)
-	}
-}
 
 
-void jtagservice_fprintf_jtagservice_record(
-	FILE *stream
-) {
-
+void jtagservice_fprintf_jtagservice_record(FILE *stream) 
+{
 	fprintf(stream, "appIndentifier: '%s'\n", 
 			jtagservice.appIdentifier == NULL? "(null)" : jtagservice.appIdentifier
 	);
