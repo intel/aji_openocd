@@ -139,13 +139,62 @@ static int aji_client_quit(void)
 //-----------------
 // jtag operations
 //-----------------
+
+/**
+ * Go to Run-Test-Idle State. Stay there for \c cycles,
+ * then go to \c state
+ *
+ * \pre #jtagservice_lock() locked the JTAG scan chain by locking
+ *      one of the TAP in the JTAG scan chain.
+
+ * \param cycles The number of cyles to stay at \c TAP_IDLE
+ *					state
+ * \param state The final state the JTAG state machine is expected
+ *					to go to. Currently must be set to 
+ *					\c TAP_IDLE or a warning will be produced.
+ * 					This request to move to \c state is actually
+ *					ignored ignored because	\c jtagserv 
+ *					automatically managed the JTAG state 
+ *					machine
+ */
+static int aji_client_runtest(int cycles, tap_state_t state)
+{
+	LOG_DEBUG_IO("%s(cycles=%i, end_state=%d(%s))", __func__, 
+		cycles, state, tap_state_name(state)
+	);
+
+	AJI_ERROR status = AJI_NO_ERROR;
+
+	AJI_OPEN_ID open_id = jtagservice_get_in_use_tap_open_id();
+	status = c_aji_run_test_idle(open_id, cycles);
+	if (AJI_NO_ERROR != status) {
+		LOG_ERROR("Unexpected error setting TAPs to RUN/IDLE state." 
+			" Return status is %d (%s)",
+			status, c_aji_error_decode(status)
+		);
+	}
+	tap_set_state(TAP_IDLE); 
+
+
+	if (state != TAP_IDLE) {
+		LOG_WARNING("Not yet support interface_jtag_add_runtest() "
+			" to finish in non TAP_IDLE state. "
+			"State %s (%d) requested", 
+			tap_state_name(state), state
+		);
+	}
+
+	return status == AJI_NO_ERROR ? ERROR_OK : ERROR_FAIL;
+}
+
+
 /**
  * Go to TLR (Test Logic Reset) State
  *
- * \pre @jtagservice_lock() locked the JTAG scan chain by locking
+ * \pre #jtagservice_lock() locked the JTAG scan chain by locking
  *      one of the TAP in the JTAG scan chain.
  */
-int aji_client_goto_tlr(void)
+static int aji_client_goto_tlr(void)
 {
 
 	LOG_DEBUG_IO("(from %s to %s)", tap_state_name(tap_get_state()),
@@ -273,7 +322,9 @@ static int aji_client_read_buffer(
 /**
  * Handles IR and DR scans
  *
- * \pre @jtagservice_lock() locked the required TAP
+ * \pre #jtagservice_lock() locked the required TAP
+ *
+ * \param cmd Contains the detail about the scan operation
  */
 static int aji_client_scan(struct scan_command *const cmd)
 {
@@ -456,15 +507,14 @@ else  { LOG_INFO("NOTFOUND tap = %s", jtag_tap_name(tap)); }
 			//aji_client_reset(cmd->cmd.reset->trst, cmd->cmd.reset->srst);
 			break;
 		case JTAG_RUNTEST:
-			LOG_ERROR("===> Not yet coded JTAG_RUNTEST(num_cycles=%d, end_state=0x%x)\n",
+			LOG_INFO("===> Not yet coded JTAG_RUNTEST(num_cycles=%d, end_state=0x%x)\n",
 					  cmd->cmd.runtest->num_cycles, 
 					  cmd->cmd.runtest->end_state
 			);
-			//aji_client_runtest(
-			//	cmd->cmd.runtest->num_cycles,
-			//	cmd->cmd.runtest->end_state
-			//);
-			assert(0); //deliberately assert() to be able to see where the error is, if it occurs
+			aji_client_runtest(
+				cmd->cmd.runtest->num_cycles,
+				cmd->cmd.runtest->end_state
+			);
 			break;
 		case JTAG_STABLECLOCKS:
 			LOG_ERROR("===> Not yet coded JTAG_STABLECLOCKS(num_cycles=%d)\n", 
