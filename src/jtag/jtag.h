@@ -672,7 +672,7 @@ void vjtag_tap_free(struct vjtag_tap* tap);
 struct vjtag_tap* vjtag_all_taps(void);
 void   vjtag_tap_add(struct vjtag_tap* t);
 struct vjtag_tap* vjtag_tap_by_string(const char* dotted_name);
-bool   jtag_tap_on_all_vtaps_list(struct jtag_tap* tap);
+bool   jtag_tap_on_all_vtaps_list(const struct jtag_tap* const tap);
 
 
 /**

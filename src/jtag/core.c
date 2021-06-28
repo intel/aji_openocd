@@ -301,7 +301,7 @@ struct jtag_tap* jtag_tap_by_string(const char* s) {
 	return jtag_tap_by_string_imp(jtag_all_taps(), s);
 }
 
-bool jtag_tap_on_list(struct jtag_tap* list, struct jtag_tap* tap) {
+bool jtag_tap_on_list(struct jtag_tap* list, const struct jtag_tap* const tap) {
 	struct jtag_tap* ptap = list;
 	while (ptap) {
 		if (ptap == tap)  {
@@ -312,7 +312,7 @@ bool jtag_tap_on_list(struct jtag_tap* list, struct jtag_tap* tap) {
 	return false;
 }
 
-bool jtag_tap_on_all_taps_list(struct jtag_tap* tap) {
+bool jtag_tap_on_all_taps_list(const struct jtag_tap* const tap) {
 	return jtag_tap_on_list(__jtag_all_taps, tap);
 }
 
@@ -2257,7 +2257,7 @@ struct vjtag_tap* vjtag_tap_by_string(const char* dotted_name)
 	return (struct vjtag_tap*) jtag_tap_by_string_imp((struct jtag_tap*) vjtag_all_taps(), dotted_name);
 }
 
-bool jtag_tap_on_all_vtaps_list(struct jtag_tap* tap)
+bool jtag_tap_on_all_vtaps_list(const struct jtag_tap* const tap)
 {
 	return jtag_tap_on_list((struct jtag_tap*) __vjtag_all_taps, tap);
 }
