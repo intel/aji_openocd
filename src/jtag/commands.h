@@ -53,6 +53,11 @@ struct scan_command {
 	/** state in which JTAG commands should finish */
 	tap_state_t end_state;
 
+	/* ***** IMPORTANT ********************
+	 *	Please take not that virtual jtag, 
+	 *	i.e. #vjtag_tap, relies EXCLUSIVELY on the fields 
+	 *	below to read/write to JTAG
+	 **************************************/
 	/** JTAG TAP for which this scan command is targeted at */
 	struct jtag_tap *tap;
 	/** is tap a virtual JTAG/SLD node? */
