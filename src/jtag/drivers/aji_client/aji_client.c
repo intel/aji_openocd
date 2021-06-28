@@ -165,7 +165,7 @@ static int aji_client_runtest(int cycles, tap_state_t state)
 
 	AJI_ERROR status = AJI_NO_ERROR;
 
-	AJI_OPEN_ID open_id = jtagservice_get_in_use_tap_open_id();
+	AJI_OPEN_ID open_id = jtagservice_get_in_use_open_id();
 	status = c_aji_run_test_idle(open_id, cycles);
 	if (AJI_NO_ERROR != status) {
 		LOG_ERROR("Unexpected error setting TAPs to RUN/IDLE state." 
@@ -353,7 +353,8 @@ static int aji_client_scan(struct scan_command *const cmd)
 
 
 	AJI_ERROR status = AJI_NO_ERROR;
-	AJI_OPEN_ID open_id = jtagservice_get_in_use_tap_open_id();
+	AJI_OPEN_ID open_id = jtagservice_get_in_use_open_id();
+
 	if(cmd->ir_scan) {
 		//LIMITATION: Max IR length is 32 bit has it has to fit into a DWORD
 		//  since c_aji_access_ir, a.k.a. aji_access_ir(DWORD)
@@ -365,10 +366,6 @@ static int aji_client_scan(struct scan_command *const cmd)
 		//  having to translate  write_buffer -> instruction and
 		//  capture -> read_buffer explicitly
 
-		if(cmd->tap_is_sld) {
-			LOG_ERROR("Not yet handling Virtual JTAG yet in %s", __FUNCTION__);
-			return ERROR_FAIL;
-		}
 
 		DWORD instruction = 0;
 		for (DWORD i = 0; i < (bit_count + 7) / 8; i++) {
@@ -376,9 +373,12 @@ static int aji_client_scan(struct scan_command *const cmd)
 		}
 
 		DWORD capture = 0;
-		status = c_aji_access_ir(
-			open_id, instruction, read_buffer ? &capture : NULL, 0
-		);
+		if(cmd->tap_is_sld) {
+			status = c_aji_access_overlay(open_id, instruction, read_buffer ? &capture : NULL);
+		} else {
+			status = c_aji_access_ir(
+				open_id, instruction, read_buffer ? &capture : NULL, 0);
+		}
 
 		if (read_buffer) {
 			for (DWORD i = 0; i < (bit_count + 7) / 8; i++) {
@@ -449,7 +449,6 @@ static int aji_client_scan(struct scan_command *const cmd)
 	*/
 
 	tap_set_state(TAP_IDLE); //Faking move to TAP_IDLE
-
 	return ERROR_OK;
 }
 
@@ -497,7 +496,6 @@ for (; pt != NULL && pt != tap; pt = jtag_tap_next_enabled(pt)) {}
 if(pt) { LOG_INFO("Found tap = %s",  jtag_tap_name(tap)); }
 else  { LOG_INFO("NOTFOUND tap = %s", jtag_tap_name(tap)); }
 		jtagservice_lock(tap);
-
 		switch (cmd->type) {
 		case JTAG_RESET:
 			LOG_INFO("Ignoring command JTAG_RESET(trst=%d, srst=%d)\n", 
@@ -507,7 +505,7 @@ else  { LOG_INFO("NOTFOUND tap = %s", jtag_tap_name(tap)); }
 			//aji_client_reset(cmd->cmd.reset->trst, cmd->cmd.reset->srst);
 			break;
 		case JTAG_RUNTEST:
-			LOG_INFO("===> Not yet coded JTAG_RUNTEST(num_cycles=%d, end_state=0x%x)\n",
+			LOG_INFO("===> JTAG_RUNTEST(num_cycles=%d, end_state=0x%x)\n",
 					  cmd->cmd.runtest->num_cycles, 
 					  cmd->cmd.runtest->end_state
 			);
@@ -544,6 +542,7 @@ else  { LOG_INFO("NOTFOUND tap = %s", jtag_tap_name(tap)); }
 					  cmd->cmd.tms->num_bits
 			);
 			//aji_client_tms(cmd->cmd.tms);
+			assert(0); //deliberately assert() to be able to see where the error is, if it occurs
 			break;
 		case JTAG_SLEEP:
 			LOG_ERROR("===> Not yet coded JTAG_SLEEP(time=%d us)\n", cmd->cmd.sleep->us);
@@ -553,7 +552,7 @@ else  { LOG_INFO("NOTFOUND tap = %s", jtag_tap_name(tap)); }
 		case JTAG_SCAN:
 			LOG_INFO(
 				"===> JTAG_SCAN(register=%s, num_fields=%d, end_state=0x%x"
-                " tap=%p (%s), "
+				" tap=%p (%s), "
 				" num_tap_fields=%d, tap_fields=%p (>%p) )\n",
 				cmd->cmd.scan->ir_scan? "IR" : "DR", 
 				cmd->cmd.scan->num_fields, 
@@ -575,7 +574,6 @@ else  { LOG_INFO("NOTFOUND tap = %s", jtag_tap_name(tap)); }
 	}
 	jtagservice_unlock();
 LOG_INFO("###########################################>>> execute queue end");
-
 	return ret;
 }
 

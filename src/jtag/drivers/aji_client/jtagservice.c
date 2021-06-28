@@ -633,7 +633,8 @@ AJI_ERROR jtagservice_lock_virtual_tap(
 	const DWORD hardware_index,
 	const DWORD tap_index,
 	const DWORD node_index     ) {
-//printf("node %lu tap  %lu %lu\n", node_index, tap_index, jtagservice.hier_id_n[tap_index]);
+//LOG_INFO("Request node %lu tap  %lu size=%lu", (unsigned long) node_index, (unsigned long) tap_index, (unsigned long) jtagservice.hier_id_n[tap_index]);
+//LOG_INFO("current node: %lu tap  %lu is_sld=%s", (unsigned long) jtagservice.in_use_device_tap_position, (unsigned long) jtagservice.in_use_hier_id_node_position, jtagservice.is_sld? "yes": "no");
 	assert(tap_index < jtagservice.device_count);
 	assert(node_index != UINT32_MAX);
 	assert(tap_index != UINT32_MAX);
@@ -715,7 +716,7 @@ AJI_ERROR jtagservice_lock_virtual_tap(
 			);
 			return status;
 		}
-		
+
 		status = c_aji_unlock_chain(jtagservice.in_use_hardware_chain_id);
 		if (AJI_NO_ERROR != status) {
 			LOG_ERROR("Cannot unlock chain. Returned %d (%s)",
@@ -814,7 +815,7 @@ static AJI_ERROR jtagservice_lock_any_tap(void)
  */
 AJI_ERROR jtagservice_lock(const struct jtag_tap* const tap)
 {
-LOG_INFO("***> %s:%d:%s: BEGIN tap=0x%08lX", __FILE__, __LINE__, __FUNCTION__, (unsigned long)(tap? tap->idcode : 0xFFFF));
+//LOG_INFO("***> %s:%d:%s: BEGIN tap=0x%08lX", __FILE__, __LINE__, __FUNCTION__, (unsigned long)(tap? tap->idcode : 0xFFFF));
 	if(tap && jtag_tap_on_all_vtaps_list(tap)) {
 		DWORD tap_index = UINT32_MAX;
 		jtagservice_device_index_by_idcode(
