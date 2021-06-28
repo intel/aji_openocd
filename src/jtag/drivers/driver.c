@@ -82,9 +82,6 @@ LOG_INFO("Add IR Scan Tap = %s", active->dotted_name);
 
 	scan->tap = active;
 	scan->tap_is_sld = jtag_tap_on_all_vtaps_list(active);
-	if(scan->tap_is_sld) {
-		LOG_ERROR("Not yet handle virtual JTAG in IR Scan (Tap = %s)", active->dotted_name);
-	}
 
 	struct jtag_tap *target = scan->tap_is_sld? ((struct vjtag_tap *) active)->parent : active;
 	struct scan_field *field = out_fields;	/* keep track where we insert data */
@@ -100,7 +97,6 @@ LOG_INFO("Add IR Scan Tap = %s", active->dotted_name);
 
 			scan->tap_fields = field;
 			scan->num_tap_fields = 1;
-
 			jtag_scan_field_clone(field, in_fields);
 		} else {
 			/* if a TAP isn't listed in input fields, set it to BYPASS */
@@ -156,9 +152,6 @@ LOG_INFO("Add DR Tap = %s", active->dotted_name);
 
 	scan->tap = active;
 	scan->tap_is_sld = jtag_tap_on_all_vtaps_list(active);
-	if(scan->tap_is_sld) {
-		LOG_ERROR("Not yet handle virtual JTAG in IR Scan (Tap = %s)", active->dotted_name);
-	}
 
 	struct jtag_tap *target = scan->tap_is_sld? ((struct vjtag_tap *) active)->parent : active;
 	struct scan_field *field = out_fields;	/* keep track where we insert data */
@@ -175,7 +168,6 @@ LOG_INFO("Add DR Tap = %s", active->dotted_name);
 			struct scan_field *start_field = field;
 #endif /* NDEBUG */
 
-			scan->tap = tap;
 			scan->tap_fields = field;
 			scan->num_tap_fields = in_num_fields;
 
