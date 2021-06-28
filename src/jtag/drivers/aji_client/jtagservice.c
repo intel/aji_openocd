@@ -279,8 +279,10 @@ struct jtagservice_record {
 				                       //< UINT32_MAX if position is invalid
 	AJI_DEVICE*  in_use_device;
 	DWORD        in_use_device_id;
-	AJI_OPEN_ID* in_use_device_open_id;
 	BYTE         in_use_device_irlen;
+
+	AJI_OPEN_ID* in_use_open_id; //< The #AJI_OPEN_ID in use. 
+								 //< Can be for TAP (device) or SLD Node
 
 	//SLD Node
 	//Additional information needed if
@@ -296,13 +298,9 @@ static struct jtagservice_record jtagservice;
 //=====================================
 // JTAG TAP management service
 //=====================================
-AJI_OPEN_ID jtagservice_get_in_use_tap_open_id() 
+AJI_OPEN_ID jtagservice_get_in_use_open_id() 
 {
-	if(jtagservice.is_sld) {
-		LOG_ERROR("Haven't coded %s for SLD", __FUNCTION__);
-		return NULL;
-	}
-	return jtagservice.in_use_device_open_id;
+	return jtagservice.in_use_open_id;
 }
 
 static AJI_ERROR jtagservice_device_index_by_idcode(
@@ -328,8 +326,13 @@ static AJI_ERROR jtagservice_device_index_by_idcode(
 
 static AJI_ERROR jtagservice_hier_id_index_by_idcode(
 	const DWORD idcode,
-	const AJI_HIER_ID *hier_id_list, const DWORD hier_id_count,
-	DWORD* hier_index) {
+	const DWORD tap_index,
+	DWORD* hier_index)
+{
+
+	AJI_HIER_ID *hier_id_list = jtagservice.hier_ids[tap_index];
+	DWORD hier_id_count = jtagservice.hier_id_n[tap_index];
+
 	DWORD index = 0;
 	for (; index < hier_id_count; ++index) {
 //        LOG_DEBUG("SLD Node ID matching - Attempting to match 0x%08lX. Try %lu with 0x%08lX",
@@ -427,12 +430,12 @@ static AJI_ERROR jtagservice_update_active_tap_record(
 						const bool is_sld, 
 						const DWORD node_index) 
 {
-LOG_INFO("***> %s:%d:%s: BEGIN, tap_index=%lu is_sld=%s node_index=%lu", 
-			__FILE__, __LINE__, __FUNCTION__, 
-			(unsigned long) tap_index, 
-			is_sld? "yes" : "no", 
-			(unsigned long) node_index
-);
+//LOG_INFO("***> %s:%d:%s: BEGIN, tap_index=%lu is_sld=%s node_index=%lu", 
+//			__FILE__, __LINE__, __FUNCTION__, 
+//			(unsigned long) tap_index, 
+//			is_sld? "yes" : "no", 
+//			(unsigned long) node_index
+//);
 	//TODO: consider not validating and assuming all parameter passed to 
     // this function is validated to prevent redundant validation
 	AJI_ERROR status = jtagservice_validate_tap_index(0, tap_index);
@@ -457,17 +460,18 @@ LOG_INFO("***> %s:%d:%s: BEGIN, tap_index=%lu is_sld=%s node_index=%lu",
 	if(UINT32_MAX == tap_index) {
 		jtagservice.in_use_device = NULL;
 		jtagservice.in_use_device_id = 0;
-		jtagservice.in_use_device_open_id = 0;
 		jtagservice.in_use_device_tap_position = UINT32_MAX;
 		jtagservice.in_use_device_irlen = 0;
 
+		jtagservice.in_use_open_id = 0;
 	} else {
 		AJI_DEVICE device = jtagservice.device_list[tap_index];
 		jtagservice.in_use_device = &(jtagservice.device_list[tap_index]);
 		jtagservice.in_use_device_id = device.device_id;
-		jtagservice.in_use_device_open_id = jtagservice.device_open_id_list[tap_index];
 		jtagservice.in_use_device_tap_position = tap_index;
 		jtagservice.in_use_device_irlen = device.instruction_length;
+
+		jtagservice.in_use_open_id = jtagservice.device_open_id_list[tap_index];
 	}
 
 	jtagservice.is_sld = is_sld;
@@ -475,6 +479,8 @@ LOG_INFO("***> %s:%d:%s: BEGIN, tap_index=%lu is_sld=%s node_index=%lu",
 		jtagservice.in_use_hier_id_node_position = node_index;
 		jtagservice.in_use_hier_id = &(jtagservice.hier_ids[tap_index][node_index]);
 		jtagservice.in_use_hier_id_idcode = jtagservice.hier_ids[tap_index][node_index].idcode;
+
+		jtagservice.in_use_open_id = jtagservice.hier_id_open_id_list[tap_index][node_index];
 	} else {
 		jtagservice.in_use_hier_id_node_position = UINT32_MAX;
 		jtagservice.in_use_hier_id = NULL;
@@ -490,7 +496,7 @@ LOG_INFO("***> %s:%d:%s: BEGIN, tap_index=%lu is_sld=%s node_index=%lu",
  */
 AJI_ERROR jtagservice_unlock()
 {
-LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
+//LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
 	if(UINT32_MAX == jtagservice.in_use_device_tap_position) {
 		return AJI_NO_ERROR; //nothing to unlock
 	}
@@ -498,7 +504,7 @@ LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
 	assert(jtagservice.in_use_device_tap_position < jtagservice.device_count);
 
 	AJI_ERROR status = AJI_NO_ERROR;
-	status = c_aji_unlock(jtagservice.in_use_device_open_id);
+	status = c_aji_unlock(jtagservice.in_use_open_id);
 	if(AJI_NO_ERROR != status) {
 		LOG_WARNING("Cannot unlock tap %lu idcode=%lX. Returned %d (%s)",
 					(unsigned long) jtagservice.in_use_device_tap_position, 
@@ -507,7 +513,7 @@ LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
 					c_aji_error_decode(status)
 		);
 	}
-	status = jtagservice_update_active_tap_record(0, (unsigned long) UINT32_MAX, false, 0);
+	status = jtagservice_update_active_tap_record(0, (unsigned long) UINT32_MAX, false, UINT32_MAX);
 	return AJI_NO_ERROR;
 }
 
@@ -521,12 +527,18 @@ static AJI_ERROR jtagservice_lock_jtag_tap (
 	const DWORD hardware_index,
 	const DWORD tap_index ) 
 {
-LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
+//LOG_INFO("***> %s:%d:%s: BEGIN device_count=%lu, tap_index = %lu", 
+//		__FILE__, __LINE__, __FUNCTION__,
+//		(unsigned long) jtagservice.device_count,
+//		(unsigned long) tap_index
+//);
 	assert(jtagservice.device_count != UINT32_MAX);
 	assert(tap_index < jtagservice.device_count);
 	assert(hardware_index == 0);
 
-	if(tap_index == jtagservice.in_use_device_tap_position) {
+	if(    !jtagservice.is_sld 
+		&& tap_index == jtagservice.in_use_device_tap_position
+	) {
 		return AJI_NO_ERROR; //tap_index is the currenly locked device.
 	}
 
@@ -609,7 +621,7 @@ LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
 		 return status;
 	}
 	
-	status = jtagservice_update_active_tap_record(hardware_index, (unsigned long) tap_index, false, 0);
+	status = jtagservice_update_active_tap_record(hardware_index, (unsigned long) tap_index, false, UINT32_MAX);
 	return status;
 }
 
@@ -617,7 +629,7 @@ LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
  * Activate Virtual Tap
  * \param hardware_index Not yet in use, set to zero.
  */
-AJI_ERROR jtagservice_activate_virtual_tap(
+AJI_ERROR jtagservice_lock_virtual_tap(
 	const DWORD hardware_index,
 	const DWORD tap_index,
 	const DWORD node_index     ) {
@@ -628,6 +640,17 @@ AJI_ERROR jtagservice_activate_virtual_tap(
 	assert(node_index < jtagservice.hier_id_n[tap_index]);
 	assert(hardware_index == 0);
 
+	if(		jtagservice.is_sld 
+		&&	tap_index == jtagservice.in_use_device_tap_position
+		&&  node_index == jtagservice.in_use_hier_id_node_position
+	) {
+		return AJI_NO_ERROR; //node_index is the currenly locked device.
+	}
+
+	if(UINT32_MAX != jtagservice.in_use_device_tap_position) {
+		jtagservice_unlock();
+	}
+
 	AJI_ERROR status = AJI_NO_ERROR;
 	if (!jtagservice.hier_id_type_list[tap_index][node_index]) {
 		LOG_WARNING(
@@ -637,7 +660,7 @@ AJI_ERROR jtagservice_activate_virtual_tap(
 		);
 		
 		//@TODO: Do a type lookup instead.
-		//return AJI_FAILURE;
+		return AJI_FAILURE;
 			
 	}
 
@@ -682,12 +705,13 @@ AJI_ERROR jtagservice_activate_virtual_tap(
 //        );
 //#endif
 		if (AJI_NO_ERROR != status) {
-			LOG_ERROR("Problem openning node %lu (0x%08lX) for tap position %lu. Returned %d (%s)",
-				      (unsigned long)node_index,
-				      (unsigned long)jtagservice.hier_ids[tap_index][node_index].idcode,
-				      (unsigned long)tap_index,
-				      status,
-				      c_aji_error_decode(status)
+			LOG_ERROR("Problem openning node %lu (0x%08lX) for tap position %lu (0x%08lX). Returned %d (%s)",
+						(unsigned long) node_index,
+						(unsigned long) jtagservice.hier_ids[tap_index][node_index].idcode,
+						(unsigned long) tap_index,
+						(unsigned long) jtagservice.device_list[tap_index].device_id,
+						status,
+						c_aji_error_decode(status)
 			);
 			return status;
 		}
@@ -701,12 +725,30 @@ AJI_ERROR jtagservice_activate_virtual_tap(
 		}
 	} //end if(!jtagservice.hier_id_open_id_list[tap_index][node_index]) 
 
-	if (AJI_NO_ERROR != status) {
-		return status;
-		
+	status = c_aji_lock(jtagservice.hier_id_open_id_list[tap_index][node_index], 
+						JTAGSERVICE_TIMEOUT_MS, 
+						AJI_PACK_AUTO
+	);
+	if(!(AJI_NO_ERROR ==  status || AJI_LOCKED == status)) { 
+		 LOG_ERROR("Cannot lock virtual tap node %lu (0x%08lX) for "
+						"tap position %lu (0x%08lX). Returned %d (%s)", 
+						(unsigned long) node_index,
+						(unsigned long) jtagservice.hier_ids[tap_index][node_index].idcode,
+						(unsigned long) tap_index, 
+						(unsigned long) jtagservice.device_list[tap_index].device_id,
+						status, 
+						c_aji_error_decode(status)
+		 );
+		 return status;
 	}
 
-	status = jtagservice_update_active_tap_record(hardware_index, (unsigned long) tap_index, true, node_index);
+
+	status = jtagservice_update_active_tap_record(
+				hardware_index, 
+				tap_index, 
+				true, 
+				node_index
+	);
 	return status;
 }
 
@@ -732,7 +774,7 @@ AJI_ERROR jtagservice_activate_virtual_tap(
  */
 static AJI_ERROR jtagservice_lock_any_tap(void)
 {
-LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
+//LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
 	if(jtagservice.in_use_device_tap_position != UINT32_MAX) {
 		return AJI_NO_ERROR; //already locked something, so just return
 	} 
@@ -772,13 +814,30 @@ LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
  */
 AJI_ERROR jtagservice_lock(const struct jtag_tap* const tap)
 {
-LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
+LOG_INFO("***> %s:%d:%s: BEGIN tap=0x%08lX", __FILE__, __LINE__, __FUNCTION__, (unsigned long)(tap? tap->idcode : 0xFFFF));
+	if(tap && jtag_tap_on_all_vtaps_list(tap)) {
+		DWORD tap_index = UINT32_MAX;
+		jtagservice_device_index_by_idcode(
+			((struct vjtag_tap*) tap)->parent->idcode,
+			&tap_index
+		); //Not checking return status because it should pass
+
+		DWORD sld_index = UINT32_MAX;
+		jtagservice_hier_id_index_by_idcode(
+			tap->idcode,
+			tap_index,
+			&sld_index
+		); //Not checking return status because it should pass
+
+		return jtagservice_lock_virtual_tap(0, tap_index, sld_index);
+	}
+
 	if(tap) {
 		DWORD tap_index = UINT32_MAX;
-        jtagservice_device_index_by_idcode(
-            tap->idcode,
-            &tap_index
-        ); //Not checking return status because it should pass
+		jtagservice_device_index_by_idcode(
+			tap->idcode,
+			&tap_index
+		); //Not checking return status because it should pass
 
 		return jtagservice_lock_jtag_tap(0, tap_index);
 	}
@@ -888,8 +947,7 @@ static bool vjtag_examine_chain_match_tap(struct vjtag_tap* vtap) {
 	DWORD node_index = -1;
 	status = jtagservice_hier_id_index_by_idcode(
 		vtap->idcode,
-		jtagservice.hier_ids[tap_index],
-		jtagservice.hier_id_n[tap_index],
+		tap_index,
 		&node_index
 	);
 
@@ -1106,9 +1164,10 @@ static AJI_ERROR  jtagservice_free_tap(const DWORD timeout)
 
 	jtagservice.in_use_device_tap_position = UINT32_MAX;
 	jtagservice.in_use_device = NULL;
-	jtagservice.in_use_device_open_id = 0;
 	jtagservice.in_use_device_id = 0;
 	jtagservice.in_use_device_irlen = 0;
+
+	jtagservice.in_use_open_id = 0;
 
 	jtagservice.is_sld = false;
 	jtagservice.in_use_hier_id_node_position = UINT32_MAX;

@@ -58,7 +58,13 @@ AJI_ERROR jtagservice_scan_for_taps(void);
 AJI_ERROR jtagservice_lock(const struct jtag_tap* const tap);
 AJI_ERROR jtagservice_unlock(void);
 
-AJI_OPEN_ID jtagservice_get_in_use_tap_open_id(void);
+/**
+ * Get the OPEN ID of the currently in use (locked) TAP/SLD node
+ *
+ * \return The #AJI_OPEN_ID of the TAP/SLD node in use.
+ *         If return NULL, no #AJI_OPEN_ID in use
+ */
+AJI_OPEN_ID jtagservice_get_in_use_open_id(void);
 
 /**
  * Helper function to print \c jtagservice_record
