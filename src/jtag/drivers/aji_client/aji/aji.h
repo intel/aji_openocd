@@ -80,25 +80,38 @@
 #define AJI_API
 #endif
 
-typedef unsigned char       BYTE;
-// On UNIX 64-bit, long is a 64 bit type (4 words)
-#if PORT==UNIX && defined(MODE_64_BIT)
-    typedef unsigned int    DWORD;
-#else
-    typedef unsigned long   DWORD;
+#if PORT==WINDOWS 
+#include <winsock2.h>
+#include <windows.h>
 #endif
 
-#if PORT==WINDOWS
-    typedef unsigned __int64    QWORD;
-#else
-    typedef unsigned long long  QWORD;
-#endif
+#include <stdint.h>
+typedef uint8_t      BYTE;
 
-// This is to maintain consistency between the programmer UI and JTAGSERVER
-// since we need a "hint" as to what the network cable is really called
-// Marketing may change the name, and we need to make sure it is updated in
-// both places since a string compare is done.
-#define AJI_NETWORK_CABLE_NAME "EthernetBlaster"
+/* In MinGW, you will get a conflict warning for
+ * DWORD because MinGW's minwindef.h includes
+ * its own definition of DWORD.
+ * The purpose is to handle realign
+ * Cygwin's native datatype to Window's (and
+ * our's) expection of DWORD as a 4 byte
+ * unsigned int datatype.
+ *
+ * minwindef.h is #include-d in windows.h and
+ * indirectly from winsock2.h.
+ *
+ * MinGW uses include guard _MINWINDEF_ for
+ * minwindef.h so will test for MINGW using the
+ * include guard. This means winsock2.h and
+ * windows.h must be #include-d first. As
+ * per best practice they are #include-d at
+ * the beginning of the file, before all
+ * other #includes
+ */
+#ifndef _MINWINDEF_
+typedef uint32_t  DWORD; 
+#endif // _MINWINDEF_
+
+typedef uint64_t    QWORD;
 
 #define AJI_MAX_HIERARCHICAL_HUB_DEPTH 8
 //# ENUMERATIONS ///////////////////////////////////////////////////////////
