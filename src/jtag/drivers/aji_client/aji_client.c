@@ -484,7 +484,9 @@ int aji_client_execute_queue(void)
 
 	struct jtag_tap *tap = NULL;
 	for (cmd = jtag_command_queue; ret == ERROR_OK && cmd != NULL;
-	     cmd = cmd->next) {
+		 cmd = cmd->next) {
+
+		keep_alive();
 
 		find_next_active_tap(cmd, &tap);
 		jtagservice_lock(tap);
@@ -545,7 +547,6 @@ int aji_client_execute_queue(void)
 		}
 	}
 	jtagservice_unlock();
-//LOG_INFO("###########################################>>> execute queue end");
 	return ret;
 }
 
