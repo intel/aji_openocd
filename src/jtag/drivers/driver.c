@@ -62,8 +62,6 @@ static void jtag_callback_queue_reset(void)
 int interface_jtag_add_ir_scan(struct jtag_tap *active,
 		const struct scan_field *in_fields, tap_state_t state)
 {
-LOG_INFO("Add IR Scan Tap = %s", active->dotted_name);
-
 	size_t num_taps = jtag_tap_count_enabled();
 
 	struct jtag_command *cmd = cmd_queue_alloc(sizeof(struct jtag_command));
@@ -126,8 +124,6 @@ LOG_INFO("Add IR Scan Tap = %s", active->dotted_name);
 int interface_jtag_add_dr_scan(struct jtag_tap *active, int in_num_fields,
 		const struct scan_field *in_fields, tap_state_t state)
 {
-LOG_INFO("Add DR Tap = %s", active->dotted_name);
-
 	/* count devices in bypass */
 	size_t bypass_devices = 0;
 
