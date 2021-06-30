@@ -550,6 +550,18 @@ int aji_client_execute_queue(void)
 	return ret;
 }
 
+static const struct command_registration vjtag_subcommand_handlers[] = {
+	{
+		.name = "create",
+		.mode = COMMAND_CONFIG,
+		.jim_handler = jim_vjtag_create,
+		.help = "Create a new virtual TAP instance on tapname, "
+			"and appends it to the scan chain.",
+		.usage = "name '-chain-position' tapname '-expected_id' idcode "
+			"['-ignore-version'] ",
+	},
+	COMMAND_REGISTRATION_DONE
+}; //end vjtag_subcommand_handlers
 
 static const struct command_registration aji_client_subcommand_handlers[] = {
 	{
@@ -576,6 +588,21 @@ static const struct command_registration aji_client_command_handlers[] = {
 		.help = "Perform aji_client management",
 		.usage = "",
 		.chain = aji_client_subcommand_handlers,
+	},
+	{
+		.name = "hardware",
+		.jim_handler = &jim_hardware_newhardware,
+		.mode = COMMAND_CONFIG,
+		.help = "select the hardware",
+		.usage = "<name> <type>[<port>]",
+	},
+	{
+		.name = "vjtag",
+		.mode = COMMAND_ANY,
+		.help = "perform jtag tap actions",
+		.usage = "",
+
+		.chain = vjtag_subcommand_handlers,
 	},
 	COMMAND_REGISTRATION_DONE
 };
