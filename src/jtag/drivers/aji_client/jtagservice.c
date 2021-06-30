@@ -1802,7 +1802,7 @@ int jtagservice_query_main(void) {
 //                }; 
 //#endif
 				char appname[] = "MyApp";
-				LOG_INFO("            (C1-1) Open Device %lX ...", (unsigned long) device.device_id); fflush(stdout);
+				LOG_INFO("            (C1-1) Open Device %lX ...", (unsigned long) device.device_id);
 				AJI_OPEN_ID open_id = NULL;   
 				
 //#if PORT == WINDOWS
@@ -1816,7 +1816,7 @@ int jtagservice_query_main(void) {
 				    continue;
 				}
 				    
-				LOG_INFO("            (C1-2) Lock Device ..."); fflush(stdout);
+				LOG_INFO("            (C1-2) Lock Device ...");
 				status = c_aji_unlock_chain_lock(chain_id, open_id, AJI_PACK_AUTO); //hardcoded timeout of 10000ms 
 				if(AJI_NO_ERROR  != status) {
 				    LOG_ERROR("       Cannot lock device. Returned %d (%s)", status, c_aji_error_decode(status));
@@ -1825,7 +1825,7 @@ int jtagservice_query_main(void) {
 				}
 				/*
 				//Need not set state of TAP.
-				printf("            (C2-1) Set TAP state  TEST_LOGIC_RESET ...\n"); fflush(stdout);             
+				printf("            (C2-1) Set TAP state  TEST_LOGIC_RESET ...\n");        
 				status = c_aji_run_test_idle(open_id, 10); //Doing two clock pulse. One now, and one potentially deferred until the next instruction
 				status = c_aji_test_logic_reset(open_id);  
 				if(AJI_NO_ERROR  != status) {
@@ -1836,7 +1836,9 @@ int jtagservice_query_main(void) {
 				}
 				*/
 				QWORD ir_idcode = device.device_id == 0x4BA00477 ? 0b1110 : 0b0000000110; // claims[0].value;
-				LOG_INFO("            (C2-2) Read IDCODE : Set IR (0x%lX)... (only works for Arria10 and ARMVHPS)", ir_idcode); fflush(stdout);
+				LOG_INFO("            (C2-2) Read IDCODE : Set IR (0x%llX)... (only works for Arria10 and ARMVHPS)", 
+						  (long long unsigned) ir_idcode
+				);
 				DWORD captured_ir = 0xFFFF;      
 				status = c_aji_access_ir(open_id, ir_idcode,  &captured_ir, 0);
 				            //if I am in TEST_LOGIC_RESET, I am suppose to get AJI_BAD_TAP STATE but I am not, and I get 0b1 on captured_ir
@@ -1848,7 +1850,7 @@ int jtagservice_query_main(void) {
 				}
 				LOG_INFO("                 Return IR buffer reads %04lX", (unsigned long) captured_ir);
 				
-				LOG_INFO("            (C2-3) Read IDCODE : Read DR ..."); fflush(stdout);  
+				LOG_INFO("            (C2-3) Read IDCODE : Read DR ...");  
 				DWORD length_dr = 32,
 				      flags = 0,
 				      write_offset = 0,
