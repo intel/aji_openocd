@@ -337,7 +337,7 @@ static int aji_client_scan(struct scan_command *const cmd)
 
 	if(write_buffer) {
 		log_buf = hexdump(write_buffer, DIV_ROUND_UP(bit_count, 8));
-		LOG_DEBUG_IO("%s(scan=%s%s, type=OUT, bits=%d, buf=[%s], end_state=%d)", __func__,
+		LOG_DEBUG_IO("%s(scan=%s%s, type=OUT, bits=%ld, buf=[%s], end_state=%d)", __func__,
 			cmd->tap_is_sld ? "Virtual " : "",
 			cmd->ir_scan ? "IRSCAN" : "DRSCAN",
 			bit_count, log_buf, cmd->end_state
@@ -407,7 +407,7 @@ static int aji_client_scan(struct scan_command *const cmd)
 
 	if(read_buffer) {
 		log_buf = hexdump(read_buffer, DIV_ROUND_UP(bit_count, 8));
-		LOG_DEBUG_IO("%s(scan=%s%s, type=IN, bits=%d, buf=[%s], end_state=%d)", __func__,
+		LOG_DEBUG_IO("%s(scan=%s%s, type=IN, bits=%ld, buf=[%s], end_state=%d)", __func__,
 			cmd->tap_is_sld ? "Virtual " : "",
 			cmd->ir_scan ? "IRSCAN" : "DRSCAN",
 			bit_count, log_buf, cmd->end_state
