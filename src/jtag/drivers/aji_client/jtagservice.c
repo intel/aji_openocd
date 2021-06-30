@@ -1836,7 +1836,7 @@ int jtagservice_query_main(void) {
 				}
 				*/
 				QWORD ir_idcode = device.device_id == 0x4BA00477 ? 0b1110 : 0b0000000110; // claims[0].value;
-				LOG_INFO("            (C2-2) Read IDCODE : Set IR (0x%llX)... (only works for Arria10 and ARMVHPS)", ir_idcode); fflush(stdout);
+				LOG_INFO("            (C2-2) Read IDCODE : Set IR (0x%lX)... (only works for Arria10 and ARMVHPS)", ir_idcode); fflush(stdout);
 				DWORD captured_ir = 0xFFFF;      
 				status = c_aji_access_ir(open_id, ir_idcode,  &captured_ir, 0);
 				            //if I am in TEST_LOGIC_RESET, I am suppose to get AJI_BAD_TAP STATE but I am not, and I get 0b1 on captured_ir
