@@ -665,7 +665,6 @@ struct vjtag_tap {
 	struct jtag_tap *parent; //< The physical jtag it is based on.
 }; //end vjtag_tap
 
-int  vjtag_register_commands(struct command_context* cmd_ctx);
 void vjtag_tap_init(struct vjtag_tap* tap);
 void vjtag_tap_free(struct vjtag_tap* tap);
 
@@ -674,15 +673,15 @@ void   vjtag_tap_add(struct vjtag_tap* t);
 struct vjtag_tap* vjtag_tap_by_string(const char* dotted_name);
 bool   jtag_tap_on_all_vtaps_list(const struct jtag_tap* const tap);
 
+/**
+ * create a new vjtag with jimtcl
+ */
+int jim_vjtag_create(Jim_Interp* interp, int argc, Jim_Obj* const* argv);
+
 
 /**
  * JTAG hardware
  */
-
-/**
- * Create a new JTAG hardware with jimtcl
- */
-int jim_hardware_newhardware(Jim_Interp* interp, int argc, Jim_Obj* const* argv);
 
 struct jtag_hardware {
 	char *name; //< Hardware cable identifier. Must be unique for the openocd instance.
@@ -691,7 +690,6 @@ struct jtag_hardware {
 	struct jtag_hardware *next_hardware; //< Pointer to the next hardware
 }; //ennd jtag_hardware
 
-int  hardware_register_commands(struct command_context* cmd_ctx);
 void jtag_hardware_init(struct jtag_hardware* tap);
 void jtag_hardware_free(struct jtag_hardware* tap);
 
@@ -699,5 +697,10 @@ struct jtag_hardware* jtag_all_hardwares(void);
 void   jtag_hardware_add(struct jtag_hardware* t);
 struct jtag_hardware* jtag_hardware_by_string(const char* id);
 bool   jtag_hardware_on_all_jtag_hardware_list(struct jtag_hardware* tap);
+
+/**
+ * Create a new JTAG hardware with jimtcl
+ */
+int jim_hardware_newhardware(Jim_Interp* interp, int argc, Jim_Obj* const* argv);
 
 #endif /* OPENOCD_JTAG_JTAG_H */

@@ -1558,6 +1558,11 @@ int jim_vjtag_create(Jim_Interp* interp, int argc, Jim_Obj* const* argv)
 	return jim_vjtag_create_cmd(&goi);
 }
 
+#if 0
+/* vjtag-related function should be only be included into TCL
+ * by the driver that can use it. This #if-ed out section give
+ * an example of how to use it.
+ */
 static const struct command_registration vjtag_subcommand_handlers[] = {
 	{
 		.name = "create",
@@ -1572,7 +1577,6 @@ static const struct command_registration vjtag_subcommand_handlers[] = {
 }; //end vjtag_subcommand_handlers
 
 static const struct command_registration vjtag_command_handlers[] = {
-
 	{
 		.name = "vjtag",
 		.mode = COMMAND_ANY,
@@ -1588,7 +1592,7 @@ int vjtag_register_commands(struct command_context* cmd_ctx)
 {
 	return register_commands(cmd_ctx, NULL, vjtag_command_handlers);
 }
-
+#endif //if 0
 
 /*
  * For JTAG Hardware
@@ -1632,12 +1636,17 @@ static int jim_hardware_cmd(struct jim_getopt_info* goi)
 	return JIM_OK;
 }
 
-
 int jim_hardware_newhardware(Jim_Interp* interp, int argc, Jim_Obj* const* argv)
 {	struct jim_getopt_info goi;
 	jim_getopt_setup(&goi, interp, argc - 1, argv + 1);
 	return jim_hardware_cmd(&goi);
 }
+
+#if 0
+/* hardware-related function should be only be included into TCL
+ * by the driver that can use it. This #if-ed out section give
+ * an example of how to use it.
+ */
 static const struct command_registration hardware_subcommand_handlers[] = {
 	{
 		.name = "hardware",
@@ -1653,4 +1662,4 @@ int hardware_register_commands(struct command_context* cmd_ctx)
 {
 	return register_commands(cmd_ctx, NULL, hardware_subcommand_handlers);
 }
-
+#endif //if 0
