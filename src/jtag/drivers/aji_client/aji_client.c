@@ -493,7 +493,7 @@ int aji_client_execute_queue(void)
 
 		switch (cmd->type) {
 		case JTAG_RESET:
-			LOG_INFO("Ignoring command JTAG_RESET(trst=%d, srst=%d)\n", 
+			LOG_DEBUG("Ignoring command JTAG_RESET(trst=%d, srst=%d)", 
 					 cmd->cmd.reset->trst, 
 					 cmd->cmd.reset->srst
 			);
@@ -506,7 +506,7 @@ int aji_client_execute_queue(void)
 			);
 			break;
 		case JTAG_STABLECLOCKS:
-			LOG_ERROR("Not yet coded JTAG_STABLECLOCKS(num_cycles=%d)\n", 
+			LOG_ERROR("Not yet coded JTAG_STABLECLOCKS(num_cycles=%d)", 
 					  cmd->cmd.stableclocks->num_cycles
 			);
 			//aji_client_stableclocks(cmd->cmd.stableclocks->num_cycles);
@@ -516,7 +516,7 @@ int aji_client_execute_queue(void)
 			break;
 		case JTAG_PATHMOVE:
 			LOG_ERROR(
-				"Ignoring JTAG_PATHMOVE(numstate=%d, first_state=0x%x, end_state=0x%x)\n",
+				"Ignoring JTAG_PATHMOVE(numstate=%d, first_state=0x%x, end_state=0x%x)",
 				cmd->cmd.pathmove->num_states, 
 				cmd->cmd.pathmove->path[0], 
 				cmd->cmd.pathmove->path[cmd->cmd.pathmove->num_states-1]
@@ -525,14 +525,14 @@ int aji_client_execute_queue(void)
 			assert(0); //deliberately assert() to be able to see where the error is, if it occurs
 			break;
 		case JTAG_TMS:
-			LOG_ERROR("Not yet coded JTAG_TMS(num_bits=%d)\n",
+			LOG_ERROR("Not yet coded JTAG_TMS(num_bits=%d)",
 					  cmd->cmd.tms->num_bits
 			);
 			//aji_client_tms(cmd->cmd.tms);
 			assert(0); //deliberately assert() to be able to see where the error is, if it occurs
 			break;
 		case JTAG_SLEEP:
-			LOG_ERROR("Not yet coded JTAG_SLEEP(time=%d us)\n", cmd->cmd.sleep->us);
+			LOG_ERROR("Not yet coded JTAG_SLEEP(time=%d us)", cmd->cmd.sleep->us);
 			//aji_client_usleep(cmd->cmd.sleep->us);
 			assert(0); //deliberately assert() to be able to see where the error is, if it occurs
 			break;
