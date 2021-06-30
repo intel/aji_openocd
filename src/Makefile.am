@@ -40,7 +40,7 @@ endif
 if IS_MINGW
 MINGWLDADD = -lws2_32
 if AJI_CLIENT
-MINGWLDADD = -lshlwapi
+MINGWLDADD += -lshlwapi
 endif
 else
 MINGWLDADD =
