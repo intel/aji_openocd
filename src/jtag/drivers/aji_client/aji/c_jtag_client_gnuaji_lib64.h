@@ -25,6 +25,10 @@
 #include "config.h"
 #endif
 
+//There is no #define for Linux build, so use not win32 as proxy
+#if ! IS_WIN32
+
 //empty. See c_jtag_client_gnu_aji.h for functions to implement
 
+#endif //IS_WIN32
 #endif

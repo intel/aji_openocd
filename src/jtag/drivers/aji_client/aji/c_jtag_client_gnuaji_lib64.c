@@ -22,6 +22,9 @@
 #include "config.h"
 #endif
 
+//There is no #define for Linux build, so use not win32 as proxy
+#if ! IS_WIN32
+
 #include <dlfcn.h>
 #include <unistd.h>
 #include <libgen.h>
@@ -592,3 +595,5 @@ AJI_API AJI_ERROR c_aji_access_overlay(AJI_OPEN_ID node_id, DWORD overlay, DWORD
     }
     return (pfn)(node_id, overlay, captured_overlay);
 }
+
+#endif //IS_WIN32

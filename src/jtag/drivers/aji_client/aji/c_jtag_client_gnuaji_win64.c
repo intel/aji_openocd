@@ -22,6 +22,9 @@
 #include "config.h"
 #endif
 
+#if IS_WIN32
+
+
 #include "c_aji.h"
 #include "c_jtag_client_gnuaji_win64.h"
 
@@ -556,3 +559,5 @@ assert(pfn != NULL);
     }
     return (pfn)(node_id, overlay, captured_overlay);
 }
+
+#endif //IS_WIN32

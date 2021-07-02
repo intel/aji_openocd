@@ -25,8 +25,12 @@
 #include "config.h"
 #endif
 
+#if IS_WIN32
+
 #include <winsock2.h>
 #include <windows.h>
 
 //empty. See c_jtag_client_gnu_aji.h for functions to implement
+
+#endif //IS_WIN32
 #endif //INC_C_JTAG_CLIENT_GNUAJI_WIN64_H
