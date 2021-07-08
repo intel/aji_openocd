@@ -51,10 +51,6 @@ endif
     -mindirect-branch=thunk \
     -mfunction-return=thunk
 
-
-%C%_libocdcaji_la_SOURCES  += %D%/c_jtag_client_gnuaji_win64.h %D%/c_jtag_client_gnuaji_win64.c
-%C%_libocdcaji_la_SOURCES  += %D%/c_jtag_client_gnuaji_lib64.h %D%/c_jtag_client_gnuaji_lib64.c
-
 %C%_libocdcaji_la_SOURCES += \
     %D%/aji.h %D%/c_aji.h \
     %D%/c_jtag_client_gnuaji.h \
@@ -70,6 +66,7 @@ if IS_WIN32
      -Wl,--dynamicbase,--export-dynamic \
      -Wl,--nxcompat
 
+%C%_libocdcaji_la_SOURCES  += %D%/c_jtag_client_gnuaji_win64.h %D%/c_jtag_client_gnuaji_win64.c
 
 else
 #(linux) compile: others
@@ -86,4 +83,5 @@ else
     \
     -rdynamic
 
+%C%_libocdcaji_la_SOURCES  += %D%/c_jtag_client_gnuaji_lib64.h %D%/c_jtag_client_gnuaji_lib64.c
 endif
