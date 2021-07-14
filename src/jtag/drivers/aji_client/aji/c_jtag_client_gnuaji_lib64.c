@@ -171,36 +171,36 @@ AJI_ERROR c_aji_open_entire_device_chain(AJI_CHAIN_ID chain_id, AJI_OPEN_ID * op
     return _Z28aji_open_entire_device_chainP9AJI_CHAINPP8AJI_OPEN14AJI_CHAIN_TYPEPKc(chain_id, open_id, style, application_name);
 }
 
-AJI_ERROR AJI_API c_aji_open_node             (AJI_CHAIN_ID         chain_id,
-                                               DWORD                tap_position,
-                                               DWORD                idcode,
-                                               AJI_OPEN_ID        * node_id,
-                                               const AJI_CLAIM    * claims,
-                                               DWORD                claim_n,
-                                               const char         * application_name){
+AJI_ERROR c_aji_open_node             (AJI_CHAIN_ID         chain_id,
+                                       DWORD                tap_position,
+                                       DWORD                idcode,
+                                       AJI_OPEN_ID        * node_id,
+                                       const AJI_CLAIM    * claims,
+                                       DWORD                claim_n,
+                                       const char         * application_name){
     AJI_ERROR _Z13aji_open_nodeP9AJI_CHAINjjPP8AJI_OPENPK9AJI_CLAIMjPKc(AJI_CHAIN_ID, DWORD, DWORD, AJI_OPEN_ID*, const AJI_CLAIM*, DWORD, const char*);
     return _Z13aji_open_nodeP9AJI_CHAINjjPP8AJI_OPENPK9AJI_CLAIMjPKc(chain_id, tap_position, idcode, node_id, claims, claim_n, application_name);
 }
 
-AJI_ERROR AJI_API c_aji_open_node_a           (AJI_CHAIN_ID         chain_id,
-                                               DWORD                tap_position,
-                                               DWORD                node_position,
-                                               DWORD                idcode,
-                                               AJI_OPEN_ID        * node_id,
-                                               const AJI_CLAIM    * claims,
-                                               DWORD                claim_n,
-                                               const char         * application_name){
+AJI_ERROR c_aji_open_node_a           (AJI_CHAIN_ID         chain_id,
+                                       DWORD                tap_position,
+                                       DWORD                node_position,
+                                       DWORD                idcode,
+                                       AJI_OPEN_ID        * node_id,
+                                       const AJI_CLAIM    * claims,
+                                       DWORD                claim_n,
+                                       const char         * application_name){
     AJI_ERROR _Z13aji_open_nodeP9AJI_CHAINjjjPP8AJI_OPENPK9AJI_CLAIMjPKc(AJI_CHAIN_ID, DWORD, DWORD, DWORD, AJI_OPEN_ID*, const AJI_CLAIM*, DWORD, const char*);
     return _Z13aji_open_nodeP9AJI_CHAINjjjPP8AJI_OPENPK9AJI_CLAIMjPKc(chain_id, tap_position, node_position, idcode, node_id, claims, claim_n, application_name);
 }
 
-AJI_ERROR AJI_API c_aji_open_node_b           (AJI_CHAIN_ID         chain_id,
-                                               DWORD                tap_position,
-                                               const AJI_HIER_ID  * hier_id,
-                                               AJI_OPEN_ID        * node_id,
-                                               const AJI_CLAIM2   * claims,
-                                               DWORD                claim_n,
-                                               const char         * application_name){
+AJI_ERROR c_aji_open_node_b           (AJI_CHAIN_ID         chain_id,
+                                       DWORD                tap_position,
+                                       const AJI_HIER_ID  * hier_id,
+                                       AJI_OPEN_ID        * node_id,
+                                       const AJI_CLAIM2   * claims,
+                                       DWORD                claim_n,
+                                       const char         * application_name){
     AJI_ERROR _Z13aji_open_nodeP9AJI_CHAINjPK11AJI_HIER_IDPP8AJI_OPENPK10AJI_CLAIM2jPKc(AJI_CHAIN_ID, DWORD, const AJI_HIER_ID*, AJI_OPEN_ID*, const AJI_CLAIM2*, DWORD, const char*);
     return _Z13aji_open_nodeP9AJI_CHAINjPK11AJI_HIER_IDPP8AJI_OPENPK10AJI_CLAIM2jPKc(chain_id, tap_position, hier_id, node_id, claims, claim_n, application_name);
 }
