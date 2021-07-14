@@ -1,0 +1,104 @@
+[Note: Original OpenOCD README had been moved to README.openocd]
+
+This README assumes you want to compile OpenOCD and use
+it with jtagd, or jtagserv.exe distributed with Quartus.
+
+It also assume you are reading this file because you 
+want to or need to recompile OpenOCD with the driver
+to access jtagd/jtagserv.exe, i.e. aji_client.
+
+As conditional compilation was used when compiling
+OpenOCD with aji_client driver, you will not be able
+to use the compiled openocd with other drivers at all.
+
+PREREQUISITE:
+
+You need to compile and install libaji_client
+http://github.com/intel/libaji_client. This will
+create libaji_client.so* on Linux and 
+libaji_client.dll on Windows.
+You will need to copy these files to the same
+directory as your openocd/openocd.exe program.
+
+
+COMPILATION STEPS:
+
+Linux:
+
+(1) Copy libaji_client.so.* to src. 
+Take care not to copy any *.la file.
+
+(2) Run :
+      
+  ./bootstrap
+  ./configure --enable-aji_client
+  make
+
+(3) You should now be able to run openocd using the
+following instructions:
+
+  src/openocd
+
+(4) If you run "make install", then normally we can expect 
+the command:
+
+  openocd
+
+to work, provided you copy libaji_client.so* to the
+same directory as openocd
+      
+
+
+Windows:
+
+Only compilation using MinGW64-64bit is supported
+
+(1) Copy libaji_client.dll to src/ 
+Take care not to copy any *.la files
+
+(2) Run 
+  
+  export CPPFLAGS="$CPPFLAGS -D__USE_MINGW_ANSI_STDIO=1 -Wno-error"; 
+  export CFLAGS="$CFLAGS -Wno-error"
+  ./bootstrap
+  ./configure --disable-doxygen-pdf \
+     --enable-aji_client --enable-ftdi --enable-jlink --enable-ulink \
+     --build=x86_64-w64-mingw32 --host=x86_64-w64-mingw32
+  make
+  cp /opt/x86_64-w64-mingw32/bin/libwinpthread-1.dll ./src
+
+(3) You should now be able to run openocd using the
+following instructions:
+
+  src/openocd.exe
+
+(4) If you run "make install", then normally we can expect 
+the command:
+
+  openocd.exe
+
+to work, provided you copy libaji_client.dll to the
+same directory as openocd
+
+(5) We had seen some windows installation fails to run
+openocd.exe because it does not have
+libgcc_s_seh-1.dll and libstdc++-6.dll. In this case copy 
+the two files from the mingw installation directory of the
+machine you compile openocd on to the same directory as
+openocd.exe
+
+CHANGE LOG:
+
+0.10.0-R21.1: 
+	- Initial release based on OpenOCD 0.10.0. 
+	- Only support SOCVHPS
+	- aji_client driver used the "minidriver" approach
+	  meaning it is not possible to compile OpenOCD
+	  with other driver if you want aji_client driver
+
+0.11.0-R21.3:
+	- Based on OpenOCD 0.11.0.
+	- Added NIOS5 support
+	- aji_client now uses the standard JTAG driver
+	  approach in OpenOCD. Meaning it can coexists
+	  with other OpenOCD JTAG drivers.
