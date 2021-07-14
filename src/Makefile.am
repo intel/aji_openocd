@@ -1,6 +1,8 @@
 noinst_LTLIBRARIES += %D%/libopenocd.la
 bin_PROGRAMS += %D%/openocd
 
+%C%_openocd_LDADD =
+
 %C%_openocd_SOURCES = \
 	%D%/main.c
 
@@ -18,9 +20,7 @@ else
 %C%_openocd_LDADD += -ljim
 endif
 
-if AJI_CLIENT
-%C%_openocd_LDFLAGS +=  ../output/lib/libaji_client.dll.a
-#endif
+%C%_libopenocd_la_CPPFLAGS =
 
 # banner output includes RELSTR appended to $VERSION from the configure script
 # guess-rev.sh returns either a repository version ID or "-snapshot"
@@ -43,6 +43,7 @@ if IS_MINGW
 MINGWLDADD = -lws2_32
 if AJI_CLIENT
 MINGWLDADD += -lshlwapi
+%C%_openocd_LDADD +=  ../output/lib/libaji_client.dll.a
 endif
 else
 MINGWLDADD =
