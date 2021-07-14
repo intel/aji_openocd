@@ -53,9 +53,9 @@ typedef struct CLAIM_RECORD CLAIM_RECORD;
 struct CLAIM_RECORD {
 	DWORD claims_n;    ///! number of claims
 //#if PORT == WINDOWS
-	AJI_CLAIM* claims;
+//	AJI_CLAIM* claims;
 //#else
-//    AJI_CLAIM2* claims; ///! IR claims
+    AJI_CLAIM2* claims; ///! IR claims
 //#endif
 };
 
@@ -93,9 +93,9 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
 	if (UNKNOWN < *records_n) {
 		DWORD csize = 0;
 //#if PORT == WINDOWS
-		AJI_CLAIM* claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM)); //It's empty, NULL perhaps?
+//		AJI_CLAIM* claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM)); //It's empty, NULL perhaps?
 //#else
-//        AJI_CLAIM2 *claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2)); //It's empty, NULL perhaps?
+        AJI_CLAIM2 *claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2)); //It's empty, NULL perhaps?
 //#endif
 		if (claims == NULL) {
 			return AJI_NO_MEMORY;
@@ -104,9 +104,9 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
 	if (ARM < *records_n) {
 		DWORD csize = 4;
 //#if PORT == WINDOWS
-		AJI_CLAIM* claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM));
+//		AJI_CLAIM* claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM));
 //#else
-//        AJI_CLAIM2* claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
+        AJI_CLAIM2* claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
 //#endif
 		if (claims == NULL) {
 			return AJI_NO_MEMORY;
@@ -128,9 +128,9 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
 	if (RISCV < *records_n) {
 		DWORD csize = 3;
 //#if PORT == WINDOWS
-		AJI_CLAIM *claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM));
+//		AJI_CLAIM *claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM));
 //#else
-//      AJI_CLAIM2 *claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
+      AJI_CLAIM2 *claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
 // #endif
 		if (claims == NULL) {
 			return AJI_NO_MEMORY;
@@ -150,9 +150,9 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
 	if (VJTAG < *records_n) {
 		DWORD csize = 4;
 //#if PORT == WINDOWS
-		AJI_CLAIM *claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM));
+//		AJI_CLAIM *claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM));
 //#else
-//        AJI_CLAIM2 *claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
+        AJI_CLAIM2 *claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
 //#endif
 		if (claims == NULL) {
 			return AJI_NO_MEMORY;
@@ -572,8 +572,8 @@ static AJI_ERROR jtagservice_lock_jtag_tap (
 			 );
 			 return status;
 		}
-//#if PORT == WINDOWS
-		status = c_aji_open_device(
+//#if PORT == WINDOWS 
+/*		status = c_aji_open_device(
 			jtagservice.in_use_hardware_chain_id,
 			tap_index,
 			&(jtagservice.device_open_id_list[tap_index]),
@@ -581,15 +581,15 @@ static AJI_ERROR jtagservice_lock_jtag_tap (
 			jtagservice.claims[jtagservice.device_type_list[tap_index]].claims_n,
 			jtagservice.appIdentifier
 		);
-//#else
-//        status = c_aji_open_device_a(
-//            jtagservice.in_use_hardware_chain_id,
-//            tap_index,
-//            &(jtagservice.device_open_id_list[tap_index]),
-//            (const AJI_CLAIM2*) (jtagservice.claims[jtagservice.device_type_list[tap_index]].claims), 
-//            jtagservice.claims[jtagservice.device_type_list[tap_index]].claims_n, 
-//            jtagservice.appIdentifier
-//        );
+//#else */
+        status = c_aji_open_device_a(
+            jtagservice.in_use_hardware_chain_id,
+            tap_index,
+            &(jtagservice.device_open_id_list[tap_index]),
+            (const AJI_CLAIM2*) (jtagservice.claims[jtagservice.device_type_list[tap_index]].claims), 
+            jtagservice.claims[jtagservice.device_type_list[tap_index]].claims_n, 
+            jtagservice.appIdentifier
+        );
 //#endif
 		if(AJI_NO_ERROR !=  status ) { 
 			 LOG_ERROR("Problem openning tap %lu (0x%08lX). Returned %d (%s)", 
@@ -684,7 +684,7 @@ AJI_ERROR jtagservice_lock_virtual_tap(
 		}
 
  //#if PORT == WINDOWS
-		status = c_aji_open_node_a(
+/*		status = c_aji_open_node_a(
 			jtagservice.in_use_hardware_chain_id,
 			tap_index,
 			node_index,
@@ -694,16 +694,16 @@ AJI_ERROR jtagservice_lock_virtual_tap(
 			jtagservice.claims[jtagservice.hier_id_type_list[tap_index][node_index]].claims_n,
 			jtagservice.appIdentifier
 		);
-//#else
-//        status = c_aji_open_node_b(
-//            jtagservice.in_use_hardware_chain_id,
-//            tap_index,
-//            &(jtagservice.hier_ids[tap_index][node_index]),
-//            &(jtagservice.hier_id_open_id_list[tap_index][node_index]),
-//            (const AJI_CLAIM2*)(jtagservice.claims[jtagservice.hier_id_type_list[tap_index][node_index]].claims),
-//            jtagservice.claims[jtagservice.hier_id_type_list[tap_index][node_index]].claims_n,
-//            jtagservice.appIdentifier
-//        );
+//#else */
+        status = c_aji_open_node_b(
+            jtagservice.in_use_hardware_chain_id,
+            tap_index,
+            &(jtagservice.hier_ids[tap_index][node_index]),
+            &(jtagservice.hier_id_open_id_list[tap_index][node_index]),
+            (const AJI_CLAIM2*)(jtagservice.claims[jtagservice.hier_id_type_list[tap_index][node_index]].claims),
+            jtagservice.claims[jtagservice.hier_id_type_list[tap_index][node_index]].claims_n,
+            jtagservice.appIdentifier
+        );
 //#endif
 		if (AJI_NO_ERROR != status) {
 			LOG_ERROR("Problem openning node %lu (0x%08lX) for tap position %lu (0x%08lX). Returned %d (%s)",

@@ -18,7 +18,9 @@ else
 %C%_openocd_LDADD += -ljim
 endif
 
-%C%_libopenocd_la_CPPFLAGS =
+if AJI_CLIENT
+%C%_openocd_LDFLAGS +=  ../output/lib/libaji_client.dll.a
+#endif
 
 # banner output includes RELSTR appended to $VERSION from the configure script
 # guess-rev.sh returns either a repository version ID or "-snapshot"
