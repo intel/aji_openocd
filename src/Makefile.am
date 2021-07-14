@@ -10,6 +10,8 @@ bin_PROGRAMS += %D%/openocd
 	%D%/hello.c %D%/hello.h \
 	%D%/openocd.c %D%/openocd.h
 
+%C%_openocd_LDFLAGS =
+
 %C%_openocd_LDADD = %D%/libopenocd.la
 
 %C%_openocd_LDADD += $(MINGWLDADD)
@@ -42,10 +44,13 @@ endif
 if IS_MINGW
 MINGWLDADD = -lws2_32
 if AJI_CLIENT
+%C%_openocd_LDADD +=  ../output/lib/libaji_client.dll.a
 MINGWLDADD += -lshlwapi
 %C%_openocd_LDADD +=  ../output/lib/libaji_client.dll.a
 endif
 else
+%C%_openocd_LDFLAGS +=  -lstdc++
+%C%_openocd_LDADD +=  ../output/lib/libaji_client.a
 MINGWLDADD =
 endif
 
