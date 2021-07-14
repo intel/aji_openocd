@@ -46,7 +46,6 @@ MINGWLDADD = -lws2_32
 if AJI_CLIENT
 %C%_openocd_LDADD +=  ../output/lib/libaji_client.dll.a
 MINGWLDADD += -lshlwapi
-%C%_openocd_LDADD +=  ../output/lib/libaji_client.dll.a
 endif
 else
 %C%_openocd_LDFLAGS +=  -lstdc++
