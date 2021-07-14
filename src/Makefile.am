@@ -44,12 +44,12 @@ endif
 if IS_MINGW
 MINGWLDADD = -lws2_32
 if AJI_CLIENT
-%C%_openocd_LDADD +=  ../output/lib/libaji_client.dll.a
+%C%_openocd_LDADD +=  src/libaji_client.a
 MINGWLDADD += -lshlwapi
 endif
 else
 %C%_openocd_LDFLAGS +=  -lstdc++
-%C%_openocd_LDADD +=  ../output/lib/libaji_client.a
+%C%_openocd_LDADD +=  src/libaji_client.a
 MINGWLDADD =
 endif
 
