@@ -7,31 +7,46 @@ It also assume you are reading this file because you
 want to or need to recompile OpenOCD with the driver
 to access jtagd/jtagserv.exe, i.e. aji_client.
 
-As conditional compilation was used when compiling
-OpenOCD with aji_client driver, you will not be able
-to use the compiled openocd with other drivers at all.
+While we do not see any reason for OpenOCD 
+alongside aji_client driver will not work, we have not
+tested it and cannot be held responsible for anything.
 
-PREREQUISITE:
+
+
+============
+PREREQUISITE
+============
 
 You need to compile and install libaji_client
 http://github.com/intel/libaji_client. This will
-create libaji_client.so* on Linux and 
-libaji_client.dll on Windows.
+create libaji_client.a need for compilation.
 You will need to copy these files to the same
-directory as your openocd/openocd.exe program.
+directory as your openocd/src before you
+start your compilation.
 
 
-COMPILATION STEPS:
+
+=================
+COMPILATION STEPS
+=================
 
 Linux:
 
-(1) Copy libaji_client.so.* to src. 
-Take care not to copy any *.la file.
+(1) Copy libaji_client.a from generated in
+PREREQUISITE to the src directory
 
 (2) Run :
-      
+# LINUX
   ./bootstrap
   ./configure --enable-aji_client
+  make
+
+# Windows
+  export CPPFLAGS="$CPPFLAGS -D__USE_MINGW_ANSI_STDIO=1 -Wno-error"; 
+  export CFLAGS="$CFLAGS -Wno-error"
+  ./bootstrap
+  ./configure --enable-aji_client \
+     --build=x86_64-w64-mingw32 --host=x86_64-w64-mingw32
   make
 
 (3) You should now be able to run openocd using the
@@ -44,41 +59,7 @@ the command:
 
   openocd
 
-to work, provided you copy libaji_client.so* to the
-same directory as openocd
-      
-
-
-Windows:
-
-Only compilation using MinGW64-64bit is supported
-
-(1) Copy libaji_client.dll to src/ 
-Take care not to copy any *.la files
-
-(2) Run 
-  
-  export CPPFLAGS="$CPPFLAGS -D__USE_MINGW_ANSI_STDIO=1 -Wno-error"; 
-  export CFLAGS="$CFLAGS -Wno-error"
-  ./bootstrap
-  ./configure --disable-doxygen-pdf \
-     --enable-aji_client --enable-ftdi --enable-jlink --enable-ulink \
-     --build=x86_64-w64-mingw32 --host=x86_64-w64-mingw32
-  make
-  cp /opt/x86_64-w64-mingw32/bin/libwinpthread-1.dll ./src
-
-(3) You should now be able to run openocd using the
-following instructions:
-
-  src/openocd.exe
-
-(4) If you run "make install", then normally we can expect 
-the command:
-
-  openocd.exe
-
-to work, provided you copy libaji_client.dll to the
-same directory as openocd
+to work
 
 (5) We had seen some windows installation fails to run
 openocd.exe because it does not have
@@ -93,19 +74,37 @@ on mingw command prompt, type
 and you will get the exact location of all DLL files
 used by opencod.exe.
 
-CHANGE LOG:
 
-0.11.0-R21.3:
-	- Based on OpenOCD 0.11.0.
-	- Added NIOS5 support
-	- aji_client now uses the standard JTAG driver
-	  approach in OpenOCD, meaning it can coexists
-	  with other OpenOCD JTAG drivers.
 
-0.10.0-R21.1: 
-	- Initial release based on OpenOCD 0.10.0. 
-	- Only support SOCVHPS
-	- aji_client driver used the "minidriver" approach
-	  meaning it is not possible to compile OpenOCD
-	  with other driver if you want aji_client driver
+==========
+CHANGE LOG
+===========
+
+0.11.0-R22.2: 
+	- Uses aji_get_nodes_bi() which is
+		a workaround for aji_get_nodes()
+		as the latter sometimes failed to
+		give the correct idcode for the SLD
+		nodes when the list of SLD nodes
+		become longer
+	- When the SLD node specified via 
+		"vjtag" command is not found, 
+		openocd is no longer stopped,
+		instead, an error code is returned
+		to openocd for it to handle.
+
+0.11.0-R21.3: 
+	- Upgarded to use OpenOCD v0.11.0
+	- Works for SOCVHPS and NIOS5.
+	- aji_client driver can coexists with other OpenOCD drivers
+	- openocd executable is standalone. No longer has 
+	  dependency on libaji_client or libSafeString.so.
+		However, windows version still have dependencies
+		on MinGW dll files.
+
+0.10.0 R21.1: 
+	- First release. Works for SOCVHPS only
+	- aji_client driver wants exclusive control of OpenOCD
+		as it uses the "minidriver" approach.
+
 
