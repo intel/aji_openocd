@@ -52,11 +52,7 @@
 typedef struct CLAIM_RECORD CLAIM_RECORD;
 struct CLAIM_RECORD {
 	DWORD claims_n;    ///! number of claims
-//#if PORT == WINDOWS
-//	AJI_CLAIM* claims;
-//#else
     AJI_CLAIM2* claims; ///! IR claims
-//#endif
 };
 
 #define DEVICE_TYPE_COUNT 4
@@ -92,22 +88,15 @@ struct SLD_RECORD {
 AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * records_n) {
 	if (UNKNOWN < *records_n) {
 		DWORD csize = 0;
-//#if PORT == WINDOWS
-//		AJI_CLAIM* claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM)); //It's empty, NULL perhaps?
-//#else
         AJI_CLAIM2 *claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2)); //It's empty, NULL perhaps?
-//#endif
 		if (claims == NULL) {
 			return AJI_NO_MEMORY;
 		}
 	}
 	if (ARM < *records_n) {
 		DWORD csize = 4;
-//#if PORT == WINDOWS
-//		AJI_CLAIM* claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM));
-//#else
         AJI_CLAIM2* claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
-//#endif
+
 		if (claims == NULL) {
 			return AJI_NO_MEMORY;
 		}
@@ -127,11 +116,7 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
 
 	if (RISCV < *records_n) {
 		DWORD csize = 3;
-//#if PORT == WINDOWS
-//		AJI_CLAIM *claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM));
-//#else
-      AJI_CLAIM2 *claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
-// #endif
+		AJI_CLAIM2 *claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
 		if (claims == NULL) {
 			return AJI_NO_MEMORY;
 		}
@@ -149,11 +134,7 @@ AJI_ERROR jtagservice_create_claim_records(CLAIM_RECORD *records, DWORD * record
 
 	if (VJTAG < *records_n) {
 		DWORD csize = 4;
-//#if PORT == WINDOWS
-//		AJI_CLAIM *claims = (AJI_CLAIM*) calloc(csize, sizeof(AJI_CLAIM));
-//#else
         AJI_CLAIM2 *claims = (AJI_CLAIM2*) calloc(csize, sizeof(AJI_CLAIM2));
-//#endif
 		if (claims == NULL) {
 			return AJI_NO_MEMORY;
 		}
@@ -335,8 +316,6 @@ static AJI_ERROR jtagservice_hier_id_index_by_idcode(
 
 	DWORD index = 0;
 	for (; index < hier_id_count; ++index) {
-//        LOG_DEBUG("SLD Node ID matching - Attempting to match 0x%08lX. Try %lu with 0x%08lX",
-//           (unsigned long) idcode, (unsigned long)  index, (unsigned long) hier_id_list[index].idcode);
 		if (hier_id_list[index].idcode == idcode) {
 			break;
 		}
@@ -496,7 +475,6 @@ static AJI_ERROR jtagservice_update_active_tap_record(
  */
 AJI_ERROR jtagservice_unlock()
 {
-//LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
 	if(UINT32_MAX == jtagservice.in_use_device_tap_position) {
 		return AJI_NO_ERROR; //nothing to unlock
 	}
@@ -527,11 +505,6 @@ static AJI_ERROR jtagservice_lock_jtag_tap (
 	const DWORD hardware_index,
 	const DWORD tap_index ) 
 {
-//LOG_INFO("***> %s:%d:%s: BEGIN device_count=%lu, tap_index = %lu", 
-//		__FILE__, __LINE__, __FUNCTION__,
-//		(unsigned long) jtagservice.device_count,
-//		(unsigned long) tap_index
-//);
 	assert(jtagservice.device_count != UINT32_MAX);
 	assert(tap_index < jtagservice.device_count);
 	assert(hardware_index == 0);
@@ -572,16 +545,7 @@ static AJI_ERROR jtagservice_lock_jtag_tap (
 			 );
 			 return status;
 		}
-//#if PORT == WINDOWS 
-/*		status = c_aji_open_device(
-			jtagservice.in_use_hardware_chain_id,
-			tap_index,
-			&(jtagservice.device_open_id_list[tap_index]),
-			(const AJI_CLAIM*)(jtagservice.claims[jtagservice.device_type_list[tap_index]].claims),
-			jtagservice.claims[jtagservice.device_type_list[tap_index]].claims_n,
-			jtagservice.appIdentifier
-		);
-//#else */
+
         status = c_aji_open_device_a(
             jtagservice.in_use_hardware_chain_id,
             tap_index,
@@ -590,7 +554,7 @@ static AJI_ERROR jtagservice_lock_jtag_tap (
             jtagservice.claims[jtagservice.device_type_list[tap_index]].claims_n, 
             jtagservice.appIdentifier
         );
-//#endif
+
 		if(AJI_NO_ERROR !=  status ) { 
 			 LOG_ERROR("Problem openning tap %lu (0x%08lX). Returned %d (%s)", 
 				  (unsigned long) tap_index, 
@@ -633,8 +597,6 @@ AJI_ERROR jtagservice_lock_virtual_tap(
 	const DWORD hardware_index,
 	const DWORD tap_index,
 	const DWORD node_index     ) {
-//LOG_INFO("Request node %lu tap  %lu size=%lu", (unsigned long) node_index, (unsigned long) tap_index, (unsigned long) jtagservice.hier_id_n[tap_index]);
-//LOG_INFO("current node: %lu tap  %lu is_sld=%s", (unsigned long) jtagservice.in_use_device_tap_position, (unsigned long) jtagservice.in_use_hier_id_node_position, jtagservice.is_sld? "yes": "no");
 	assert(tap_index < jtagservice.device_count);
 	assert(node_index != UINT32_MAX);
 	assert(tap_index != UINT32_MAX);
@@ -683,18 +645,6 @@ AJI_ERROR jtagservice_lock_virtual_tap(
 		   return status;
 		}
 
- //#if PORT == WINDOWS
-/*		status = c_aji_open_node_a(
-			jtagservice.in_use_hardware_chain_id,
-			tap_index,
-			node_index,
-			jtagservice.hier_ids[tap_index][node_index].idcode,
-			&(jtagservice.hier_id_open_id_list[tap_index][node_index]),
-			(const AJI_CLAIM*)(jtagservice.claims[jtagservice.hier_id_type_list[tap_index][node_index]].claims),
-			jtagservice.claims[jtagservice.hier_id_type_list[tap_index][node_index]].claims_n,
-			jtagservice.appIdentifier
-		);
-//#else */
         status = c_aji_open_node_b(
             jtagservice.in_use_hardware_chain_id,
             tap_index,
@@ -704,7 +654,7 @@ AJI_ERROR jtagservice_lock_virtual_tap(
             jtagservice.claims[jtagservice.hier_id_type_list[tap_index][node_index]].claims_n,
             jtagservice.appIdentifier
         );
-//#endif
+
 		if (AJI_NO_ERROR != status) {
 			LOG_ERROR("Problem openning node %lu (0x%08lX) for tap position %lu (0x%08lX). Returned %d (%s)",
 						(unsigned long) node_index,
@@ -775,7 +725,6 @@ AJI_ERROR jtagservice_lock_virtual_tap(
  */
 static AJI_ERROR jtagservice_lock_any_tap(void)
 {
-//LOG_INFO("***> %s:%d:%s: BEGIN", __FILE__, __LINE__, __FUNCTION__);
 	if(jtagservice.in_use_device_tap_position != UINT32_MAX) {
 		return AJI_NO_ERROR; //already locked something, so just return
 	} 
@@ -815,7 +764,6 @@ static AJI_ERROR jtagservice_lock_any_tap(void)
  */
 AJI_ERROR jtagservice_lock(const struct jtag_tap* const tap)
 {
-//LOG_INFO("***> %s:%d:%s: BEGIN tap=0x%08lX", __FILE__, __LINE__, __FUNCTION__, (unsigned long)(tap? tap->idcode : 0xFFFF));
 	if(tap && jtag_tap_on_all_vtaps_list(tap)) {
 		DWORD tap_index = UINT32_MAX;
 		jtagservice_device_index_by_idcode(
