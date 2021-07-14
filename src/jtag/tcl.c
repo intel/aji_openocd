@@ -479,6 +479,7 @@ static int jim_newtap_expected_id(struct jim_nvp *n, struct jim_getopt_info *goi
 #define NTAP_OPT_VERSION   6
 #define NTAP_OPT_CHAIN_POSITION   7
 #define NTAP_OPT_HARDWARE 101
+#define NTAP_OPT_VJTAG_BRIDGE 102
 
 static int jim_newtap_ir_param(struct jim_nvp *n, struct jim_getopt_info *goi,
 	struct jtag_tap *pTap)
@@ -1453,6 +1454,7 @@ static int jim_vjtag_create_cmd(struct jim_getopt_info* goi)
 	const struct jim_nvp opts[] = {
 		{.name = "-chain-position",  .value = NTAP_OPT_CHAIN_POSITION },
 		{.name = "-expected-id",     .value = NTAP_OPT_EXPECTED_ID },
+		{.name = "-bridge",          .value = NTAP_OPT_VJTAG_BRIDGE },
 		{.name = "-ignore-version",  .value = NTAP_OPT_VERSION },
 		{.name = NULL,               .value = -1 },
 	};
@@ -1506,6 +1508,16 @@ static int jim_vjtag_create_cmd(struct jim_getopt_info* goi)
 				Jim_SetResultString(goi->interp, "-chain-position is invalid", -1);
 				return JIM_ERR;
 			}
+			break;
+		}
+		case NTAP_OPT_VJTAG_BRIDGE: {
+			Jim_Obj* o_t;
+			e = jim_getopt_obj(goi, &o_t);
+			if (e != JIM_OK)
+				return e;
+
+			Jim_SetResultString(goi->interp, "Parameter -bridge for 'vjtag create' is ignored as it is not yet supported", -1);
+			LOG_USER("Notice : Parameter -bridge for 'vjtag create' is ignored as it is not yet supported");
 			break;
 		}
 		case NTAP_OPT_VERSION:
