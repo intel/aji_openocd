@@ -54,6 +54,7 @@ EXTRA_DIST += \
 	NEWTAPS \
 	README.Windows \
 	README.macOS \
+	README.aji_client \
 	$(EXTRA_DIST_NEWS) \
 	Doxyfile.in \
 	LICENSES/license-rules.txt \
