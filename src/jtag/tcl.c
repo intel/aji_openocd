@@ -1636,6 +1636,8 @@ static int jim_hardware_cmd(struct jim_getopt_info* goi)
 		LOG_ERROR("Insufficient memory");
 		if(hw->name) { free(hw->name); }
 		if(hw->address) { free(hw->address); }
+		free(hw);
+		hw = NULL;
 		return JIM_ERR;
 	}
 
