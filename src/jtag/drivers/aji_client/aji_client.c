@@ -278,7 +278,7 @@ static int aji_client_build_buffers(
 	*write_buffer = NULL;
 	int req = jtag_build_buffer(&mock_cmd, write_buffer);
 	if(req) {
-		if(write_buffer == NULL) {
+		if(*write_buffer == NULL) {
 			LOG_ERROR("Insufficient memory for write buffer");
 			return ERROR_FAIL;
 		}
@@ -296,7 +296,7 @@ static int aji_client_build_buffers(
 	}
 	if(req) {
 		*read_buffer = calloc(1, DIV_ROUND_UP(*bit_count, 8));
-		if(read_buffer == NULL) {
+		if(*read_buffer == NULL) {
 			LOG_ERROR("Insufficient memory for read buffer");
 			return ERROR_FAIL;
 		}
