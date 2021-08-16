@@ -1750,6 +1750,13 @@ int adapter_quit(void)
 		vt = n;
 	}
 
+	struct jtag_hardware* hw = jtag_all_hardwares();
+	while (hw) {
+		struct jtag_hardware* n = hw->next_hardware;
+		jtag_hardware_free(hw);
+		hw = n;
+	}
+
 	return ERROR_OK;
 }
 
@@ -2310,6 +2317,7 @@ void jtag_hardware_free(struct jtag_hardware* hardware)
 		free(hardware->address);
 		hardware->address = NULL;
 	}
+	free(hardware);
 }
 
 struct jtag_hardware* jtag_hardware_by_string(const char* name)
