@@ -82,12 +82,25 @@ same directory as openocd
 
 (5) We had seen some windows installation fails to run
 openocd.exe because it does not have
-libgcc_s_seh-1.dll and libstdc++-6.dll. In this case copy 
-the two files from the mingw installation directory of the
-machine you compile openocd on to the same directory as
-openocd.exe
+libgcc_s_seh-1.dll, libstdc++-6.dll and libwinpthread-1.dll. 
+In this case copy the three files from of the machine you 
+compile openocd on to the same directory as
+openocd.exe. To find where the files are on that machine
+on mingw command prompt, type
+
+  ldd src/openocd.exe
+
+and you will get the exact location of all DLL files
+used by opencod.exe.
 
 CHANGE LOG:
+
+0.11.0-R21.3:
+	- Based on OpenOCD 0.11.0.
+	- Added NIOS5 support
+	- aji_client now uses the standard JTAG driver
+	  approach in OpenOCD, meaning it can coexists
+	  with other OpenOCD JTAG drivers.
 
 0.10.0-R21.1: 
 	- Initial release based on OpenOCD 0.10.0. 
@@ -96,9 +109,3 @@ CHANGE LOG:
 	  meaning it is not possible to compile OpenOCD
 	  with other driver if you want aji_client driver
 
-0.11.0-R21.3:
-	- Based on OpenOCD 0.11.0.
-	- Added NIOS5 support
-	- aji_client now uses the standard JTAG driver
-	  approach in OpenOCD. Meaning it can coexists
-	  with other OpenOCD JTAG drivers.

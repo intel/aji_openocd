@@ -11,6 +11,7 @@
 *.la
 *.in
 
+
 # generated source files
 src/jtag/minidriver_imp.h
 src/jtag/jtag_minidriver.h
@@ -74,6 +75,14 @@ stamp-h1
 stamp-vti
 INSTALL
 NOTES
+compile
+config.guess
+config.sub
+depcomp
+install-sh
+ltmain.sh
+mdate-sh
+missing
 
 # coexist with quilt
 patches
