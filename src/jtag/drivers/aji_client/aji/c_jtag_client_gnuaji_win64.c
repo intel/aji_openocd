@@ -139,6 +139,16 @@ AJI_ERROR AJI_API c_aji_get_nodes_b(
     return _Z13aji_get_nodesP9AJI_CHAINmP11AJI_HIER_IDPmP12AJI_HUB_INFO(chain_id, tap_position, hier_ids, hier_id_n, hub_infos);
 }
 
+AJI_ERROR AJI_API c_aji_get_nodes_bi(
+    AJI_CHAIN_ID chain_id,
+    DWORD  tap_position,
+    AJI_HIER_ID* hier_ids,
+    DWORD* hier_id_n,
+    AJI_HUB_INFO* hub_infos) {
+    AJI_ERROR _Z13aji_get_nodesP9AJI_CHAINmP11AJI_HIER_IDPmP12AJI_HUB_INFOi(AJI_CHAIN_ID, DWORD, AJI_HIER_ID*, DWORD*, AJI_HUB_INFO*, int);
+    return _Z13aji_get_nodesP9AJI_CHAINmP11AJI_HIER_IDPmP12AJI_HUB_INFOi(chain_id, tap_position, hier_ids, hier_id_n, hub_infos, 1);
+}
+
 AJI_ERROR c_aji_lock(AJI_OPEN_ID open_id, DWORD timeout, AJI_PACK_STYLE pack_style) {
     AJI_ERROR _Z8aji_lockP8AJI_OPENm14AJI_PACK_STYLE(AJI_OPEN_ID, DWORD, AJI_PACK_STYLE);
     return _Z8aji_lockP8AJI_OPENm14AJI_PACK_STYLE(open_id, timeout, pack_style);

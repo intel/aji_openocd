@@ -1474,7 +1474,7 @@ AJI_ERROR jtagservice_scan_for_taps(void)
 		}
 		jtagservice.hier_id_n[tap_position] = 10; //@TODO Find a good compromise for number of SLD so I don't have to call c_aji_get_nodes_b() twice.
 		jtagservice.hier_ids[tap_position] = (AJI_HIER_ID*)calloc(jtagservice.hier_id_n[tap_position], sizeof(AJI_HIER_ID));
-		status = c_aji_get_nodes_b(
+		status = c_aji_get_nodes_bi(
 			hw.chain_id, //could be jtagservice.in_use_hardware_chain_id,
 			tap_position,
 			jtagservice.hier_ids[tap_position],
@@ -1489,7 +1489,7 @@ AJI_ERROR jtagservice_scan_for_taps(void)
 				return AJI_NO_MEMORY;
 			}
 
-			status = c_aji_get_nodes_b(
+			status = c_aji_get_nodes_bi(
 				hw.chain_id, //could be jtagservice.in_use_hardware_chain_id,
 				tap_position,
 				jtagservice.hier_ids[tap_position],
@@ -1524,42 +1524,10 @@ AJI_ERROR jtagservice_scan_for_taps(void)
 		);
 		if (jtagservice.hier_id_n[tap_position]) {
 			for (DWORD n = 0; n < jtagservice.hier_id_n[tap_position]; ++n) {
-char positions[64];
-sprintf(
-  positions,
-  "%d %d %d %d %d %d %d %d",
-  jtagservice.hier_ids[tap_position][n].positions[0],
-  jtagservice.hier_ids[tap_position][n].positions[1],
-  jtagservice.hier_ids[tap_position][n].positions[2],
-  jtagservice.hier_ids[tap_position][n].positions[3],
-  jtagservice.hier_ids[tap_position][n].positions[4],
-  jtagservice.hier_ids[tap_position][n].positions[5],
-  jtagservice.hier_ids[tap_position][n].positions[6],
-  jtagservice.hier_ids[tap_position][n].positions[7]
-);
-char pointers[256];
-sprintf(
-  pointers,
-  "%p %p %p %p %p %p %p %p",
-  jtagservice.hier_ids[tap_position][n].positions+0,
-  jtagservice.hier_ids[tap_position][n].positions+1,
-  jtagservice.hier_ids[tap_position][n].positions+2,
-  jtagservice.hier_ids[tap_position][n].positions+3,
-  jtagservice.hier_ids[tap_position][n].positions+4,
-  jtagservice.hier_ids[tap_position][n].positions+5,
-  jtagservice.hier_ids[tap_position][n].positions+6,
-  jtagservice.hier_ids[tap_position][n].positions+7
-
-);
-				LOG_INFO("    node %2lu idcode=%08lX position_n=%lu positions=[ %s ]; size=%ld, pointers=%p %p [%s]",
+				LOG_INFO("    node %2lu idcode=%08lX position_n=%lu",
 				    (unsigned long)n,
 				    (unsigned long)(jtagservice.hier_ids[tap_position][n].idcode),
-				    (unsigned long)(jtagservice.hier_ids[tap_position][n].position_n),			
-					positions,
-					sizeof(jtagservice.hier_ids[tap_position][n]),
-                    &(jtagservice.hier_ids[tap_position][n].idcode),
-                    &(jtagservice.hier_ids[tap_position][n].position_n),
-                    pointers
+				    (unsigned long)(jtagservice.hier_ids[tap_position][n].position_n)
 				);
 				jtagservice.hier_id_type_list[tap_position][n] = VJTAG; //@TODO Might have to ... 
 				                                                        //... replace with  node specific claims
