@@ -505,9 +505,21 @@ static AJI_ERROR jtagservice_lock_jtag_tap (
 	const DWORD hardware_index,
 	const DWORD tap_index ) 
 {
-	assert(jtagservice.device_count != UINT32_MAX);
-	assert(tap_index < jtagservice.device_count);
 	assert(hardware_index == 0);
+
+	//assert(tap_index != UINT32_MAX);
+    if(tap_index == UINT32_MAX) {
+        LOG_ERROR("JTAG TAP node does not exists");
+        return AJI_BAD_TAP_POSITION;
+    }
+
+	//assert(tap_index < jtagservice.device_count);
+	if(jtagservice.device_count <= tap_index) {
+        LOG_ERROR("Bad JTAG TAP position (requested tap %lu not in [0,%lu)",
+                  (unsigned long) tap_index, (unsigned long) jtagservice.device_count
+		);
+        return AJI_BAD_TAP_POSITION;
+    }
 
 	if(    !jtagservice.is_sld 
 		&& tap_index == jtagservice.in_use_device_tap_position
@@ -597,11 +609,32 @@ AJI_ERROR jtagservice_lock_virtual_tap(
 	const DWORD hardware_index,
 	const DWORD tap_index,
 	const DWORD node_index     ) {
-	assert(tap_index < jtagservice.device_count);
-	assert(node_index != UINT32_MAX);
-	assert(tap_index != UINT32_MAX);
-	assert(node_index < jtagservice.hier_id_n[tap_index]);
+
 	assert(hardware_index == 0);
+
+    if(tap_index == UINT32_MAX) {
+        LOG_ERROR("JTAG TAP node for vJTAG node does not exists");
+        return AJI_BAD_TAP_POSITION;
+    }
+
+	if(jtagservice.device_count <= tap_index) {
+        LOG_ERROR("Bad JTAG TAP position of vJTAG node (requested tap %lu not in [0,%lu)",
+                  (unsigned long) tap_index, (unsigned long) jtagservice.device_count
+		);
+        return AJI_BAD_TAP_POSITION;
+    }
+
+    if(node_index == UINT32_MAX) {
+        LOG_ERROR("vJTAG node does not exists");
+        return AJI_NO_MATCHING_NODES;
+    }
+
+    if(jtagservice.hier_id_n[tap_index] <= node_index) {
+        LOG_ERROR("Bad  vJTAG node position (requested node %lu not in [0,%lu)",
+                  (unsigned long) node_index, (unsigned long) jtagservice.hier_id_n[tap_index]
+		);
+        return AJI_NO_MATCHING_NODES;
+    }
 
 	if(		jtagservice.is_sld 
 		&&	tap_index == jtagservice.in_use_device_tap_position
