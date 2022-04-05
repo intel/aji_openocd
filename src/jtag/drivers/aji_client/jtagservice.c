@@ -1524,10 +1524,42 @@ AJI_ERROR jtagservice_scan_for_taps(void)
 		);
 		if (jtagservice.hier_id_n[tap_position]) {
 			for (DWORD n = 0; n < jtagservice.hier_id_n[tap_position]; ++n) {
-				LOG_INFO("    node %2lu idcode=%08lX position_n=%lu",
+char positions[64];
+sprintf(
+  positions,
+  "%d %d %d %d %d %d %d %d",
+  jtagservice.hier_ids[tap_position][n].positions[0],
+  jtagservice.hier_ids[tap_position][n].positions[1],
+  jtagservice.hier_ids[tap_position][n].positions[2],
+  jtagservice.hier_ids[tap_position][n].positions[3],
+  jtagservice.hier_ids[tap_position][n].positions[4],
+  jtagservice.hier_ids[tap_position][n].positions[5],
+  jtagservice.hier_ids[tap_position][n].positions[6],
+  jtagservice.hier_ids[tap_position][n].positions[7]
+);
+char pointers[256];
+sprintf(
+  pointers,
+  "%p %p %p %p %p %p %p %p",
+  jtagservice.hier_ids[tap_position][n].positions+0,
+  jtagservice.hier_ids[tap_position][n].positions+1,
+  jtagservice.hier_ids[tap_position][n].positions+2,
+  jtagservice.hier_ids[tap_position][n].positions+3,
+  jtagservice.hier_ids[tap_position][n].positions+4,
+  jtagservice.hier_ids[tap_position][n].positions+5,
+  jtagservice.hier_ids[tap_position][n].positions+6,
+  jtagservice.hier_ids[tap_position][n].positions+7
+
+);
+				LOG_INFO("    node %2lu idcode=%08lX position_n=%lu positions=[ %s ]; size=%ld, pointers=%p %p [%s]",
 				    (unsigned long)n,
 				    (unsigned long)(jtagservice.hier_ids[tap_position][n].idcode),
-				    (unsigned long)(jtagservice.hier_ids[tap_position][n].position_n)
+				    (unsigned long)(jtagservice.hier_ids[tap_position][n].position_n),			
+					positions,
+					sizeof(jtagservice.hier_ids[tap_position][n]),
+                    &(jtagservice.hier_ids[tap_position][n].idcode),
+                    &(jtagservice.hier_ids[tap_position][n].position_n),
+                    pointers
 				);
 				jtagservice.hier_id_type_list[tap_position][n] = VJTAG; //@TODO Might have to ... 
 				                                                        //... replace with  node specific claims
