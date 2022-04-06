@@ -58,7 +58,7 @@ include %D%/aji/Makefile.am
 
 %C%_libocdaji_client_la_LDFLAGS += -Wl,-fuse-ld=gold -z noexecstack -z relro -rdynamic \
     -fopenmp \
-    -static-libgcc 
+    -static-libgcc -static-libstdc++
 
 %C%_libocdaji_client_la_SOURCES += \
     %D%/aji/aji.h %D%/aji/c_aji.h \

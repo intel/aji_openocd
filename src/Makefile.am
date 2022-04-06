@@ -41,16 +41,15 @@ endif
 # the library search path.
 %C%_libopenocd_la_LDFLAGS = $(all_libraries)
 
+MINGWLDADD =
 if IS_MINGW
-MINGWLDADD = -lws2_32
 if AJI_CLIENT
-%C%_openocd_LDADD +=  src/libaji_client.a
+%C%_openocd_LDADD +=  src/libaji_client.a -lstdc++ -lws2_32
 MINGWLDADD += -lshlwapi
 endif
 else
 %C%_openocd_LDFLAGS +=  -lstdc++
 %C%_openocd_LDADD +=  src/libaji_client.a
-MINGWLDADD =
 endif
 
 %C%_libopenocd_la_LIBADD = \
