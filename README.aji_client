@@ -18,8 +18,9 @@ PREREQUISITE
 ============
 
 You need to compile and install libaji_client
-http://github.com/intel/libaji_client. This will
-create libaji_client.a need for compilation.
+https://github.com/intel/libaji_client. This will
+create libaji_client.a (for linux) or 
+libaji_client.dll (for windows) need for compilation.
 You will need to copy these files to the same
 directory as your openocd/src before you
 start your compilation.
@@ -32,8 +33,10 @@ COMPILATION STEPS
 
 Linux:
 
-(1) Copy libaji_client.a from generated in
-PREREQUISITE to the src directory
+(1) Copy libaji_client.a (for linux) and
+libaji_client.dll) generated using 
+https://github.com/intel/libaji_client
+to the src directory
 
 (2) Run :
 # LINUX
