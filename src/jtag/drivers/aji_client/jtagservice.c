@@ -1500,13 +1500,18 @@ AJI_ERROR jtagservice_scan_for_taps(void)
 	}
 
 	for (DWORD tap_position = 0; tap_position < jtagservice.device_count; ++tap_position) {
-		jtagservice.hub_infos[tap_position] = (AJI_HUB_INFO*)calloc(AJI_MAX_HIERARCHICAL_HUB_DEPTH, sizeof(AJI_HUB_INFO));
+		jtagservice.hier_id_n[tap_position] = 10; //@TODO Find a good compromise for number of SLD so I don't have to call c_aji_get_nodes_b() twice.
+		jtagservice.hier_ids[tap_position] = (AJI_HIER_ID*)calloc(jtagservice.hier_id_n[tap_position], sizeof(AJI_HIER_ID));
+		if (NULL == jtagservice.hier_ids[tap_position]) {
+			LOG_ERROR("Ran out of memory for jtagservice's tap  %lu's hier_ids", (unsigned long)tap_position);
+			return AJI_NO_MEMORY;
+		}
+		jtagservice.hub_infos[tap_position] = (AJI_HUB_INFO*)calloc(jtagservice.hier_id_n[tap_position], sizeof(AJI_HUB_INFO));
 		if (NULL == jtagservice.hub_infos[tap_position]) {
 			LOG_ERROR("Ran out of memory for jtagservice's tap  %lu's hub_info", (unsigned long)tap_position);
 			return AJI_NO_MEMORY;
 		}
-		jtagservice.hier_id_n[tap_position] = 10; //@TODO Find a good compromise for number of SLD so I don't have to call c_aji_get_nodes_b() twice.
-		jtagservice.hier_ids[tap_position] = (AJI_HIER_ID*)calloc(jtagservice.hier_id_n[tap_position], sizeof(AJI_HIER_ID));
+
 		status = c_aji_get_nodes_bi(
 			hw.chain_id, //could be jtagservice.in_use_hardware_chain_id,
 			tap_position,
@@ -1514,11 +1519,19 @@ AJI_ERROR jtagservice_scan_for_taps(void)
 			&(jtagservice.hier_id_n[tap_position]),
 			jtagservice.hub_infos[tap_position]
 		);
-		if (AJI_TOO_MANY_DEVICES == status) {
+
+		if (AJI_TOO_MANY_DEVICES == status) {		
 			free(jtagservice.hier_ids[tap_position]);
 			jtagservice.hier_ids[tap_position] = (AJI_HIER_ID*)calloc(jtagservice.hier_id_n[tap_position], sizeof(AJI_HIER_ID));
 			if (NULL == jtagservice.hub_infos[tap_position]) {
 				LOG_ERROR("Ran out of memory for jtagservice's tap  %lu's hier_ids", (unsigned long)tap_position);
+				return AJI_NO_MEMORY;
+			}
+
+			free(jtagservice.hub_infos[tap_position]);
+			jtagservice.hub_infos[tap_position] = (AJI_HUB_INFO*)calloc(jtagservice.hier_id_n[tap_position], sizeof(AJI_HUB_INFO));
+			if (NULL == jtagservice.hub_infos[tap_position]) {
+				LOG_ERROR("Ran out of memory for jtagservice's tap  %lu's hub_info", (unsigned long)tap_position);
 				return AJI_NO_MEMORY;
 			}
 
