@@ -37,10 +37,14 @@ endif
 # the library search path.
 %C%_libopenocd_la_LDFLAGS = $(all_libraries)
 
+
+if AJI_CLIENT
 %C%_openocd_LDADD +=  src/libaji_client.a
+endif
 
 if IS_MINGW
 if AJI_CLIENT
+%C%_openocd_LDADD +=  /mingw64/lib/libshlwapi.a
 %C%_openocd_LDADD +=  -lws2_32 -lstdc++ 
   # the -l flags are with _LDADD, not _LDFLAGS ...
   # ... because they have to be at the end
