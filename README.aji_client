@@ -33,10 +33,13 @@ COMPILATION STEPS
 
 Linux:
 
-(1) Copy libaji_client.a (for linux) and
+(1) Copy libaji_client.a and libSafeString.a (for linux) and
 libaji_client.dll) generated using 
 https://github.com/intel/libaji_client
 to the src directory
+
+(1.1) For windows, locate libshlwapi.a inside your
+mingw64 installation and copy it into the src directory
 
 (2) Run :
 # LINUX
@@ -82,6 +85,14 @@ used by opencod.exe.
 ==========
 CHANGE LOG
 ==========
+
+0.11.0-R24.2:
+    - Bugfix: If you have 8 or more SLD nodes, then
+	  previously opencod can segfault as the code
+	  was trying to access memory beyond what was
+	  allocated.
+    - Added missing libshlwapi.a dependency
+	  that was required by recent version of mingw64
 
 0.11.0-R22.2: 
 	- Uses aji_get_nodes_bi() which is
