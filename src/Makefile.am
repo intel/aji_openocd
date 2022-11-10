@@ -1,6 +1,11 @@
 noinst_LTLIBRARIES += %D%/libopenocd.la
 bin_PROGRAMS += %D%/openocd
 
+
+%C%_openocd_CFLAGS = $(AM_CFLAGS) $(CFLAGS) -g
+
+%C%_openocd_LDADD =
+
 %C%_openocd_SOURCES = \
 	%D%/main.c
 
