@@ -44,7 +44,8 @@ endif
 
 if IS_MINGW
 if AJI_CLIENT
-%C%_openocd_LDADD +=  /mingw64/lib/libshlwapi.a
+%C%_openocd_LDADD +=  src/libshlwapi.a 
+  #you can find and copy the file from mingw installation.
 %C%_openocd_LDADD +=  -lws2_32 -lstdc++ 
   # the -l flags are with _LDADD, not _LDFLAGS ...
   # ... because they have to be at the end
