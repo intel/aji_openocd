@@ -104,3 +104,9 @@ TAGS
 
 # ctags tag files
 tags
+
+
+## output from make dist
+**/*.tar.gz
+**/*.tar.bz2
+**/*.tar
