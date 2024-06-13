@@ -6,8 +6,13 @@ on: push
 
 name: OpenOCD Snapshot
 
+permissions:
+  contents: read
+
 jobs:
   package:
+    permissions:
+      contents: write  # for dev-drprasad/delete-tag-and-release to delete tags or releases
     runs-on: [ubuntu-18.04]
     env:
       DL_DIR: ../downloads
